@@ -196,6 +196,8 @@ mkdir 04_rbm_pdf
 mv ${my_species}*.pdf 04_rbm_pdf
 ```
 
+![Histogram of gene RBMs](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/test_genome01-genome02.png)
+
 ### Step 04: Compare your genomes to a model
 
 To view model info/options:
@@ -337,6 +339,8 @@ Create list of genes with pangenome category (conserved, core, accessory). This 
 ```bash
 python 00d_Workflow_Scripts/04a_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -c all_genes_CDS_aligned.tsv -o pancat_file.tsv
 ```
+
+![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
 
 ### Step 02: Run analysis for each genome pair of interest
 
