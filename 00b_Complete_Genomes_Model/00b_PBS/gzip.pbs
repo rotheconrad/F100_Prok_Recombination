@@ -1,0 +1,17 @@
+#PBS -N gzip
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=1gb
+#PBS -l walltime=6:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00_log/gzip_${n}.out
+#PBS -e 00_log/gzip_${n}.err
+
+cd $PBS_O_WORKDIR
+
+gzip $f
+
+## Run Log
+## for f in dir/*; do qsub -v f=$f 00_PBS/gzip.pbs; done
+## for f in *fastq; do n=`basename $f | cut -d. -f1`; qsub -v f=$f,n=$n ../00b_PBS/gzip.pbs; done
+## for f in EN_56*; do n=`basename $f | cut -d. -f1`; qsub -v f=$f,n=$n ../00b_PBS/gzip.pbs; done

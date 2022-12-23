@@ -1,0 +1,25 @@
+#PBS -N RBM_dist
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=5gb
+#PBS -l walltime=12:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/03c_RBMdist_${n}.out
+#PBS -e 00a_log/03c_RBMdist_${n}.err
+
+F100="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/00c_Scripts/03c_AAI_RBM_F100.py"
+
+cd $PBS_O_WORKDIR
+
+# check if directory exists
+if [ ! -d ${odir}/${n} ]; then mkdir ${odir}/${n}; fi
+
+# check if result exists
+if [ ! -s ${odir}/${n}/${n}_F100.tsv ]
+  then
+  	python ${F100} -i $f -s $n -o ${odir}/${n}/${n}
+fi
+
+## Run Log:
+## qsub -v f=,n=,odir= ../../00b_PBS/03c_RBM_dist.pbs
+## for f in 04a_Complete_RBMs/*; do n=`basename $f | cut -d. -f1`; if [ ! -s 05a_RBM_dist/${n}/${n}.tsv ]; then qsub -v f=${f},n=${n},odir=05a_RBM_dist ../../00b_PBS/03c_RBM_dist.pbs; fi; done

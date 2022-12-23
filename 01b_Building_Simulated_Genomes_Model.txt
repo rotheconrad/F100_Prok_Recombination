@@ -1,0 +1,380 @@
+My simulated genomes produced discrepancies between fastANI and blast based ANI (ani.rb from enveomics). An extreme discrepancy between the shared genome fraction. The blast ANI yields results I expect based on my code. The fastANI yields results much much higher than expected. FastANI also yeilds what appears to be a downward shift in ANI values. 99.99% ANI values are at ~99.94 and the effect is more pronounced down around 94-95%.
+
+These are notes for the various things I will look at to understand this better.
+
+I. Simulation 1. 1000 bp avg gene length (default)
+II. Simulation 2. 3000 bp avg gene length (default)
+III. Real genomes. 1000 closed E.coli genomes
+IV. Real genomes. 1000 draft E.coli genomes
+
+* first load conda environment using alias "recombi"
+
+################################################################################
+### I. Simulation 1. 1000 bp avg gene length (default)
+###### fastANI 1000 bp frags vs 3000 bp vs 5000 bp
+###### fastANI vs BlastANI
+### path: /storage/scratch1/9/rconrad6/recombination/01d_sim_four
+################################################################################
+
+# simulate genomes
+> python 00c_scripts/06a_generate_test_data.py -o sim_four -a 95 100 0.01 -cr 0.75
+> mkdir 01d_sim_four
+> mv sim_four_* 01d_sim_four
+
+# fastANI source vs all
+
+	1) generate a list of file names
+	> for f in 01d_sim_four/sim_four_FNAs/*; do echo $f; done > 01d_sim_four/genome_fasta_path_list.txt
+
+	2) run fastANI sbatch
+	> sbatch --export query=01d_sim_four/sim_four_FNAs/sim_four_0SourceGenome.fna,refs=01d_sim_four/genome_fasta_path_list.txt,output=01d_sim_four/fastANI_1v-1000.ani,frag=1000 00b_sbatch/01c_fastANI_1v.sbatch
+
+	> sbatch --export query=01d_sim_four/sim_four_FNAs/sim_four_0SourceGenome.fna,refs=01d_sim_four/genome_fasta_path_list.txt,output=01d_sim_four/fastANI_1v-3000.ani,frag=3000 00b_sbatch/01c_fastANI_1v.sbatch
+
+	> sbatch --export query=01d_sim_four/sim_four_FNAs/sim_four_0SourceGenome.fna,refs=01d_sim_four/genome_fasta_path_list.txt,output=01d_sim_four/fastANI_1v-5000.ani,frag=5000 00b_sbatch/01c_fastANI_1v.sbatch
+
+	3) plot results
+	###########################
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-1000-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-1000-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-1000-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-1000-98.pdf -g True -xmin 98 -t 0.2
+	###########################
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-3000-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-3000-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-3000-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-3000-98.pdf -g True -xmin 98 -t 0.2
+	###########################
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-5000-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-5000-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-5000-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-5000-98.pdf -g True -xmin 98 -t 0.2
+	###########################
+
+# blastANI source vs all
+
+	1) generate FNA file list source vs all
+	> for f in 01d_sim_four/sim_four_FNAs/sim_four_ANI*; do echo 01d_sim_four/sim_four_FNAs/sim_four_0SourceGenome.fna $f; done > 01d_sim_four/genome_fasta_path_list_source.txt
+
+	2) split file for parallization
+	> split -l 500 -a 3 -d 01d_sim_four/genome_fasta_path_list_source.txt genome_fasta_path_list_source_
+
+	3) Run ani.rb 
+	> mkdir 01d_sim_four/sim_four_Blast_ANI-1v
+	> for f in genome_fasta_path_list_source_00*; do sbatch --export input=${f},outdir=01d_sim_four/sim_four_Blast_ANI-1v,output=${f}.ani 00b_sbatch/01d_Blast_ANI.sbatch; done
+
+	4) concatenate results
+	> cat 01d_sim_four/sim_four_Blast_ANI-1v/* > 01d_sim_four/blastANI-1v.ani
+
+	5) parse ani.rb output to tsv file
+	> python 00c_scripts/06b_ANIrb_to_TSV.py -i 01d_sim_four/blastANI-1v.ani -o 01d_sim_four/blastANI-1v.tsv
+
+	6) plot results
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01d_sim_four/blastANI-1v.tsv -s Simulated_genomes -o 01d_sim_four/blastANI-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01d_sim_four/blastANI-1v.tsv -s Simulated_genomes -o 01d_sim_four/blastANI-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01d_sim_four/blastANI-1v.tsv -s Simulated_genomes -o 01d_sim_four/blastANI-95.pdf -g True 
+
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01d_sim_four/blastANI-1v.tsv -s Simulate_genomes -o 01d_sim_four/blastANI-98.pdf -g True -xmin 98 -t 0.2
+
+	7) cleanup
+	> rm genome_fasta_path_list_source_00*
+
+# fastANI vs blastANI
+
+	1) fastANI-1v-1000.ani vs blastANI-1v.tsv
+	> python 00c_scripts/06d_fastANI_vs_blastANI.py -fa 01d_sim_four/fastANI_1v-1000.ani -ba 01d_sim_four/blastANI-1v.tsv -o 01d_sim_four/diff_fastANI1000-blastANI.pdf
+
+	2) fastANI-1v-3000.ani vs blastANI-1v.tsv
+	> python 00c_scripts/06d_fastANI_vs_blastANI.py -fa 01d_sim_four/fastANI_1v-3000.ani -ba 01d_sim_four/blastANI-1v.tsv -o 01d_sim_four/diff_fastANI3000-blastANI.pdf
+
+	3) fastANI-1v-5000.ani vs blastANI-1v.tsv
+	> python 00c_scripts/06d_fastANI_vs_blastANI.py -fa 01d_sim_four/fastANI_1v-5000.ani -ba 01d_sim_four/blastANI-1v.tsv -o 01d_sim_four/diff_fastANI5000-blastANI.pdf
+
+# fastANI vs fastANI
+
+	1) 1000 vs 3000 fragment size
+	> python 00c_scripts/06e_fastANI_vs_fastANI.py -f1 01d_sim_four/fastANI_1v-1000.ani -f2 01d_sim_four/fastANI_1v-3000.ani -o 01d_sim_four/diff_fastANI_1000_vs_3000.pdf
+
+	2) 1000 vs 5000 fragment size
+	> python 00c_scripts/06e_fastANI_vs_fastANI.py -f1 01d_sim_four/fastANI_1v-1000.ani -f2 01d_sim_four/fastANI_1v-5000.ani -o 01d_sim_four/diff_fastANI_1000_vs_5000.pdf
+
+	3) 3000 vs 5000 fragment size
+	> python 00c_scripts/06e_fastANI_vs_fastANI.py -f1 01d_sim_four/fastANI_1v-3000.ani -f2 01d_sim_four/fastANI_1v-5000.ani -o 01d_sim_four/diff_fastANI_3000_vs_5000.pdf
+
+################################################################################
+### II. Simulation 2. 3000 bp avg gene length (default)
+###### fastANI 1000 bp frags vs 3000 bp vs 5000 bp
+###### fastANI vs BlastANI
+### path: /storage/scratch1/9/rconrad6/recombination/01e_sim_five
+################################################################################
+
+# simulate genomes
+> python 00c_scripts/06a_generate_test_data.py -o sim_five -a 95 100 0.01 -cr 0.75 -mu 3000
+> mkdir 01e_sim_five 01e_sim_five/sim_five_Blast_ANI-1v 01e_sim_five/sim_five_RBMs-1v 01e_sim_five/sim_five_RBMs-1v_PDF
+> mv sim_five* 01e_sim_five
+
+# fastANI source vs all
+
+	1) generate a list of file names
+	> for f in 01e_sim_five/sim_five_FNAs/*; do echo $f; done > 01e_sim_five/genome_fasta_path_list.txt
+
+	2) run fastANI sbatch
+	> sbatch --export query=01e_sim_five/sim_five_FNAs/sim_five_0SourceGenome.fna,refs=01e_sim_five/genome_fasta_path_list.txt,output=01e_sim_five/fastANI_1v-1000.ani,frag=1000 00b_sbatch/01c_fastANI_1v.sbatch
+
+	> sbatch --export query=01e_sim_five/sim_five_FNAs/sim_five_0SourceGenome.fna,refs=01e_sim_five/genome_fasta_path_list.txt,output=01e_sim_five/fastANI_1v-3000.ani,frag=3000 00b_sbatch/01c_fastANI_1v.sbatch
+
+	> sbatch --export query=01e_sim_five/sim_five_FNAs/sim_five_0SourceGenome.fna,refs=01e_sim_five/genome_fasta_path_list.txt,output=01e_sim_five/fastANI_1v-5000.ani,frag=5000 00b_sbatch/01c_fastANI_1v.sbatch
+
+	3) plot results
+	###########################
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-1000-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-1000-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-1000-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-1000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-1000-98.pdf -g True -xmin 98 -t 0.2
+	###########################
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-3000-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-3000-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-3000-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-3000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-3000-98.pdf -g True -xmin 98 -t 0.2
+	###########################
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-5000-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-5000-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-5000-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01e_sim_five/fastANI_1v-5000.ani -s Simulation_Three_Genomes -o 01e_sim_five/fastANI_1v-5000-98.pdf -g True -xmin 98 -t 0.2
+
+# blastANI source vs all
+
+	1) generate FNA file list source vs all
+	> for f in 01e_sim_five/sim_five_FNAs/sim_five_ANI*; do echo 01e_sim_five/sim_five_FNAs/sim_five_0SourceGenome.fna $f; done > 01e_sim_five/genome_fasta_path_list_source.txt
+
+	2) split file for parallization
+	> split -l 500 -a 3 -d 01e_sim_five/genome_fasta_path_list_source.txt genome_fasta_path_list_source_
+
+	3) Run ani.rb 
+	> for f in genome_fasta_path_list_source_00*; do sbatch --export input=${f},outdir=01e_sim_five/sim_five_Blast_ANI-1v,output=${f}.ani 00b_sbatch/01d_Blast_ANI.sbatch; done
+
+	4) concatenate results
+	> cat 01e_sim_five/sim_five_Blast_ANI-1v/* > 01e_sim_five/blastANI-1v.ani
+
+	5) parse ani.rb output to tsv file
+	> python 00c_scripts/06b_ANIrb_to_TSV.py -i 01e_sim_five/blastANI-1v.ani -o 01e_sim_five/blastANI-1v.tsv
+
+	6) plot results
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01e_sim_five/blastANI-1v.tsv -s Simulated_genomes -o 01e_sim_five/blastANI-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01e_sim_five/blastANI-1v.tsv -s Simulated_genomes -o 01e_sim_five/blastANI-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01e_sim_five/blastANI-1v.tsv -s Simulated_genomes -o 01e_sim_five/blastANI-95.pdf -g True 
+
+	> python 00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 01e_sim_five/blastANI-1v.tsv -s Simulate_genomes -o 01e_sim_five/blastANI-98.pdf -g True -xmin 98 -t 0.2
+
+	7) cleanup
+	> rm genome_fasta_path_list_source_00*
+
+# fastANI vs blastANI
+
+	1) fastANI-1v-1000.ani vs blastANI-1v.tsv
+	> python 00c_scripts/06d_fastANI_vs_blastANI.py -fa 01e_sim_five/fastANI_1v-1000.ani -ba 01e_sim_five/blastANI-1v.tsv -o 01e_sim_five/diff_fastANI1000-blastANI.pdf
+
+	2) fastANI-1v-3000.ani vs blastANI-1v.tsv
+	> python 00c_scripts/06d_fastANI_vs_blastANI.py -fa 01e_sim_five/fastANI_1v-3000.ani -ba 01e_sim_five/blastANI-1v.tsv -o 01e_sim_five/diff_fastANI3000-blastANI.pdf
+
+	3) fastANI-1v-5000.ani vs blastANI-1v.tsv
+	> python 00c_scripts/06d_fastANI_vs_blastANI.py -fa 01e_sim_five/fastANI_1v-5000.ani -ba 01e_sim_five/blastANI-1v.tsv -o 01e_sim_five/diff_fastANI5000-blastANI.pdf
+
+# fastANI vs fastANI
+
+	1) 1000 vs 3000 fragment size
+	> python 00c_scripts/06e_fastANI_vs_fastANI.py -f1 01e_sim_five/fastANI_1v-1000.ani -f2 01e_sim_five/fastANI_1v-3000.ani -o 01e_sim_five/diff_fastANI_1000_vs_3000.pdf
+
+	2) 1000 vs 5000 fragment size
+	> python 00c_scripts/06e_fastANI_vs_fastANI.py -f1 01e_sim_five/fastANI_1v-1000.ani -f2 01e_sim_five/fastANI_1v-5000.ani -o 01e_sim_five/diff_fastANI_1000_vs_5000.pdf
+
+	3) 3000 vs 5000 fragment size
+	> python 00c_scripts/06e_fastANI_vs_fastANI.py -f1 01e_sim_five/fastANI_1v-3000.ani -f2 01e_sim_five/fastANI_1v-5000.ani -o 01e_sim_five/diff_fastANI_3000_vs_5000.pdf
+
+
+
+################################################################################
+### III. Real genomes. 5000 closed E.coli genomes
+###### fastANI 1000 bp frags vs 3000 bp vs 5000 bp
+###### fastANI vs BlastANI
+### path: /storage/scratch1/9/rconrad6/recombination/02a_Ecoli_closed
+################################################################################
+
+# Download genomes December 14, 2022
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+* Genomes are divided into four assembly levels (Complete, Chromosome, Scaffold, and Contig).
+> python 00c_scripts/00a_Parse_NCBI_Assembly_Summary.py -i assembly_summary.txt -p bacteria -n 2000
+> grep "Escherichia_coli" bacteria_Complete_ftps.sh | shuf -n 1000 > download_Ecoli_Complete.sh
+> grep "Escherichia_coli" bacteria_Contig_ftps.sh | shuf -n 1000 > download_Ecoli_Contig.sh
+> rm bacteria_* assembly_summary.txt 
+> cd 02a_Ecoli_closed
+> while read p; do n=`echo -e "$p" | cut -f2`; wget $n; done < ../download_Ecoli_Complete.sh 
+> mkdir 00b_genomes 00a_log 02_blastANI 01_fastANI
+> mv *gz 00b_genomes/
+> gunzip 00b_genomes/*
+
+# fastANI all vs all
+
+	1) generate a list of file names
+	> for f in 00b_genomes/*; do echo $f; done > genome_fasta_path_list.txt
+
+	2) split file for parallelization
+	> split -l 20 -a 3 -d genome_fasta_path_list.txt genome_fasta_path_list_
+
+	3) run fastANI sbatch
+	> for f in genome_fasta_path_list_*; do sbatch --export query=${f},refs=genome_fasta_path_list.txt,output=01_fastANI/${f}.ani ../00b_sbatch/01e_fastANI_allv_para.sbatch; done
+
+	4) clean up split files
+	> rm genome_fasta_path_list_*
+
+	4) concatenate results
+	> cat 01_fastANI/* > 01_fastANI_allv.ani
+
+	3) plot results
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_allv.ani -s Ecoli_Complete -o 01_fastANI_allv_ecoli_closed-90.pdf -g True -xmin 90 -t 2
+
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_allv.ani -s Ecoli_Complete -o 01_fastANI_allv_ecoli_closed-94.pdf -g True -xmin 94 -t 1
+
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_allv.ani -s Ecoli_Complete -o 01_fastANI_allv_ecoli_closed-95.pdf -g True
+
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_allv.ani -s Ecoli_Complete -o 01_fastANI_allv_ecoli_closed-98.pdf -g True -xmin 98 -t 0.2
+
+# blastANI all vs all
+	
+	1) Generate all vs all file list
+	> f=(00b_genomes/*)
+	> for ((i = 0; i < ${#f[@]}; i++)); do for ((j = i + 1; j < ${#f[@]}; j++)); do echo ${f[i]} ${f[j]}; done; done > all_vs_all_path_list.txt
+
+	2) split file for parallelization
+	> split -l 3000 -a 3 -d all_vs_all_path_list.txt all_vs_all_path_list_
+
+	3) run ani.rb
+	> for f in all_vs_all_path_list_*; do sbatch --export input=${f},outdir=02_blastANI,output=${f}.ani ../00b_sbatch/01d_Blast_ANI.sbatch; done
+
+	* didn't completely finished but finished most. def enough for now.
+
+	4) clean up split files
+	> rm all_vs_all_path_list_*
+
+	5) concatenate results
+	> cat 02_blastANI/* > 02_blastANI_allv.ani
+
+	6) parse ani.rb output to tsv file
+	> python ../00c_scripts/06b_ANIrb_to_TSV.py -i 02_blastANI_allv.ani -o 02_blastANI_allv.tsv
+
+	7) plot results
+	> python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_closed -o 02_blastANI_allv_ecoli_closed-90.pdf -g True -xmin 90 -t 2
+
+	> python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_closed -o 02_blastANI_allv_ecoli_closed-94.pdf -g True -xmin 94 -t 1
+
+	> python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_closed -o 02_blastANI_allv_ecoli_closed-95.pdf -g True
+
+	> python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_closed -o 02_blastANI_allv_ecoli_closed-98.pdf -g True -xmin 98 -t 0.2
+
+# fastANI vs blastANI
+
+	1) 01_fastANI-allv.ani vs 02_blastANI-allv.tsv
+	> python ../00c_scripts/06d_fastANI_vs_blastANI.py -fa 01_fastANI_allv.ani -ba 02_blastANI_allv.tsv -o 03_fastANI_vs_blastANI.pdf
+
+
+################################################################################
+### IV. Real genomes. 5000 draft E.coli genomes
+###### fastANI 1000 bp frags vs 3000 bp vs 5000 bp
+###### fastANI vs BlastANI
+### path: /storage/scratch1/9/rconrad6/recombination/02b_Ecoli_draft
+################################################################################
+
+# Download genomes December 14, 2022
+> Already downloaded assembly_summary.txt and download_Ecoli_Contig.sh above.
+> cd 02b_Ecoli_draft/
+> while read p; do n=`echo -e "$p" | cut -f2`; wget $n; done < ../download_Ecoli_Contig.sh
+> mkdir 00b_genomes 00a_log 02_blastANI
+> mv *gz 00b_genomes/
+> gunzip 00b_genomes/*
+
+# fastANI all vs all
+
+	1) generate a list of file names
+	> for f in 00b_genomes/*; do echo $f; done > genome_fasta_path_list.txt
+
+	2) run fastANI sbatch
+	> sbatch --export input=genome_fasta_path_list.txt,output=01_fastANI_AllV.ani ../00b_sbatch/01a_fastANI.sbatch
+
+	3) plot results
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_AllV.ani -s Ecoli_Draft -o 01_fastANI_AllV_ecoli_draft-90.pdf -g True -xmin 90 -t 2
+
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_AllV.ani -s Ecoli_Draft -o 01_fastANI_AllV_ecoli_draft-94.pdf -g True -xmin 94 -t 1
+
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_AllV.ani -s Ecoli_Draft -o 01_fastANI_AllV_ecoli_draft-95.pdf -g True
+
+	> python ../00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01_fastANI_AllV.ani -s Ecoli_Draft -o 01_fastANI_AllV_ecoli_draft-98.pdf -g True -xmin 98 -t 0.2
+
+# blastANI all vs all
+	
+	1) Generate all vs all file list
+	> f=(00b_genomes/*)
+	> for ((i = 0; i < ${#f[@]}; i++)); do for ((j = i + 1; j < ${#f[@]}; j++)); do echo ${f[i]} ${f[j]}; done; done > all_vs_all_path_list.txt
+
+	2) split file for parallelization
+	> split -l 3000 -a 3 -d all_vs_all_path_list.txt all_vs_all_path_list_
+
+	3) run ani.rb
+	> for f in all_vs_all_path_list_*; do sbatch --export input=${f},outdir=02_blastANI,output=${f}.ani ../00b_sbatch/01d_Blast_ANI.sbatch; done
+
+	* didn't completely finished but finished most. def enough for now.
+
+  4) clean up split files
+  > rm all_vs_all_path_list_*
+
+  5) concatenate results
+  > cat 02_blastANI/* > 02_blastANI_allv.ani
+
+  6) parse ani.rb output to tsv file
+  > python ../00c_scripts/06b_ANIrb_to_TSV.py -i 02_blastANI_allv.ani -o 02_blastANI_allv.tsv
+
+  7) plot results
+  > python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_draft -o 02_blastANI_allv_ecoli_draft-90.pdf -g True -xmin 90 -t 2
+
+  > python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_draft -o 02_blastANI_allv_ecoli_draft-94.pdf -g True -xmin 94 -t 1
+
+  > python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_draft -o 02_blastANI_allv_ecoli_draft-95.pdf -g True
+
+  > python ../00c_scripts/06c_blastANIrb_scatter_pyGAM.py -i 02_blastANI_allv.tsv -s Ecoli_draft -o 02_blastANI_allv_ecoli_draft-98.pdf -g True -xmin 98 -t 0.2
+
+# fastANI vs blastANI
+
+	1) 01_fastANI-allv.ani vs 02_blastANI-allv.tsv
+	> python ../00c_scripts/06d_fastANI_vs_blastANI.py -fa 01_fastANI_AllV.ani -ba 02_blastANI_allv.tsv -o 03_fastANI_vs_blastANI.pdf
+
+  
+
+
+
+
+
+
+
+
+

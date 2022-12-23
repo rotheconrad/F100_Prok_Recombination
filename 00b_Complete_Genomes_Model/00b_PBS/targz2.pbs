@@ -1,0 +1,26 @@
+#PBS -N targz2
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=1gb
+#PBS -l walltime=24:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/targz2_${name}.out
+#PBS -e 00a_log/targz2_${name}.err
+
+cd $PBS_O_WORKDIR
+
+path="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/Complete/"
+odir="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/04c_CDS_archives"
+
+cd ${path}
+#tar czf ${odir}/${name}.fnn.tar.gz ${name}/02_FNN
+
+#if [ -s ${odir}/${name}.fnn.tar.gz ]; then rm -r ${name}/02_FNN; fi
+
+tar czf ${odir}/${name}.faa.tar.gz ${name}/03_FAA
+
+if [ -s ${odir}/${name}.faa.tar.gz ]; then rm -r ${name}/03_FAA; fi
+
+## Run Log
+## qsub -v name= 00b_PBS/targz.pbs
+## for d in Complete/*; do n=`basename $d`; qsub -v name=${n} ../../00b_PBS/targz2.pbs; done

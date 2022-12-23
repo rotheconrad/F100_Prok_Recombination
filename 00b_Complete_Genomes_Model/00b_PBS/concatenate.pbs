@@ -1,0 +1,18 @@
+#PBS -N concatenate
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=1gb
+#PBS -l walltime=24:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/concatenate_${name}_${ext}.out
+#PBS -e 00a_log/concatenate_${name}_${ext}.err
+
+cd $PBS_O_WORKDIR
+
+path="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/Complete/${name}/04_RBM"
+odir="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/04a_Complete_RBMs"
+
+for f in ${path}/*.${ext}; do cat $f >> ${odir}/${name}.rbm; done
+
+## Run Log
+## qsub -v name=,ext= 00b_PBS/concatenate.pbs

@@ -1,0 +1,894 @@
+##################################################################################
+## STEP 01 ## Get the data
+##################################################################################
+Project directory: /storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination
+project root: 04_Recombination
+
+I chose to download data from NCBI through the FTP access.
+NCBI provides current genome summary for genebank or refseq
+
+Date: Apr 20 2022
+In Direcotry : 04_Recombination/01a_Data_Download_Prep
+
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/assembly_summary_genbank.txt
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt
+
+We want to focus on just archaea and bacteria so we will ignore the files above which include everything
+and work with the files listed below:
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/archaea/assembly_summary.txt
+> mv assembly_summary.txt NCBI_assembly_summary_archaea.txt
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+> mv assembly_summary.txt NCBI_assembly_summary_bacteria.txt
+
+# Description of the assembly summary file
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt
+> wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/README.txt
+
+I decided to go with refseq genomes for this project.
+
+Genomes are divided into four assembly levels (Complete, Chromosome, Scaffold, and Contig).
+
+I wrote a Python script to parse this file.
+It creates summaries counting the number of genomes at each assembly level for each species.
+It also creates files to download genomes for each species at each assembly level.
+The download file can be created based on the number of genomes available at each level for each species.
+n=10 for complete genomes will list the ftp download only for species with at least 10 complete genomes.
+The script also filters for the "latest" version of the genome ignores other genomes versions.
+
+> python ../00c_Scripts/00a_Parse_NCBI_Assembly_Summary.py -i NCBI_assembly_summary_archaea.txt -p archaea -n 5
+> python ../00c_Scripts/00a_Parse_NCBI_Assembly_Summary.py -i NCBI_assembly_summary_bacteria.txt -p bacteria -n 10
+
+For archaea there are fewer genomes so I've selected species with at least n=5 genomes.
+I'm going to explore all assembly levels for archaea.
+
+For bacteria I'm starting with complete genomes only for species with at least n=10 genomes.
+
+Download genomes:
+Date: Apr 20 2022
+In Directory : 04_Recombination/01b_Genomes
+Total Species complete genomes >= 10: 330
+Total genomes: 18153
+
+Make directories for archaea and bacteria
+> mkdir archaea archaea/Complete archaea/Chromosome archaea/Scaffold archaea/Contig
+> mkdir bacteria bacteria/Complete
+
+Download Complete level archaea genomes to species directories
+> while read p; do t=archaea; l=Complete; n=`echo -e "$p" | cut -f1`; m=`echo -e "$p" | cut -f2`; if [ ! -d ${t}/${l}/$n ]; then mkdir ${t}/${l}/$n; fi; wget -P ${t}/${l}/$n $m; done < ../01a_Data_Download_Prep/archaea_Complete_ftps.sh
+
+Download Chromosome level archaea genomes to species directories
+> while read p; do t=archaea; l=Chromosome; n=`echo -e "$p" | cut -f1`; m=`echo -e "$p" | cut -f2`; if [ ! -d ${t}/${l}/$n ]; then mkdir ${t}/${l}/$n; fi; wget -P ${t}/${l}/$n $m; done < ../01a_Data_Download_Prep/archaea_Chromosome_ftps.sh
+
+Download Scaffold level archaea genomes to species directories
+> while read p; do t=archaea; l=Scaffold; n=`echo -e "$p" | cut -f1`; m=`echo -e "$p" | cut -f2`; if [ ! -d ${t}/${l}/$n ]; then mkdir ${t}/${l}/$n; fi; wget -P ${t}/${l}/$n $m; done < ../01a_Data_Download_Prep/archaea_Scaffold_ftps.sh
+
+Download Contig level archaea genomes to species directories
+> while read p; do t=archaea; l=Contig; n=`echo -e "$p" | cut -f1`; m=`echo -e "$p" | cut -f2`; if [ ! -d ${t}/${l}/$n ]; then mkdir ${t}/${l}/$n; fi; wget -P ${t}/${l}/$n $m; done < ../01a_Data_Download_Prep/archaea_Contig_ftps.sh
+
+Download Complete level bacteria genomes to species directories
+> while read p; do t=bacteria; l=Complete; n=`echo -e "$p" | cut -f1`; m=`echo -e "$p" | cut -f2`; if [ ! -d ${t}/${l}/$n ]; then mkdir ${t}/${l}/$n; fi; wget -P ${t}/${l}/$n $m; done < ../01a_Data_Download_Prep/bacteria_Complete_ftps.sh
+Check we got them all
+> while read p; do t=bacteria; l=Complete; n=`echo -e "$p" | cut -f1`; m=`echo -e "$p" | cut -f2`; x=`echo $m | rev | cut -d/ -f1 | cut -d. -f2- | rev`; if [ ! -s ${t}/${l}/${n}/$x ]; then echo $n $x "NOT COMPLETE DOWNLOADING"; wget -P ${t}/${l}/$n $m; fi; done < ../01a_Data_Download_Prep/bacteria_Complete_ftps.sh
+
+Unzip them
+> gunzip 01b_Genomes/archaea/*/*/*
+> qsub -v f=01b_Genomes/bacteria/*/*/* 00b_PBS/01_gunzip.pbs
+
+##################################################################################
+## STEP 02 ## Run All vs All fastANI for each species
+##################################################################################
+
+Archeae
+#######
+April 21 2022
+In Directory: 04_Recombination/01b_Genomes/archaea
+
+> mkdir 00a_log fastANI_Complete fastANI_Chromosome fastANI_Scaffold fastANI_Contig
+> for d in Complete/*; do n=`basename $d`; qsub -v fDir=$d,oDir=fastANI_Complete,n=$n ../../00b_PBS/02a_fastANI.pbs; done
+> for d in Chromosome/*; do n=`basename $d`; qsub -v fDir=$d,oDir=fastANI_Chromosome,n=$n ../../00b_PBS/02a_fastANI.pbs; done
+> for d in Scaffold/*; do n=`basename $d`; qsub -v fDir=$d,oDir=fastANI_Scaffold,n=$n ../../00b_PBS/02a_fastANI.pbs; done
+> for d in Contig/*; do n=`basename $d`; qsub -v fDir=$d,oDir=fastANI_Contig,n=$n ../../00b_PBS/02a_fastANI.pbs; done
+
+# concatenate files
+> mkdir 01_AllvAll_fastANI 01_AllvAll_fastANI/Complete 01_AllvAll_fastANI/Chromosome 01_AllvAll_fastANI/Scaffold 01_AllvAll_fastANI/Contig
+> for d in fastANI_Complete/*; do n=`basename $d`; cat ${d}/* >> 01_AllvAll_fastANI/Complete/${n}.ani; echo $n; done
+> for d in fastANI_Chromosome/*; do n=`basename $d`; cat ${d}/* >> 01_AllvAll_fastANI/Chromosome/${n}.ani; echo $n; done
+> for d in fastANI_Scaffold/*; do n=`basename $d`; cat ${d}/* >> 01_AllvAll_fastANI/Scaffold/${n}.ani; echo $n; done
+> for d in fastANI_Contig/*; do n=`basename $d`; cat ${d}/* >> 01_AllvAll_fastANI/Contig/${n}.ani; echo $n; done
+
+# plot
+> mkdir 02_fastANI_scatter
+> for f in 01_AllvAll_fastANI/*/*; do n=`basename $f | cut -d. -f1`; l=`echo $f | cut -d/ -f2`; echo $f; python ../../00c_Scripts/02b_fastANI_scatter.py -i $f -s $n -o 02_fastANI_scatter/${l}_${n}_ani.pdf; done
+
+Bacteria
+########
+April 21 2022
+In Directory: 04_Recombination/01b_Genomes/bacteria
+
+> mkdir 00a_log fastANI_Complete
+> for d in Complete/*; do n=`basename $d`; qsub -v fDir=$d,oDir=fastANI_Complete,n=$n ../../00b_PBS/02a_fastANI.pbs; done
+
+# All but 6 species finished all vs all fastANI with ppn=5 and 12 hours walltime.
+# Increased to 20 cpus and 7 days for remaining 6. Ecoli has 2000+ complete genomes now.
+# I decided to start over instead of writing code to pick up where it left off.
+Remove failed log files
+> for f in Temp_Genome_List_*; do n=`echo $f | cut -d. -f1 | cut -d_ -f4-`; rm 00a_log/*${n}*; done
+
+Remove failed fastANI directories
+> for f in Temp_Genome_List_*; do n=`echo $f | cut -d. -f1 | cut -d_ -f4-`; rm -r fastANI_Complete/${n}; done
+
+Restart failed fastANI species
+> for f in Temp_Genome_List_*; do n=`echo $f | cut -d. -f1 | cut -d_ -f4-`; qsub -v fDir=Complete/${n},oDir=fastANI_Complete,n=${n} ../../00b_PBS/02_fastANI.pbs; done
+
+# pace failed me. Keep checking and run waht didn't work.
+> for d in Complete/*; do n=`basename $d`; if [ ! -d 02_fastANI_Complete/${n} ]; then echo $n; fi; done
+		Bacillus_velezensis
+		Borreliella_burgdorferi
+		Bradyrhizobium_diazoefficiens
+		Candidatus_Planktophila
+		Citrobacter_portucalensis
+		Enterobacter_asburiae
+		Lactobacillus_helveticus
+		Leptospira_interrogans
+		Phaeobacter_inhibens
+		Ralstonia_solanacearum
+		Streptococcus_salivarius
+		Xylella_fastidiosa
+
+> qsub -v fDir=Complete/Bacillus_velezensis,oDir=02_fastANI_Complete,n=Bacillus_velezensis ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Borreliella_burgdorferi,oDir=02_fastANI_Complete,n=Borreliella_burgdorferi ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Bradyrhizobium_diazoefficiens,oDir=02_fastANI_Complete,n=Bradyrhizobium_diazoefficiens ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Candidatus_Planktophila,oDir=02_fastANI_Complete,n=Candidatus_Planktophila ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Citrobacter_portucalensis,oDir=02_fastANI_Complete,n=Citrobacter_portucalensis ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Enterobacter_asburiae,oDir=02_fastANI_Complete,n=Enterobacter_asburiae ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Lactobacillus_helveticus,oDir=02_fastANI_Complete,n=Lactobacillus_helveticus ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Leptospira_interrogans,oDir=02_fastANI_Complete,n=Leptospira_interrogans ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Phaeobacter_inhibens,oDir=02_fastANI_Complete,n=Phaeobacter_inhibens ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Ralstonia_solanacearum,oDir=02_fastANI_Complete,n=Ralstonia_solanacearum ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Streptococcus_salivarius,oDir=02_fastANI_Complete,n=Streptococcus_salivarius ../../00b_PBS/02a_fastANI.pbs
+
+> qsub -v fDir=Complete/Xylella_fastidiosa,oDir=02_fastANI_Complete,n=Xylella_fastidiosa ../../00b_PBS/02a_fastANI.pbs
+
+# concate files
+> mkdir 01a_AllvAll_fastANI
+> for d in fastANI_Complete/*; do n=`basename $d`; if [ ! -s 01a_AllvAll_fastANI/${n}.ani ]; then cat ${d}/* >> 01a_AllvAll_fastANI/${n}.ani; echo $d; fi; done
+
+#### Species Check again ####
+> cut -f1 fastANI_Complete_All.ani | cut -d/ -f2 | sort | uniq > species_count_fastANI.txt
+> cd Complete/
+> ls -d * > ../species_count_NCBIdownload.txt
+> cd ..
+> cat species_count_fastANI.txt species_count_NCBIdownload.txt | sort | uniq -u
+
+*** One species ended up with brackets around the genus name: [Haemophilus]_ducreyi
+*** It was failing to run fastANI. so I'm renaming here. I didn't track down where the naming error occured.
+
+> cd Complete/
+> mv \[Haemophilus\]_ducreyi/ Haemophilus_ducreyi/
+> cd ..
+> qsub -v fDir=Complete/Haemophilus_ducreyi,oDir=02_fastANI_Complete,n=Haemophilus_ducreyi ../../00b_PBS/02a_fastANI.pbs
+
+> for d in fastANI_Complete/*; do n=`basename $d`; if [ ! -s 01a_AllvAll_fastANI/${n}.ani ]; then cat ${d}/* >> 01a_AllvAll_fastANI/${n}.ani; echo $d; fi; done
+
+# plot
+> mkdir 02a_fastANI_scatter
+> for f in 01a_AllvAll_fastANI/*; do n=`basename $f | cut -d. -f1`; echo $f; python ../../00c_Scripts/02b_fastANI_scatter.py -i $f -s $n -o 02a_fastANI_scatter/${n}.pdf; done
+
+##################
+##################
+
+# Do some subsampling to explore how distribution changes
+> qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=10 ../../00b_PBS/02b_Random_Genomes.pbs
+> qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=20 ../../00b_PBS/02b_Random_Genomes.pbs
+> qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=50 ../../00b_PBS/02b_Random_Genomes.pbs
+> qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=100 ../../00b_PBS/02b_Random_Genomes.pbs
+
+# All vs All fastANI on subsamples
+> for d in SubSampled/*; do n=`basename $d`; qsub -v fDir=$d,oDir=fastANI_SubSampled,n=$n ../../00b_PBS/02a_fastANI.pbs; done
+
+# concatenate files
+> mkdir 01b_AllvAll_fastANI_subsamples
+> for d in fastANI_SubSampled/*; do n=`basename $d`; cat ${d}/* >> 01b_AllvAll_fastANI_subsamples/${n}.ani; echo $d; done
+
+# plot
+> mkdir 02b_fastANI_scatter_subsamples
+> for f in 01b_AllvAll_fastANI_subsamples/*; do n=`basename $f | cut -d. -f1`; echo $f; python ../../00c_Scripts/02b_fastANI_scatter.py -i $f -s $n -o 02b_fastANI_scatter_subsamples/${n}.pdf; done
+
+##################
+##################
+
+# Look at fastANI visualize files for fragment ANI distribution between two genoems
+Look at one genome pair for each species
+> for d in Complete/*; do n=`basename $d`; array=(${d}/*); fastANI -r ${array[1]} -q ${array[2]} -o Visualize/${n}.ani --visualize; done
+
+# Plot visualizer distributions
+> mkdir 03a_fastANI_visual_scatter_species
+> for f in Visualize/*.visual; do n=`basename $f | cut -d. -f1`; echo $f; python ../../00c_Scripts/02c_fastANI_visual_distribution.py -i $f -s $n -o 03a_fastANI_visual_scatter_species/${n}.pdf; done
+
+Look at 20 genome pairs for Ecoli
+> for i in {1..19}; do j=$(($i+1)); array=(SubSampled/Escherichia_coli_20/*); n=`basename ${array[$i]}`; fastANI -r ${array[$i]} -q ${array[$j]} -o Visualize_SubSampled/${n}.ani --visualize; done
+
+# Plot visualizer distributions
+> mkdir 03b_fastANI_visual_scatter_subsamples
+> for f in Visualize_SubSampled/*.visual; do n=`basename $f | cut -d_ -f3`; echo $f; python ../../00c_Scripts/02c_fastANI_visual_distribution.py -i $f -s $n -o 03b_fastANI_visual_scatter_subsamples/${n}.pdf; done
+
+Look at 100 genome pairs for Ecoli concatenate results build 1 plot of all
+> mkdir Visualize_100 03c_fastANI_visual_distribution_100 03d_fastANI_visual_100
+> for i in {1..99}; do j=$(($i+1)); array=(Complete/Escherichia_coli/*); n=`basename ${array[$i]}`; fastANI -r ${array[$i]} -q ${array[$j]} -o Visualize_100/${n}.ani --visualize; done
+> cat Visualize_100/*.visual >> 03c_fastANI_visual_distribution_100/visualize_100_ecoli.ani.visual
+> python ../../00c_Scripts/02c_fastANI_visual_distribution.py -i 03c_fastANI_visual_distribution_100/visualize_100_ecoli.ani.visual -s 100_Ecoli -o 03c_fastANI_visual_distribution_100/visualize_100_ecoli.ani.visual.pdf 
+> for f in Visualize_100/*.visual; do n=`basename $f | cut -d_ -f3`; echo $f; python ../../00c_Scripts/02c_fastANI_visual_distribution.py -i $f -s $n -o 03d_fastANI_visual_100/${n}.pdf; done
+
+# tar.gz the folders and delete to reduce file count and disk usage.
+> for d in 0[123]*; do tar czf ${d}.tar.gz ${d}; rm -r ${d}; echo $d; done
+> for d in [fSV]*; do tar czf ${d}.tar.gz ${d}; rm -r ${d}; echo $d; done
+
+##################################################################################
+## STEP 03 ## Run Prodigal and aai.rb for RBMs on all genomes
+##################################################################################
+
+Archeae
+#######
+April 22 2022
+In Directory: 04_Recombination/01b_Genomes/archaea
+
+# Prodigal
+> for d in Complete/*; do n=`basename $d`; qsub -v inDir=$d,n=$n ../../00b_PBS/03a_Prodigal_parallel.pbs; done
+> for d in Contig/*; do n=`basename $d`; qsub -v inDir=$d,n=$n ../../00b_PBS/03a_Prodigal_parallel.pbs; done
+
+# check completion: Species *fna *fnn
+> for d in Complete/*; do echo `basename $d` `echo ${d}/*fna | wc -w` `echo ${d}/01_FNN/*fnn | wc -w`; done
+> for d in Contig/*; do echo `basename $d` `echo ${d}/*fna | wc -w` `echo ${d}/01_FNN/*fnn | wc -w`; done
+
+# RBMs.
+> for d in Complete/*; do n=`basename $d`; qsub -v fDir=$d,oDir=04_RBM,n=$n ../../00b_PBS/03b_Gene_RBMs.pbs; done
+> for d in Contig/*; do n=`basename $d`; qsub -v fDir=$d,oDir=04_RBM,n=$n ../../00b_PBS/03b_Gene_RBMs.pbs; done
+
+# check completion: species *fna *rbm
+> for d in Complete/*; do echo `basename $d` `echo ${d}/*fna | wc -w` `echo ${d}/04_RBM/*rbm | wc -w`; done
+
+# collect data
+> mkdir Complete_RBMs
+> for f in Complete/*/04_RBM/*.rbm; do n=`echo $f | cut -d/ -f2`; cat $f >> Complete_RBMs/${n}.rbm; echo $n; done
+
+# remove non .rbm files
+> rm Complete/*/04_RBM/*out Complete/*/04_RBM/*tsv Complete/*/04_RBM/*.res
+
+# compress data
+> mkdir RBM-Archives
+> cd Complete; for d in */04_RBM; do n=`echo $d | cut -d/ -f1`; tar czf ../RBM-Archives/${n}_RBMs.tar.gz $d; echo $n; done; cd ..
+
+Bacteria
+########
+April 22 2022
+In Directory: 04_Recombination/01b_Genomes/bacteria
+
+# Prodigal
+> for d in Complete/*; do n=`basename $d`; qsub -v inDir=$d,n=$n ../../00b_PBS/03a_Prodigal_parallel.pbs; done
+
+# check completion: Species *fna *fnn
+> for d in Complete/*; do echo `basename $d` `echo ${d}/*fna | wc -w` `echo ${d}/01_FNN/*fnn | wc -w`; done
+
+# RBMs.
+> for d in Complete/*; do n=`basename $d`; qsub -v fDir=$d,oDir=04_RBM,n=$n ../../00b_PBS/03b_Gene_RBMs.pbs; done
+
+# check completion: species *fna (*fna)^2 *rbm
+> for d in Complete/*; do n=`basename $d`; g=`echo ${d}/*fna | wc -w`; g2=$(($g*$g)); r=`echo ${d}/04_RBM/*rbm | wc -w`; if [ ! $g2 -eq $r ]; then echo $n $g $g2 $r; fi; done
+
+* RBM improvements:
+	- I ran an all vs all for RBMs. But RBM is reciprocal. I could add something to remove genomes from the list with each iteration to remove reduncancy. Could also remove self matches.
+	- I only need the -R rbm output from the AAI.rb script. I include multiple outputs because I hadn't made up my mind yet.
+
+# collect and clean up data
+> mkdir 04a_Complete_RBMs 04b_RBM_archives
+
+# concate RBMs - this got weird because of high file counts
+> for d in Complete/*; do n=`echo $d | cut -d/ -f2`; cd $d; cat 04_RBM/*.rbm >> ../../04a_Complete_RBMs/${n}.rbm; echo $n; cd ../..; done
+
+> qsub -v name=Acinetobacter_baumannii,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Bordetella_pertussis,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Escherichia_coli,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Klebsiella_pneumoniae,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Listeria_monocytogenes,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Mycobacterium_tuberculosis,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Pseudomonas_aeruginosa,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Salmonella_enterica,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=Staphylococcus_aureus,ext=rbm 00b_PBS/concatenate.pbs
+
+> qsub -v name=,ext=rbm 00b_PBS/concatenate.pbs
+> qsub -v name=,ext=rbm 00b_PBS/concatenate.pbs
+
+* hit some errors with this -bash: /bin/cat: Argument list too long
+> for f in Complete/Acinetobacter_baumannii/04_RBM/*.rbm; do cat $f >> 04a_Complete_RBMs/Acinetobacter_baumannii.rbm
+
+# remove .out .tsv and .res files
+> for d in Complete/*; do n=`echo $d | cut -d/ -f2`; cd $d; rm 04_RBM/*.out; echo $n; cd ../..; done
+> for d in Complete/*; do n=`echo $d | cut -d/ -f2`; cd $d; rm 04_RBM/*.res; echo $n; cd ../..; done
+> for d in Complete/*; do n=`echo $d | cut -d/ -f2`; cd $d; rm 04_RBM/*.tsv; echo $n; cd ../..; done
+
+# what a mess. Some species have too many files for rm
+#
+
+> qsub -v name=Escherichia_coli,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Escherichia_coli,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Escherichia_coli,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Acinetobacter_baumannii,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Acinetobacter_baumannii,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Acinetobacter_baumannii,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Bordetella_pertussis,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Bordetella_pertussis,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Bordetella_pertussis,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Klebsiella_pneumoniae,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Klebsiella_pneumoniae,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Klebsiella_pneumoniae,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Listeria_monocytogenes,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Listeria_monocytogenes,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Listeria_monocytogenes,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Mycobacterium_tuberculosis,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Mycobacterium_tuberculosis,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Mycobacterium_tuberculosis,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Pseudomonas_aeruginosa,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Pseudomonas_aeruginosa,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Pseudomonas_aeruginosa,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Salmonella_enterica,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Salmonella_enterica,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Salmonella_enterica,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=Staphylococcus_aureus,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Staphylococcus_aureus,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=Staphylococcus_aureus,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=,ext=res 00b_PBS/removeEcoliA.pbs
+
+> qsub -v name=,ext=out 00b_PBS/removeEcoliA.pbs
+> qsub -v name=,ext=tsv 00b_PBS/removeEcoliA.pbs
+> qsub -v name=,ext=res 00b_PBS/removeEcoliA.pbs
+
+
+# compress rbms
+> while read p; do echo $p; qsub -v name=${p} 00b_PBS/targz.pbs; done < tmp_complete.txt
+
+> qsub -v name= 00b_PBS/targz.pbs
+> qsub -v name= 00b_PBS/targz.pbs
+> qsub -v name= 00b_PBS/targz.pbs
+
+# compress CDS
+> for d in Complete/*; do n=`basename $d`; qsub -v name=${n} ../../00b_PBS/targz2.pbs; done
+
+# Make some plots!
+> mkdir 05a_RBM_dist 05b_F100_tsv 05c_RBM_scatter
+################################################################################
+################################################################################
+> for f in 04a_Complete_RBMs/*; do n=`basename $f | cut -d. -f1`; if [ ! -s 05a_RBM_dist/${n}/${n}_F100.tsv ]; then qsub -v f=${f},n=${n},odir=05a_RBM_dist ../../00b_PBS/03c_RBM_dist.pbs; fi; done
+
+> while read n; do if [ ! -s 05a_RBM_dist/${n}/${n}_F100.tsv ]; then qsub -v f=04a_Complete_RBMs/${n}.rbm,n=${n},odir=05a_RBM_dist ../../00b_PBS/03c_RBM_dist.pbs; fi; done < zNorm_list.txt
+
+> while read n; do if [ ! -s 05a_RBM_dist/${n}/${n}_F100.tsv ]; then qsub -v f=04a_Complete_RBMs/${n}.rbm,n=${n},odir=05a_RBM_dist ../../00b_PBS/03c_RBM_dist.pbs; fi; done < zHigh_list.txt
+################################################################################
+################################################################################
+
+> cp 05a_RBM_dist/*/*tsv 05b_F100_tsv/
+
+> cat 05b_F100_tsv/*.tsv >> 05b_F100_tsv/00_All_F100.tsv
+
+# Plot everything in the 05b_F100_tsv folder on default
+> for f in 05b_F100_tsv/*; do n=`basename $f | cut -d_ -f1-2`; qsub -v f=$f,n=$n,odir=05c_RBM_scatter ../../00b_PBS/03d_RBM_scatter.pbs; done
+
+# Here's a bunch of plots we looked at for all species combined
+################################################################################
+################################################################################
+
+# F100 vs ANI from AAI.rb
+
+##########
+# All species no constraint ANI as Distance (1 - (ANI/100)) x-axis log scale
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_0_log_distance.pdf -l True -d True -xmin 0 -xmax 100 - p 0.6
+
+# same but with density
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_0_log_distance_density.pdf -l True -d True -xmin 0 -xmax 100 -z True
+
+##########
+# Juliana constrain: ANI as Distance (1 - (ANI/100)) x-axis log scale
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_juli_log_distance.pdf -l True -d True -xmin 90 -xmax 99.99 -p 0.6
+
+# same but with density
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_juli_log_distance_density.pdf -l True -d True -xmin 90 -xmax 99.99 -z True
+
+##########
+# All species no constraint normal axis ANI
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_70.pdf -xmin 70 -t 5
+
+# same but with density
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_70_desnity.pdf -xmin 70 -t 5 -z True
+
+##########
+# All species x-axis constrained to 95% ANI
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_95.pdf -xmin 95
+
+# same but with density
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_95_density.pdf -xmin 95 -z True
+
+##########
+# All species x-axis constrained to 98% ANI
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_98.pdf -xmin 98 -t 0.5
+
+# same but with density
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_98_density.pdf -xmin 98 -t 0.5 -z True
+
+##########
+# All species x-axis constrained to 99% ANI
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_99.pdf -xmin 99 -t 0.2
+
+# same but with density
+> python ../../00c_Scripts/03d_AAI_RBM_scatter.py -i 05b_F100_tsv/00_All_F100.tsv -s All_species -o 06a_All_species_f100_99_density.pdf -xmin 99 -t 0.2 -z True
+
+################################################################################
+################################################################################
+
+## Shared genome fraction vs ANI from fastANI
+
+# Concatenate all ANIs
+> cat
+
+##########
+# All species no constraint
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_75.pdf -xmin 75 -t 5
+
+# with density
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_75_density.pdf -xmin 75 -t 5 -z True
+
+# pyGAM
+> python ../../00c_Scripts/02b_fastANI_scatter_pyGAM.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_75_density_pyGAM.pdf -xmin 75 -t 5 -z True -g True
+
+##########
+# Constrained at 95% ANI
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_95.pdf
+
+# with density
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_95_density.pdf -z True
+
+# pyGAM
+> python ../../00c_Scripts/02b_fastANI_scatter_pyGAM.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_95_density_pyGAM.pdf -z True -g True
+
+##########
+# Constrained at 98% ANI
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_98.pdf -xmin 98 -t 0.5
+
+# with density
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_98_density.pdf -xmin 98 -t 0.5 -z True
+
+# pyGAM
+> python ../../00c_Scripts/02b_fastANI_scatter_pyGAM.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_98_density_pyGAM.pdf -xmin 98 -t 0.5 -z True -g True
+
+##########
+# Constrained at 99% ANI
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_99.pdf -xmin 99 -t 0.2
+
+# with density
+> python ../../00c_Scripts/02b_fastANI_scatter.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_99_density.pdf -xmin 99 -t 0.2 -z True
+
+# pyGAM
+> python ../../00c_Scripts/02b_fastANI_scatter_pyGAM.py -i fastANI_Complete_All.ani -s All_species -o fastANI_Complete_All_99_density_pyGAM.pdf -xmin 99 -t 0.2 -z True -g True
+
+############ Range fraction count:
+> python ../../00c_Scripts/02d_fastANI_fraction_in_range.py -i fastANI_Complete_All.ani -xmin 99.2 -xmax 99.8
+
+Points in range [99.2, 99.8]: 233714
+Total points: 4428502
+Points >= 95% ANI: 4319488
+Points >= 96% ANI: 4254862
+Points >= 97% ANI: 3612766
+Points >= 98% ANI: 2663415
+Points >= 99% ANI: 930562
+Fraction from range / Total: 0.0528
+Fraction from range / 95% Total: 0.0541
+Fraction from range / 96% Total: 0.0549
+Fraction from range / 97% Total: 0.0647
+Fraction from range / 98% Total: 0.0877
+Fraction from range / 99% Total: 0.2512
+
+Points in range [99.2, 99.8]: 235527
+Total points: 4455818
+Points >= 95% ANI: 4344982
+Points >= 96% ANI: 4280042
+Points >= 97% ANI: 3637508
+Points >= 98% ANI: 2677076
+Points >= 99% ANI: 934658
+Fraction from range / Total: 0.0529
+Fraction from range / 95% Total: 0.0542
+Fraction from range / 96% Total: 0.0550
+Fraction from range / 97% Total: 0.0647
+Fraction from range / 98% Total: 0.0880
+Fraction from range / 99% Total: 0.2520
+
+############ Subsample high genome count species to 10:
+> python ../../00c_Scripts/02b_fastANI_scatter_pyGAM.py -i fastANI_Complete_All.ani -s All_species -g True -r 10 -p 4 -o fastANI_Complete_All_95_density_pyGAM_r10a.pdf 
+
+> python ../../00c_Scripts/02b_fastANI_scatter_pyGAM.py -i fastANI_Complete_All.ani -s All_species -g True -r 10 -p 4 -xmin 98 -t 0.5 -o fastANI_Complete_All_98_density_pyGAM_r10a.pdf
+
+
+########## Plots of single species on top of the model w/ all species #####
+
+## Sal. ruber for Catherine
+from local: /Users/rothconrad/OneDrive - Georgia Institute of Technology/00_Recombination/07_Sal_ruber_test
+
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub -i2 01_Salruber_f100_labelled.txt
+
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub_labelled -i2 01_Salruber_f100_labelled.txt -l True
+
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub_clade-01 -i2 Salruber_Clade-01.tsv -t Clade 01
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub_clade-02 -i2 Salruber_Clade-02.tsv -t Clade 02
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub_clade-03 -i2 Salruber_Clade-03.tsv -t Clade 03
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub_clade-04 -i2 Salruber_Clade-04.tsv -t Clade 04
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -o 01_F100_Salrub_clade-05 -i2 Salruber_Clade-05.tsv -t Clade 05
+
+
+## Species from Juliana's work
+** I don't have Alteromonas macleodii in my species list but Juliana does
+** I don't have Lactobacillus casei in my species list but Juliana does
+** It must not have ≥10 complete genomes.
+
+from local: /Users/rothconrad/OneDrive - Georgia Institute of Technology/00_Recombination/08_Species_tests
+
+## E. coli
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Escherichia_coli_F100.tsv -o 01b_F100_Ecoli
+
+## Buchnera_aphidicola
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Buchnera_aphidicola_F100.tsv -o 01b_F100_Buchnera_aphidicola -t Buchnera aphidicola
+
+## Campylobacter_coli
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Campylobacter_coli_F100.tsv -o 01b_F100_Campylobacter_coli -t Campylobacter coli
+
+## Campylobacter_jejuni
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Campylobacter_jejuni_F100.tsv -o 01b_F100_Campylobacter_jejuni -t Campylobacter jejuni
+
+## Helicobacter_pylori
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Helicobacter_pylori_F100.tsv -o 01b_F100_Helicobacter_pylori -t Helicobacter pylori
+
+## Mycobacterium_tuberculosis
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Mycobacterium_tuberculosis_F100.tsv -o 01b_F100_Mycobacterium_tuberculosis -t Mycobacterium tuberculosis
+
+## Neisseria_meningitidis
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Neisseria_meningitidis_F100.tsv -o 01b_F100_Neisseria_meningitidis -t Neisseria meningitidis
+
+## Rickettsia_prowazekii
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Rickettsia_prowazekii_F100.tsv -o 01b_F100_Rickettsia_prowazekii -t Rickettsia prowazekii
+
+## Rickettsia_rickettsii
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Rickettsia_rickettsii_F100.tsv -o 01b_F100_Rickettsia_rickettsii -t Rickettsia rickettsii
+
+## Salmonella_enterica
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Salmonella_enterica_F100.tsv -o 01b_F100_Salmonella_enterica -t Salmonella enterica
+
+## Synechococcus_sp
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Synechococcus_sp_F100.tsv -o 01b_F100_Synechococcus_sp -t Synechococcus sp
+
+## Vibrio_cholerae
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Vibrio_cholerae_F100.tsv -o 01b_F100_Vibrio_cholerae -t Vibrio cholerae
+
+## Yersinia_pestis
+> python ../00c_Scripts/03g_f100_tests.py -i ../06_RBM_All/00_All_F100.tsv -i2 Yersinia_pestis_F100.tsv -o 01b_F100_Yersinia_pestis -t Yersinia pestis
+
+#########
+Retreiving F100 genes and distances for RBM pairs.
+#########
+
+The pygam script writes a file of significant pairs outside the confidence interval of the model. Select a genome pair of interest to look at the distance between f100 genes in the genomes and the core vs accessory genes.
+
+## Lets take a look at Vibrio cholerae
+## We'll select the genome pair ASM1335762v1-ASM306388v1
+# from pace: 
+/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/08a_Species_tests/Vibrio_cholerae
+
+## Get genomes, prodigal CDS, and RBMs
+> cp `ls 04_RBM/* | grep ASM1335762v1 | grep ASM306388v1` .
+> cp ../../07a_nucleotide_CDS/Vibrio_cholerae_All_CDS.fnn .
+> grep -A 1 ASM1335762v1 Vibrio_cholerae_All_CDS.fnn > Vibrio_cholerae_ASM1335762v1.fnn
+> grep -A 1 ASM306388v1 Vibrio_cholerae_All_CDS.fnn > Vibrio_cholerae_ASM306388v1.fnn
+> cp ../../Complete/Vibrio_cholerae/GCF_013357625.1_ASM1335762v1_genomic.fna ../../Complete/Vibrio_cholerae/GCF_003063885.1_ASM306388v1_genomic.fna .
+
+## Updated MMSeqs2 to include sequence identities in the tsv output
+# Run MMSeqs2 workflow
+
+> qsub -v infile=Vibrio_cholerae/Vibrio_cholerae_All_CDS.fnn,n=Vibrio_cholerae ../../../00b_PBS/04a_MMSeqs2_Nucs.pbs 
+
+## Download files to local to work on additional scripts
+## local dir: /Users/rothconrad/OneDrive - Georgia Institute of Technology/00_Recombination/08_Species_tests/01_Vibrio
+
+# write script to find F100 genes (recombining) vs non F100 genes (non-recombining) in the .rbm file and then retrieve coordinates from the .fnn CDS files from prodigal to calculate distance between recombining genes vs distance between non-recombining genes.
+
+> python ../../00c_Scripts/05a_F100_distances.py -rbm GCF_013357625.1_ASM1335762v1_genomic-GCF_003063885.1_ASM306388v1_genomic.rbm -cA Vibrio_cholerae_ASM1335762v1.fnn -cB Vibrio_cholerae_ASM306388v1.fnn -gA GCF_013357625.1_ASM1335762v1_genomic.fna -gB GCF_003063885.1_ASM306388v1_genomic.fna -PC Vibrio_cholerae_C90_cluster_align_pancats.tsv -o ASM1335762v1-ASM306388v1
+
+# Quick ANI from .rbm file. average of column 3.
+> awk '{ total += $3 } END { print total/NR }' GCF_013357625.1_ASM1335762v1_genomic-GCF_003063885.1_ASM306388v1_genomic.rbm
+
+### UPDATED 05d_F100_distance_analysis.py
+# from: 
+
+> python ../../00c_Scripts/05d_F100_distance_analysis.py -rbm GCF_013357625.1_ASM1335762v1_genomic-GCF_003063885.1_ASM306388v1_genomic.rbm -PC Vibrio_cholerae_C90_cluster_align_pancats.tsv -cA Vibrio_cholerae_ASM306388v1.fnn -gA GCF_003063885.1_ASM306388v1_genomic.fna -cB Vibrio_cholerae_ASM1335762v1.fnn -gB GCF_013357625.1_ASM1335762v1_genomic.fna -o 02_Vibrio_cholerae_Pair-01
+
+> python ../../00c_Scripts/05d_F100_distance_analysis.py -rbm GCF_013357625.1_ASM1335762v1_genomic-GCF_003063885.1_ASM306388v1_genomic.rbm -PC Vibrio_cholerae_C90_cluster_align_pancats.tsv -cA Vibrio_cholerae_ASM1335762v1.fnn -gA GCF_013357625.1_ASM1335762v1_genomic.fna -cB Vibrio_cholerae_ASM306388v1.fnn -gB GCF_003063885.1_ASM306388v1_genomic.fna -o 02_Vibrio_cholerae_Pair-01 -draft True
+
+##### Generating synthetic test data
+from: /Users/rothconrad/OneDrive - Georgia Institute of Technology/00_Recombination/10_Unit_Test_Data
+
+> python ../00c_Scripts/06a_generate_test_data.py -o test
+
+> aai.rb -1 test_FNNs/test_000-Source.fnn -2 test_FNNs/test_001-ANI_97.5_genome_001.fnn -N -R 000_001_ANI975.rbm
+
+from: /Users/rothconrad/OneDrive - Georgia Institute of Technology/00_Recombination/10_Unit_Test_Data
+> python ../00c_Scripts/05d_F100_distance_analysis.py -rbm 000_001_ANI975.rbm -PC test_total_pancats.tsv -gA test_FNAs/test_000-Source.fna -cA test_FNNs/test_000-Source.fnn -gB test_FNAs/test_001-ANI_97.5_genome_001.fna -cB test_FNNs/test_001-ANI_97.5_genome_001.fnn -o TEST -draft True
+
+##### Generate ANI gradient of test data 95-100% ANI step of 0.01
+# 10 genomes per step. 500 steps. 5,000 genomes
+from: /Users/rothconrad/OneDrive - Georgia Institute of Technology/00_Recombination/11_Simulated_Genomes
+
+> python ../00c_Scripts/06a_generate_test_data.py -o sim_one
+
+* change the name of the source file to match other files delimiting scheme
+> mv sim_one_000-Source.fnn sim_one_ANI_100.0_genome_000.fnn
+
+# run All vs All FastANI and RBMs (aai.rb)
+# move to working on PACE. 
+from: /storage/scratch1/9/rconrad6/recombination
+> mkdir 00a_log 00b_sbatch 00c_scripts 01a_simulated_genomes
+# upload output from 06a_generate_test_data.py -o sim_one
+
+# fastANI
+
+	1) generate a list of file names
+	> for f in 01a_simulated_genomes/sim_one_FNAs/*; do echo $f; done > 01a_simulated_genomes/genome_fasta_path_list.txt
+	
+	2) run fastANI sbatch
+	> sbatch --export input=01a_simulated_genomes/genome_fasta_path_list.txt,output=01a_simulated_genomes/fastANI_AllvAll.ani 00b_sbatch/01a_fastANI.sbatch
+
+	3) plot results
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01a_simulated_genomes/fastANI_AllvAll.ani -s Simulation_One_Genomes -o 01a_simulated_genomes/fastANI_AllvAll.pdf -g True -z True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01a_simulated_genomes/fastANI_AllvAll.ani -s Simulation_One_Genomes -o 01a_simulated_genomes/fastANI_AllvAll-98.pdf -g True -xmin 98 -t 0.2
+
+# RBMs (aai.rb)
+	1) generate a list of file name pair combinations
+	> f=(01a_simulated_genomes/sim_one_FNNs/*)
+	> for ((i = 0; i < ${#f[@]}; i++)); do for ((j = i + 1; j < ${#f[@]}; j++)); do echo ${f[i]} ${f[j]}; done; done > 01a_simulated_genomes/genome_pair_combinations.txt
+
+	2) run aai.rb in nucleotide mode (-N) with -R to report RBMs of genes
+	> sbatch --export input=01a_simulated_genomes/genome_pair_combinations.txt,outdir=01a_simulated_genomes/sim_one_RBMs 00b_sbatch/01b_RBMs.sbatch 
+
+	3) concatenate the results that finished
+		* sbatch job did not finish within 24 hours
+	> cat 01a_simulated_genomes/sim_one_RBMs/* > 01a_simulated_genomes/genome_pair_combinations_AllvAll.rbm
+
+	4) compute F100 vs ANI table
+	> python 00c_scripts/03c_AAI_RBM_F100.py -i 01a_simulated_genomes/genome_pair_combinations_AllvAll.rbm -s Sim_One_Genomes -o 01a_simulated_genomes/genome_pair_combinations_AllvAll
+
+	5) Build the model and the plot
+	> python 00c_scripts/03f_f100_scatter_pyGAM.py -i 01a_simulated_genomes/genome_pair_combinations_AllvAll_F100.tsv -o 01a_simulated_genomes/genome_pair_combinations_AllvAll
+
+#############################
+### Sim One NOTES:
+### shared fraction was too high. Should be 0.85 @ 95% ANI
+### RBMs take too long for 1 ppn and 24 hours. ~ 1000 genome pairs per hour
+### split up workflow and run more jobs to parallelize
+### updated the linear equation to try and get it lower.
+### create new conda env on pace. random.sample counts needs python 3.9+
+###############################################
+
+> conda create -p /storage/home/hcoda1/9/rconrad6/p-ktk3-0/apps/Recombination python=3.10
+# add alias "recombi" to .bashrc
+> recombi
+> conda install matplotlib
+> conda install seaborn
+> conda install datashader
+> conda install -c conda-forge pygam
+> conda install -c conda-forge scikit-sparse nose
+# simulate genomes
+> python 00c_scripts/06a_generate_test_data.py -o sim_two
+> mkdir 01b_sim_two
+> mv sim_two_* 01b_sim_two/
+
+# fastANI
+
+	1) generate a list of file names
+	> for f in 01b_sim_two/sim_two_FNAs/*; do echo $f; done > 01b_sim_two/genome_fasta_path_list.txt
+	
+	2) run fastANI sbatch
+	> sbatch --export input=01b_sim_two/genome_fasta_path_list.txt,output=01b_sim_two/fastANI_AllvAll.ani 00b_sbatch/01a_fastANI.sbatch
+
+	3) plot results
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01b_sim_two/fastANI_AllvAll.ani -s Simulation_One_Genomes -o 01b_sim_two/fastANI_AllvAll.pdf -g True -z True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 001b_sim_two/fastANI_AllvAll.ani -s Simulation_One_Genomes -o 01b_sim_two/fastANI_AllvAll-98.pdf -g True -xmin 98 -t 0.2
+
+#############################
+### Sim Two NOTES:
+### the genome and contig naming was bad to fit with the rest of the pipeline
+### redid that
+### The shared fraction was still wrong. Redid that
+###############################################
+
+# simulate genomes
+> python 00c_scripts/06a_generate_test_data.py -o sim_three
+> mkdir 01c_sim_three
+> mv sim_three_* 01c_sim_three
+
+# fastANI all vs all
+
+	1) generate a list of file names
+	> for f in 01c_sim_three/sim_three_FNAs/*; do echo $f; done > 01c_sim_three/genome_fasta_path_list.txt
+	
+	2) run fastANI sbatch
+	> sbatch --export input=01c_sim_three/genome_fasta_path_list.txt,output=01c_sim_three/fastANI_AllvAll.ani 00b_sbatch/01a_fastANI.sbatch
+
+	3) plot results
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01c_sim_three/fastANI_AllvAll.ani -s Simulation_Three_Genomes -o 01c_sim_three/fastANI_AllvAll-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01c_sim_three/fastANI_AllvAll.ani -s Simulation_Three_Genomes -o 01c_sim_three/fastANI_AllvAll-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01c_sim_three/fastANI_AllvAll.ani -s Simulation_Three_Genomes -o 01c_sim_three/fastANI_AllvAll-98.pdf -g True -xmin 98 -t 0.2
+
+# fastANI source vs all
+
+	1) use the list from above as reference list
+
+	2) run fastANI sbatch
+	> sbatch --export query=01c_sim_three/sim_three_FNAs/sim_three_SourceGenome.fna,refs=01c_sim_three/genome_fasta_path_list.txt,output=01c_sim_three/fastANI_1v.ani 00b_sbatch/01c_fastANI_1v.sbatch
+
+	3) plot results
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01c_sim_three/fastANI_1v.ani -s Simulation_Three_Genomes -o 01c_sim_three/fastANI_1v-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01c_sim_three/fastANI_1v.ani -s Simulation_Three_Genomes -o 01c_sim_three/fastANI_1v-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01c_sim_three/fastANI_1v.ani -s Simulation_Three_Genomes -o 01c_sim_three/fastANI_1v-98.pdf -g True -xmin 98 -t 0.2
+
+# RBMs (aai.rb) all vs all
+	1) generate a list of file name pair combinations
+	> f=(01c_sim_three/sim_three_FNNs/*)
+	> for ((i = 0; i < ${#f[@]}; i++)); do for ((j = i + 1; j < ${#f[@]}; j++)); do echo ${f[i]} ${f[j]}; done; done > 01c_sim_three/genome_pair_combinations.txt
+
+	2) split combintations file into smaller files w/ 12000 lines each
+		* aai.rb does about 1000 pairs per hour
+	> split -l 12000 -a 3 -d 01d_sim_three/genome_pair_combinations.txt genome_pair_combinations
+
+	3) run aai.rb in nucleotide mode (-N) with -R to report RBMs of genes
+	> mkdir 01c_sim_three/sim_three_RBMs
+	> for f in genome_pair_combinations_*; do sbatch --export input=${f},outdir=01d_sim_three/sim_three_RBMs 00b_sbatch/01b_RBMs.sbatch; done
+
+	4) concatenate the results that finished
+	> cat 01c_sim_three/sim_three_RBMs/* > 01c_sim_three/genome_pair_combinations_AllvAll.rbm
+	* bash: /usr/bin/cat: Argument list too long
+	> for f in 01c_sim_three/sim_three_RBMs/*rbm; do cat $f >> 01c_sim_three/genome_pair_combinations_AllvAll.rbm; done
+
+	5) compute F100 vs ANI table
+	> python 00c_scripts/03c_AAI_RBM_F100.py -i 01c_sim_three/genome_pair_combinations_AllvAll.rbm -s Sim_Three_Genomes -o 01c_sim_three/genome_pair_combinations_AllvAll
+
+	6) Build the model and the plot
+	> python 00c_scripts/03f_f100_scatter_pyGAM.py -i 01c_sim_three/genome_pair_combinations_AllvAll_F100.tsv -o 01c_sim_three/genome_pair_combinations_AllvAll	
+
+	7) clean up
+	> rm genome_pair_combinations0*
+	> mkdir 01c_sim_three/sim_three_RBMs-allv
+
+
+# RBMs (aai.rb) source vs all
+	1) get just the source genome pairs
+	> cat 01c_sim_three/sim_three_RBMs/*Source* > 01c_sim_three/genome_pair_combinations-1v.rbm
+
+	2) compute F100 vs ANI table
+	> python 00c_scripts/03c_AAI_RBM_F100.py -i 01c_sim_three/genome_pair_combinations-1v.rbm -s Sim_Three_Genomes -o 01c_sim_three/genome_pair_combinations_1v
+
+	3) Build the model and the plot
+	> python 00c_scripts/03f_f100_scatter_pyGAM.py -i 01c_sim_three/genome_pair_combinations_1v_F100.tsv -o 01c_sim_three/genome_pair_combinations_1v
+
+	> python 00c_scripts/03g_f100_tests.py -i 01c_sim_three/genome_pair_combinations_1v_F100.tsv -o 01c_sim_three/genome_pair_combinations_1vB
+
+	4) clean up
+	> mkdir 01c_sim_three/sim_three_RBMs-1v
+	> mv 01c_sim_three/*-SourceGenome.pdf 01c_sim_three/sim_three_RBMs-1v/
+
+#############################
+### Sim Three NOTES:
+### seems to be working good. The all vs all spread is greater than i'd like
+### I check the high ANI > 99.4 and the code seems to be working correctly
+### it's possible that was just the random luck of the draw on that simulation
+### I'm going to try source vs all instead of 1 vs all with a step of 0.01
+### with 10 genomes per step for a total of 5000 genomes.
+###############################################
+
+# simulate genomes
+> python 00c_scripts/06a_generate_test_data.py -o sim_four -a 95 100 0.01 -cr 0.75
+> mkdir 01d_sim_four
+> mv sim_four_* 01d_sim_four
+
+# fastANI source vs all
+
+	1) generate a list of file names
+	> for f in 01d_sim_four/sim_four_FNAs/*; do echo $f; done > 01d_sim_four/genome_fasta_path_list.txt
+
+	2) run fastANI sbatch
+	> sbatch --export query=01d_sim_four/sim_four_FNAs/sim_four_0SourceGenome.fna,refs=01d_sim_four/genome_fasta_path_list.txt,output=01d_sim_four/fastANI_1v.ani 00b_sbatch/01c_fastANI_1v.sbatch
+
+	3) plot results
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-90.pdf -g True -xmin 90 -t 2
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-94.pdf -g True -xmin 94 -t 1
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-95.pdf -g True
+
+	> python 00c_scripts/02b_fastANI_scatter_pyGAM.py -i 01d_sim_four/fastANI_1v.ani -s Simulation_Three_Genomes -o 01d_sim_four/fastANI_1v-98.pdf -g True -xmin 98 -t 0.2
+
+# RBMs (aai.rb) source vs all
+	1) generate file list of source vs all
+	> for f in 01d_sim_four/sim_four_FNNs/sim_four_ANI*; do echo 01d_sim_four/sim_four_FNNs/sim_four_0SourceGenome.fnn $f; done > 01d_sim_four/genome_pair_combinations-1v.txt
+
+	2) split combintations file into smaller files w/ 12000 lines each
+		* aai.rb does about 1000 pairs per hour
+	> split -l 500 -a 3 -d 01d_sim_four/genome_pair_combinations-1v.txt genome_pair_combinations_
+
+	3) run aai.rb in nucleotide mode (-N) with -R to report RBMs of genes
+	> mkdir 01d_sim_four/sim_four_RBMs-1v
+	> for f in genome_pair_combinations_*; do sbatch --export input=${f},outdir=01d_sim_four/sim_four_RBMs-1v 00b_sbatch/01b_RBMs.sbatch; done
+
+	4) concatenate the results that finished
+	> for f in 01d_sim_four/sim_four_RBMs-1v/*rbm; do cat $f >> 01d_sim_four/genome_pair_combinations_1v.rbm; done
+
+	5) compute F100 vs ANI table
+	> python 00c_scripts/03c_AAI_RBM_F100.py -i 01d_sim_four/genome_pair_combinations_1v.rbm -s sim_four_Genomes -o 01d_sim_four/genome_pair_combinations_1v
+
+	6) Build the model and the plot
+	> python 00c_scripts/03f_f100_scatter_pyGAM.py -i 01d_sim_four/genome_pair_combinations_1v_F100.tsv -o 01d_sim_four/genome_pair_combinations_1v
+
+	> python 00c_scripts/03f_f100_scatter_pyGAM.py -i 01d_sim_four/genome_pair_combinations_1v_F100.tsv -o 01d_sim_four/genome_pair_combinations_1v
+
+	7) clean up
+	> rm genome_pair_combinations_*
+	> mkdir 01d_sim_four/sim_four_RBMs-1v_PDF
+	> mv 01d_sim_four/*-ANI*pdf 01d_sim_four/sim_four_RBM-1v_PDF/
+
+# Shared fraction is still too high. Check Blast ANI (ani.rb) compared to fastANI
+
+	1) generate FNA file list source vs all
+	> for f in 01d_sim_four/sim_four_FNAs/sim_four_ANI*; do echo 01d_sim_four/sim_four_FNAs/sim_four_0SourceGenome.fna $f; done > 01d_sim_four/genome_fasta_path_list_source.txt
+
+	2) split file for parallelization
+	> split -l 500 -a 3 -d 01d_sim_four/genome_fasta_path_list_source.txt genome_fasta_path_list_source_
+
+	3) Run ani.rb 
+	> mkdir 01d_sim_four/sim_four_Blast_ANI-1v
+	> for f in genome_fasta_path_list_source_00*; do sbatch --export input=${f},outdir=01d_sim_four/sim_four_Blast_ANI-1v,output=${f}.ani 00b_sbatch/01d_Blast_ANI.sbatch; done
+
+	4) concatenate results
+	> cat 01d_sim_four/sim_four_Blast_ANI-1v/* > 01d_sim_four/genome_fasta_path_list_source.ani
+
+	5) parse ani.rb output to tsv file
+	> python ../../00c_Scripts/06b_ANIrb_to_TSV.py -i genome_fasta_path_list_source.ani -o genome_fasta_path_list_source.tsv
+
+	6) plot results
+	> python ../../00c_Scripts/06c_blastANIrb_scatter_pyGAM.py -i genome_fasta_path_list_source.tsv -s Simulate_genomes -o blastANI-90.pdf -g True -xmin 90 -t 2
+
+	> python ../../00c_Scripts/06c_blastANIrb_scatter_pyGAM.py -i genome_fasta_path_list_source.tsv -s Simulate_genomes -o blastANI-94.pdf -g True -xmin 94 -t 1
+
+	> python ../../00c_Scripts/06c_blastANIrb_scatter_pyGAM.py -i genome_fasta_path_list_source.tsv -s Simulate_genomes -o blastANI-98.pdf -g True -xmin 98 -t 0.2
+
+	7) cleanup
+	> rm genome_fasta_path_list_source_00*
+	

@@ -1,0 +1,22 @@
+#PBS -N RBM_scatter
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=5gb
+#PBS -l walltime=12:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/03d_RBMscatter_${n}.out
+#PBS -e 00a_log/03d_RBMscatter_${n}.err
+
+scatter="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/00c_Scripts/03d_AAI_RBM_scatter.py"
+
+cd $PBS_O_WORKDIR
+
+# check if result exists
+if [ ! -s ${odir}/${n}.pdf ]
+  then
+	python ${scatter} -i $f -s $n -o ${odir}/${n}.pdf
+fi
+
+## Run Log:
+## qsub -v f=,n=,odir= ../../00b_PBS/03c_RBM_dist.pbs
+## for f in 05b_F100_tsv/*; do n=`basename $f | cut -d_ -f1-2`; qsub -v f=$f,n=$n,odir=05c_RBM_scatter ../../00b_PBS/03d_RBM_scatter.pbs; done

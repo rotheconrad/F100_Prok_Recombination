@@ -1,0 +1,75 @@
+#PBS -N MMSeqs2_Nucs
+#PBS -l nodes=1:ppn=5
+#PBS -l mem=10gb
+#PBS -l walltime=12:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/04a_MMSeqs2_Nucs_${n}.out
+#PBS -e 00a_log/04a_MMSeqs2_Nucs_${n}.err
+
+# Pace was failing at large batches of this so here is a random sleep time to help
+sleep $[ ( $RANDOM % 60 )  + 1 ]s
+
+# Change to working directory
+cd $PBS_O_WORKDIR
+
+# make a tmp folder
+mkdir ${n}_tmp
+
+odir=07e_mmseqs_tsv
+mdir=07f_binary_matrix
+scripts='/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/00c_Scripts'
+
+# create an mmseqs database
+DB=07b_mmseqs2_db
+if [ ! -s $DB/$n ]
+  then
+	mmseqs createdb $infile $DB/$n --dbtype 2
+	# --dbtype INT          Database type 0: auto, 1: amino acid, 2: nucleotides [0]
+  fi
+
+# Cluster at 95% nucleotide ID
+C95=07d_mmseqs_output_95
+if [ ! -s $C95/${n}_C95.index ]
+  then
+	mmseqs cluster $DB/$n $C95/${n}_C95 ${n}_tmp --min-seq-id 0.95 --cov-mode 1 -c 0.5 --cluster-mode 2 --cluster-reassign --threads 5
+ fi
+
+if [ ! -s ${odir}/${n}_C95.tsv ]
+  then
+	# convert to tsv format
+	mmseqs createtsv $DB/$n $DB/$n $C95/${n}_C95 ${odir}/${n}_C95.tsv --threads 5
+  fi
+
+if [ ! -s ${mdir}/${n}_C95.bmat ]
+  then
+	# convert to binary matrix
+	python ${scripts}/04a_MMSeqsTSV-to-BinaryMatrix.py -i ${odir}/${n}_C95.tsv -o ${mdir}/${n}_C95.bmat -k ${mdir}/${n}_C95.key
+  fi
+
+# Cluster at 100% nucleotide ID
+C100=07c_mmseqs2_output_100
+
+if [ ! -s $C100/${n}_C100.index ]
+  then
+	mmseqs cluster $DB/$n $C100/${n}_C100 ${n}_tmp --min-seq-id 0.90 --cov-mode 1 -c 0.5 --cluster-mode 2 --cluster-reassign --threads 5
+  fi
+
+if [ ! -s ${odir}/${n}_C100.tsv ]
+  then
+	# convert to tsv format
+	mmseqs createtsv $DB/$n $DB/$n $C100/${n}_C100 ${odir}/${n}_C100.tsv --threads 5
+  fi
+
+if [ ! -s ${mdir}/${n}_C100.bmat ]
+  then
+	# convert to binary matrix
+	python ${scripts}/04a_MMSeqsTSV-to-BinaryMatrix.py -i ${odir}/${n}_C100.tsv -o ${mdir}/${n}_C100.bmat -k ${mdir}/${n}_C100.key
+  fi
+
+rm -r ${n}_tmp
+
+## Run Log ##
+## qsub -v infile=,n= ../00b_PBS/04a_MMSeqs2_Nucs.pbs
+## qsub -v infile=07a_nucleotide_CDS/Acetobacter_pasteurianus_All_CDS.fnn,n=Acetobacter_pasteurianus ../../00b_PBS/04a_MMSeqs2_Nucs.pbs
+## for f in 07a_nucleotide_CDS/*.fnn; do n=`basename $f | cut -d_ -f1-2`; if [ ! -s 07f_binary_matrix/${n}_100.bmat ]; then qsub -v infile=${f},n=${n} ../../00b_PBS/04a_MMSeqs2_Nucs.pbs; fi; done

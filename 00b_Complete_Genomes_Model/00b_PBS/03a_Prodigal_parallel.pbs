@@ -1,0 +1,40 @@
+#PBS -N Prodigal
+#PBS -l nodes=1:ppn=10
+#PBS -l mem=10gb
+#PBS -l walltime=2:00:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/03a_prodigal_${n}.out
+#PBS -e 00a_log/03a_prodigal_${n}.err
+
+## Runs all verse all fastANI on directory of genomes
+## Uses gnu parallel to speed it up
+## fastANI must be installed in the user path
+
+module load parallel/20190222
+
+cd $PBS_O_WORKDIR
+
+# Path to the scripts
+spath="/storage/coda1/p-ktk3/0/rconrad6/04_Recombination/00c_Scripts"
+rename="${spath}/03a_rename_genomes.py"
+filter="${spath}/03b_len_filter_genes.py"
+
+cd ${inDir}
+if [ ! -d 00_Log ]
+  then
+	mkdir 00_Log 01_FNN 02_FAA 03_GFF
+fi
+
+# rename fasta files
+parallel -j 10 --joblog 00_Log/parallel_rename_log.tsv 'python {1} -i {2}' ::: ${rename} ::: *.fna
+
+# run prodigal
+parallel -j 10 --joblog 00_Log/parallel_prodigal_log.tsv 'prodigal -q -f gff -i {} -o 03_GFF/{/.}.gff -d 01_FNN/{/.}.fnn -a 02_FAA/{/.}.faa; echo {} complete.' ::: *.fna
+
+# Filter gene predictions <100bp & >40000bp
+parallel -j 10 --joblog 00_Log/parallel_len_filter_log.tsv 'python {1} -i {2}' ::: ${filter} ::: 01_FNN/*.fnn
+
+## Run log:
+## qsub -v inDir=Genome_Directory,n=Species_name ../../00b_PBS/03a_Prodigal_parallel.pbs
+## for d in Complete/*; do n=`basename $d`; qsub -v inDir=$d,n=$n ../../00b_PBS/03a_Prodigal_parallel.pbs; done

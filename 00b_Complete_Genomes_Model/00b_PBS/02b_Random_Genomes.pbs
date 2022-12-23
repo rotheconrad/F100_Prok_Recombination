@@ -1,0 +1,21 @@
+#PBS -N Random Genomes
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=1gb
+#PBS -l walltime=12:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/02b_random_genomes_${name}_10${n}.out
+#PBS -e 00a_log/02b_random_genomes_${name}_10${n}.err
+
+cd $PBS_O_WORKDIR
+
+script='/storage/coda1/p-ktk3/0/rconrad6/04_Recombination/00c_Scripts/02a_Random_Genomes.py'
+
+python ${script} -i ${iDir}/${name} -o ${oDir}/${name}_10${n} -n 10
+
+## Run Log:
+## qsub -v iDir=,oDir=,name=,n= ../../00b_PBS/02b_Random_Genomes.pbs
+## qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=10 ../../00b_PBS/02b_Random_Genomes.pbs
+## qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=20 ../../00b_PBS/02b_Random_Genomes.pbs
+## qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=50 ../../00b_PBS/02b_Random_Genomes.pbs
+## qsub -v iDir=Complete,oDir=SubSampled,name=Escherichia_coli,n=100 ../../00b_PBS/02b_Random_Genomes.pbs

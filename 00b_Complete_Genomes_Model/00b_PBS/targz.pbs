@@ -1,0 +1,21 @@
+#PBS -N targz
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=1gb
+#PBS -l walltime=24:00:00
+#PBS -q inferno     
+#PBS -A GT-ktk3-CODA20
+#PBS -o 00a_log/targz_${name}.out
+#PBS -e 00a_log/targz_${name}.err
+
+cd $PBS_O_WORKDIR
+
+path="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/Complete/"
+odir="/storage/home/hcoda1/9/rconrad6/p-ktk3-0/04_Recombination/01b_Genomes/bacteria/04b_RBM_archives"
+
+cd ${path}
+tar czf ${odir}/${name}.tar.gz ${name}/04_RBM
+
+if [ -s ${odir}/${name}.tar.gz ]; then rm -r ${name}/04_RBM; fi
+
+## Run Log
+## qsub -v name= 00b_PBS/targz.pbs
