@@ -1,6 +1,6 @@
 # F100 as a signal for prokaryote recombination
 
-![F100 Recent Recombination Model with Complete level Genomes from NCBI RefSeq for 330 Species](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/01_Complete_Genomes_Model.pdf)
+![F100 Recent Recombination Model with Complete level Genomes from NCBI RefSeq for 330 Species](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/01_Complete_Genomes_Model.png)
 
 Contains the code and workflow for the F100 recombination project.
 
@@ -118,7 +118,7 @@ python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -h
 python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -i fastANI_allV.ani -s test_species -o fastANI_allV_sharedfrac_ANI.pdf -m True
 ```
 
-![Shared fraction vs. ANI](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_sharedfrac_ANI.pdf)
+![Shared fraction vs. ANI](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_sharedfrac_ANI.png)
 
 # PART 02: F100 frequency model
 
@@ -217,7 +217,7 @@ unzip Complete_Genome_Model_Data.tsv.zip
 python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Complete_Genome_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species_complete_model}
 ```
 
-![Your data on top of the complete genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_complete_model_GAMplot.pdf)
+![Your data on top of the complete genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_complete_model_GAMplot.png)
 
 #### Simulated Neutral model
 
@@ -230,7 +230,7 @@ unzip Simulated_Neutral_Model_Data.tsv.zip
 python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Simulated_Neutral_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species_simulated_model}
 ```
 
-![Your data on top of the simulated neutral genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.pdf)
+![Your data on top of the simulated neutral genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.png)
 
 #### Create a model from your own genomes
 
@@ -241,7 +241,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Simulated_Neutral_Model
 python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv -i2 ${my_species}_F100.tsv -o ${my_species_custom_model}
 ```
 
-![Your data on top of a model build from your own data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.pdf)
+![Your data on top of a model build from your own data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.png)
 
 # PART 03: Investigate recombinant positions in specific genome pairs
 
@@ -312,7 +312,7 @@ python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -h
 python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -b pangenome_matrix.tsv -o pangenome_model -n my_species_name
 ```
 
-![Pangenome curve model of your genomes](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_model_pangenome_curves.pdf)
+![Pangenome curve model of your genomes](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_model_pangenome_curves.png)
 
 ### Step 09: create clustermap
 
@@ -324,7 +324,7 @@ python 00d_Workflow_Scripts/03c_Clustermap_fromBinary.py -h
 python 00d_Workflow_Scripts/03c_Clustermap_fromBinary.py -b pangenome_matrix.tsv -o pangenome_clustermap.pdf
 ```
 
-![Gene clusters vs genomes from your data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_clustermap.pdf)
+![Gene clusters vs genomes from your data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_clustermap.png)
 
 # PART 04: Investigate specific genome pairs recombinant positions
 
@@ -352,15 +352,15 @@ python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC
 
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
-![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_genomes.pdf)
+![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_genomes.png)
 
 The distribution of recombinant gene location is also assessed and compared to a Null Model using the Poisson distribution as a proxy for evenly distributed recombination events across the genome. If the p-value is low and the and the k value is close to 1, the spacing of genes in that category does not fit a Poisson model for evenly spaced events. If the p-value is high, but the k value is still close 1 (and not to 0) this indicates a majority of the data falls inside the Poisson distribution but the overal shape of the distribution is still not a great fit. See the Q-Q plot to visualy why. The mean of the data is shown as a dashed line, a poisson model based on this mean is shown as a red curve, and the emperical data (the number of genes between events) is plotted as a histogram.
 
-![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_B_distance.pdf)
+![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_B_distance.png)
 
 The Q-Q plot shows how the quantiles from your emperical data align with quantiles from the Poisson distribution fit to your data.
 
-![Q-Q plot of your data to a Poisson fit](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_B_distance-qq.pdf)
+![Q-Q plot of your data to a Poisson fit](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_B_distance-qq.png)
 
 Example of what a Q-Q plot of a good fit looks like:
-![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.pdf)
+![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
