@@ -248,7 +248,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Simulated_Neutral_Model
 *You can build the model using your species genomes and compare them to themselves, or build any other custom model from any set of genomes. Replace ${my_species_custom_model} with a  file name prefix of your choosing.*
 
 ```bash
-# For this step we use the input file generate as part of this STEP 02
+# For this step we use the input file generate in PART 02, Step 03 twice, or you can generate two diffent F100.tsv files for different genome sets to create your own custom genome model.
 python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv -i2 ${my_species}_F100.tsv -o ${my_species_custom_model}
 ```
 
