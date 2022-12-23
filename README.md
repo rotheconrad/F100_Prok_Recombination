@@ -12,14 +12,23 @@ The users genomes may be compared to a model of 330+ species genomes from NCBI t
 
 The workflow will yeild many intermediate files and several publication ready figures.
 
-1. All vs All genome pair fastANI results
-1. Shared fraction vs ANI scatter plot PDF
-1. CDC gene prediction fasta files from Prodigal
-1. RBM sequence similarities for each genome pair
-1. F100 score for each genome pair in .tsv file
-1. (OPTIONAL) Histogram of RBM sequence similarity for each genome pair (PDFs)
-1. F100 vs ANI with GAM model PDF
-1. 
+*Figures our publication quality PDF files, DataTables are tab separated value (tsv) files*
+
+1. DataTable: All vs All genome pair fastANI results (PART 01, Step 02)
+1. Figure: Shared fraction vs ANI scatter plot (PART 01, Step 02)
+1. Fasta: CDC gene predictions from Prodigal (PART 02, Step 01)
+1. DataTable: RBM sequence similarities for each genome pair (PART 02, Step 02)
+1. DataTable: F100 score for each genome pair (PART 02, Step 03)
+1. Figure: Histogram of RBM sequence similarity for each genome pair (PART 02, Step 03)
+1. Figure: F100 vs ANI with various GAM models (PART 02, Step 04)
+1. DataTable: p-value of F100 at ANI for each genome pair (PART 02, Step 04)
+1. DataTable: F100 vs ANI data by genome pair (PART 02, Step 04)
+1. DataTable: Gene clusters from MMSeqs2 clustered and aligned (PART 03, Step 06)
+1. DataTable: Presence/Absence binary matrix of genomes and gene cluster. (PART 03, Step 07)
+1. Figure: Pangenome model figures (PART 03, Step 08-09)
+1. DataTable: Genes assigned to pangenome classes: Conserved, Core, Accessory (PART 04, Step 01)
+1. Figure: Recombinant gene class and location between genome pairs (PART 04, Step 02)
+1. Figure: Stats test recombinant gene spacing vs. Poisson distribution (PART 04, Step 02)
 
 See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
 
