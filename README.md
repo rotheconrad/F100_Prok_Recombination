@@ -47,8 +47,8 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 
 1. Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC bioinformatics. 2010 Dec;11(1):1-1.
 1. Camacho C, Coulouris G, Avagyan V, Ma N, Papadopoulos J, Bealer K, Madden TL. BLAST+: architecture and applications. BMC bioinformatics. 2009 Dec;10(1):1-9.
-1. Rodriguez-R LM, Konstantinidis KT. The enveomics collection: a toolbox for specialized analyses of microbial genomes and metagenomes. PeerJ Preprints; 2016 Mar 27.
 1. Steinegger M, Söding J. MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets. Nature biotechnology. 2017 Nov;35(11):1026-8.
+1. Rodriguez-R LM, Konstantinidis KT. The enveomics collection: a toolbox for specialized analyses of microbial genomes and metagenomes. PeerJ Preprints; 2016 Mar 27.
 1. Flanagan D, Matsumoto Y. The Ruby Programming Language: Everything You Need to Know. " O'Reilly Media, Inc."; 2008 Jan 25.
 1. Sanner MF. Python: a programming language for software integration and development. J Mol Graph Model. 1999 Feb 1;17(1):57-61.
 
@@ -62,7 +62,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 - [datashader](https://datashader.org/)
 - [pygam](https://pygam.readthedocs.io/)
 
-*Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed with conda.*
+*Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed with [Conda](https://docs.conda.io/en/latest/miniconda.html).*
 
 #### References
 
