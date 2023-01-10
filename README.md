@@ -12,7 +12,7 @@ The users genomes may be compared to a model of 330+ species genomes from NCBI t
 
 The workflow will yeild many intermediate files and several publication ready figures.
 
-*Figures our publication quality PDF files, DataTables are tab separated value (tsv) files*
+*Figures are publication quality PDF files, DataTables are tab separated value (tsv) files*
 
 1. DataTable: All vs All genome pair fastANI results (PART 01, Step 02)
 1. Figure: Shared fraction vs ANI scatter plot (PART 01, Step 02)
