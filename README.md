@@ -222,7 +222,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -h
 
 This step will create a PDF of your genomes on top of the models and write out a sig-pairs.tsv file that can be used in Excel, R or etc. to sort by the xx column and select interesting genome pairs. The sig-pairs file labels any genome pairs with F100 and ANI values outside the 95% confidence interval of the model as "Recombining," and anything within the confidence interval as Non-recombining. But please be aware this is just a simplified terminology. This method is ranking genome pairs with higher to lower F100 scores based on the ANI between the genome pair. Genes with 100% sequence similarity are a proxy for recent homologous recombination or strict evolutionary conservation. Any genome pair, even the points at the bottom of the confidence interval may still have some 100% similar genes and as such could possibly have undergone a small amount of recent homologous recombination. 
 
-#### Complete genomes model
+#### Option 01: Complete genomes model
 
 *This model comes from 330 species with at least 10 complete genomes in the NCBI RefSeq database as of April 20, 2022. Replace ${my_species_complete_model} with a  file name prefix of your choosing.*
 
@@ -235,7 +235,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Complete_Genome_Model_D
 
 ![Your data on top of the complete genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_complete_model_GAMplot.png)
 
-#### Simulated Neutral model
+#### Option 02: Simulated Neutral model
 
 *This model comes from [SpecSim](link-to-spec-sim-github) introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. Replace ${my_species_simulated_model} with a  file name prefix of your choosing.*
 
@@ -248,9 +248,9 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Simulated_Neutral_Model
 
 ![Your data on top of the simulated neutral genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.png)
 
-#### Create a model from your own genomes
+#### Option 03: Custom model
 
-*You can build the model using your species genomes and compare them to themselves, or build any other custom model from any set of genomes. Replace ${my_species_custom_model} with a  file name prefix of your choosing.*
+*You can build the model using your species genomes and compare them to themselves, or build any other custom model from any set of genomes by repeating this pipeline with that set of genomes. Replace ${my_species_custom_model} with a  file name prefix of your choosing.*
 
 ```bash
 # For this step we use the input file generate in PART 02, Step 03 twice, or you can generate two diffent F100.tsv files for different genome sets to create your own custom genome model.
