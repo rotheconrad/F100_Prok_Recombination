@@ -95,11 +95,13 @@ So for a fasta file with three contigs or chromosomes the script cuts
 >\>ASM710v1_n  
 >GGACGACCTGCGCAAGCTGACGATCCAACTTCCGAGCCGGTTTTACTACGAGTGGATTGA...  
 
+To use the renaming script on all files in a directory with default setting:
+
 ```bash
 for f in ${genomes_dir}/*; do python 00d/Workflow_Scripts/01a_rename_fasta.py -i $f; done
 ```
 
-Alternatively, the user can input their own desired prefix.
+Alternatively, the user can input their own desired prefix:
 
 ```bash
 for f in ${genomes_dir}/*; do n=`echo basename $f | cut -d_ -f3`; python 00d/Workflow_Scripts/01a_rename_fasta.py -i $f -p $n; done
