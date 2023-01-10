@@ -318,7 +318,7 @@ python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_al
 
 *side quest: create two optional plots just for fun because you can once you have the binary matrix file.*
 
-### Step 08: create pangenome model
+### Step 08 (OPTIONAL): create pangenome model
 
 ```bash
 # for script info/options
@@ -330,7 +330,7 @@ python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -b pangenome_m
 
 ![Pangenome curve model of your genomes](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_model_pangenome_curves.png)
 
-### Step 09: create clustermap
+### Step 09 (OPTIONAL): create clustermap
 
 ```bash
 # for script info/options
