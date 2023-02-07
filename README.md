@@ -4,7 +4,7 @@
 
 Contains the code and workflow for the F100 recombination project.
 
-This workflow will assess the frequency of genes with 100% sequence similarity (F100) between a pair genomes compared to the total reciprocal best matches (RBMs) of genes shared between them for all genome pairs within a species. A collection of genomes in fasta format belonging to the same species is all that is required as input.
+This workflow will assess the frequency of genes with 100% sequence similarity (F100) between a pair of genomes compared to the total reciprocal best matches (RBMs) of genes shared between them for all genome pairs within a species. A collection of genomes in fasta format belonging to the same species is all that is required as input.
 
 Assuming that a high F100 score for a given average nucleotide identity (ANI) indicates recent homologous recombination between a pair of genomes, this workflow will identify genomes from a set of species genomes with the greatest amount of recent recombination (i.e. which genome pairs share the most identical genes).
 
@@ -104,7 +104,7 @@ for f in ${genomes_dir}/*; do python 00d/Workflow_Scripts/01a_rename_fasta.py -i
 Alternatively, the user can input their own desired prefix:
 
 ```bash
-for f in ${genomes_dir}/*; do n=`echo basename $f | cut -d_ -f3`; python 00d/Workflow_Scripts/01a_rename_fasta.py -i $f -p $n; done
+for f in ${genomes_dir}/*; do name=`echo basename $f | cut -d_ -f3`; python 00d/Workflow_Scripts/01a_rename_fasta.py -i $f -p ${name}; done
 ```
 
 ### Step 02: Inspect genome similarity
@@ -144,7 +144,7 @@ In this section we identify which genome pairs from your species have the most o
 # make new directory for gene CDS fastas we'll refer to this as ${genes_dir}
 mkdir ${genes_dir}
 # loop through genome fasta files and predict genes for each with prodigal
-for f in ${genomes_dir}/*; do n=`basename $f | cut -d. -f1`; prodigal -q -d ${genes_dir}/${n}.fnn -i $f; echo $f; done
+for f in ${genomes_dir}/*; do name=`basename $f | cut -d. -f1`; prodigal -q -d ${genes_dir}/${name}.fnn -i $f; echo $f; done
 # in our experience Prodigal tends to predict a lot of short genes. While some of these may be real, we think a lot of them are likely noise.
 # Filter by gene length to remove tiny genes
 for f in ${gene_dir}/*; do python 00d_Workflow_Scripts/02a_len_filter_genes.py -i $f; done
@@ -168,8 +168,8 @@ while read p;
     	x=`echo $p | cut -d' ' -f1`;
         m=`basename $x | cut -d. -f1`;
         y=`echo $p | cut -d' ' -f2`;
-        n=`basename $y | cut -d. -f1`;
-        aai.rb -1 ${x} -2 ${y} -N -R ${rbm_dir}/${m}-${n}.rbm;
+        name=`basename $y | cut -d. -f1`;
+        aai.rb -1 ${x} -2 ${y} -N -R ${rbm_dir}/${m}-${name}.rbm;
   done < genes_filenames_allV.txt
 
 # concatenate rbm results to a single file.
@@ -365,12 +365,14 @@ Contigs in draft genome and MAG assemblies are not typically aligned to any part
 
 Repeat this step as many times as you have genome pairs you're interested in.
 
+cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here).
+
 ```bash
 # for script info/option
 python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -h
 
 # with default settings
-python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB -draft True
+python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
 
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
