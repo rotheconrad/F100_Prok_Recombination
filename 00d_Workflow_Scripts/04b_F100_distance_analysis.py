@@ -265,7 +265,7 @@ def qqplots(qqdata, distance_title, distance_out):
                 fontsize=18, ha='center',transform=ax1.transAxes
                 )
     ax1.set_title('Non-recombinant genes', fontsize=axlabsz)
-
+    ax1.set_xlabel('')
     if "conserved" in qqdata:
         emp = qqdata["conserved"]
         qdist = stats.poisson(np.mean(emp))
@@ -276,6 +276,8 @@ def qqplots(qqdata, distance_title, distance_out):
                 fontsize=18, ha='center',transform=ax2.transAxes
                 )
     ax2.set_title('Conserved genes', fontsize=axlabsz)
+    ax2.set_xlabel('')
+    ax2.set_ylabel('')
 
     if "core" in qqdata:
         emp = qqdata["core"]
@@ -298,8 +300,9 @@ def qqplots(qqdata, distance_title, distance_out):
                 fontsize=18, ha='center',transform=ax4.transAxes
                 )
     ax4.set_title('Recombinant accessory genes', fontsize=axlabsz)
+    ax4.set_ylabel('')
 
-    #fig.set_tight_layout(True)
+    fig.set_tight_layout(True)
     plt.savefig(f'{distance_out}-qq.pdf')
     plt.close()
 
