@@ -532,13 +532,14 @@ def build_some_plots(df, genomes, pancats, outpre, cpos):
             ax.barh(ylab, W, left=S, color=c, height=0.75)
 
 
+
     # add contig markers
     mark_bars = {"gA-HC": ["v", -0.5], "gB-GS": ["^", 9.5]}
     for lab, marker in mark_bars.items():
         genome = lab[1]
         mark_pos = cpos[genome][:-1]
         ypos = [marker[1]] * len(mark_pos)
-        ax.plot(mark_pos, ypos, marker=marker[0], linestyle="", color='#969696')
+        ax.plot(mark_pos, ypos, marker="|", linestyle="", color='#969696')
 
 
     # Plot aesthetics
@@ -567,8 +568,8 @@ def build_some_plots(df, genomes, pancats, outpre, cpos):
             )
         legend_elements.append(n)
     marker_legend = Line2D(
-            [0], [0], color='w', label='Contig Marker', marker="^",
-            markersize=15, markerfacecolor='#969696'
+            [0], [0], color='#969696', label='Contig Marker', marker="|",
+            markersize=15, linestyle='None', #markerfacecolor='#969696'
             )
     legend_elements.append(marker_legend)
 
