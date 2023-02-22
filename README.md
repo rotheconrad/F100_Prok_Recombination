@@ -36,6 +36,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 
 ## Required dependencies
 
+- [FastANI](https://github.com/ParBLiSS/FastANI)
 - [Prodigal](https://github.com/hyattpd/Prodigal)
 - [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 - [MMseqs2](https://github.com/soedinglab/MMseqs2)
@@ -45,6 +46,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 
 #### References
 
+1. Jain C, Rodriguez-R LM, Phillippy AM, Konstantinidis KT, Aluru S. High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. Nature communications. 2018 Nov 30;9(1):1-8.
 1. Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC bioinformatics. 2010 Dec;11(1):1-1.
 1. Camacho C, Coulouris G, Avagyan V, Ma N, Papadopoulos J, Bealer K, Madden TL. BLAST+: architecture and applications. BMC bioinformatics. 2009 Dec;10(1):1-9.
 1. Steinegger M, Söding J. MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets. Nature biotechnology. 2017 Nov;35(11):1026-8.
@@ -375,6 +377,9 @@ python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -h
 python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
 
+This script writes a tsv file for each genome with columns: Genome, Gene, F100, PanCat, Start, Stop, Strand, Width.
+The gene name should contain the genome identifier_contigNumberFromAssembly_geneNumberOnContig. The F100 column is assigned a 0 or 1. 1 indicates the gene sequence has 100% identity with its corresponding RBM in the other genome and thus a candidate for recent homoloug recombination. A 0 indicates the gene does not have 100% sequence identity with its RBM. The PanCat column indicates the pangenome class assigned to the gene. Start and stop positions are relative to the genome with all contigs concatenated in fasta file order. Strand indicates the strand sense (1) or antisense (-1) the gene is predicted on. Width indicates the gene length or distance between the start and stop positions.
+
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
 ![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_genomes.png)
@@ -389,3 +394,17 @@ The Q-Q plot shows how the quantiles from your emperical data align with quantil
 
 Example of what a Q-Q plot of a good fit looks like:
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
+
+### Step 03: Hypothesis test gene annotation bins
+
+After the mmseq clustering step we end up with a fasta file containing representative genes for each gene cluster. Here we will annotate this file using either EggNog Mapper or COGclassifier, summarize the gene annotations by gene pair and by recombinant pangenome category, and then perform a parametric and non-parametric hypothesis test for recombinant genes against non-recombinant genes.
+
+(make sure we output the rep gene fasta from mmseq step)
+
+- add EggNog Mapper to depency list (optional)
+- add COGclassifier to depency list (optional)
+
+- breif commands for option 1 or option 2
+
+- write code to parse inputs
+

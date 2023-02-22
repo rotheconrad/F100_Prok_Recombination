@@ -1,6 +1,6 @@
  #!/usr/bin/env python
 
-'''Tests distance between recombing (F100) vs non-recombing genes.
+'''Tests distance between recombing vs non-recombing genes.
 
 This scripts requires 6 input files:
 
@@ -15,8 +15,8 @@ script of the enveomics collection.
 5-6) The corresponding genome fasta fasta files.
      Inputs gA and gB in the same order as they were given to AAI.rb
 
-This script returns graphics and statistics concerning the genomic
-distance between genes categorized by highly conserved core genes,
+This script returns data, graphics and statistics concerning the genomic
+positions between genes categorized by highly conserved core genes,
 recombining core genes, recombing accessory genes, and non-recombining
 genes. A gene is said to be recombining if the RBM value equals 100 and
 if it is not highly conserved.
@@ -34,15 +34,21 @@ All rights reserved
 
 import argparse
 from collections import defaultdict
-import numpy as np; import pandas as pd
+import pandas as pd; import numpy as np
 pd.options.mode.chained_assignment = None
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-import seaborn as sns
 from scipy import stats
+import seaborn as sns
 import statsmodels.api as sm
 
+
+###############################################################################
+##### SECTION 01: PARSE THE INPUT FILES #######################################
+###############################################################################
+
 def read_fasta(fp):
+    '''This generator function reads fasta input and returns name, seq'''
     name, seq = None, []
     for line in fp:
         line = line.rstrip()
@@ -56,22 +62,23 @@ def read_fasta(fp):
 
 def parse_genome_fasta(gA, gB, switch):
     # parses the genome fasta files and retrieves the length of each
-    # contig/chromosome (C). Returns dictionary of {contigID: len(contig)}
+    # contig/chromosome. Creates nested dictionaries for both genomes
+    # containing dictionaries of {contigID: len(contig)} for each genome.
+
     genomes = {
             'A': defaultdict(list),
             'B': defaultdict(list)
             }
-    
+
     for i, G in enumerate([gA, gB]):
-        length = 0
         with open(G, 'r') as file:
             for name, seq in read_fasta(file):
                 contigID = name[1:] # remove the ">" from the fasta defline
                 seqlen = len(seq)
-                length += seqlen
                 genomes[switch[i]][contigID] = seqlen
 
     # get the unique genome ID used in the fasta file for each genome
+    # used to match genome A or genome B in the RBM file.
     gAid = '_'.join(list(genomes['A'].keys())[0].split('_')[:-1])
     gBid = '_'.join(list(genomes['B'].keys())[0].split('_')[:-1])
 
@@ -80,7 +87,8 @@ def parse_genome_fasta(gA, gB, switch):
 
 def parse_prodigal_CDS(cA, cB, switch):
     # parses the prodigal fasta and retrieves gene start, stop, and strand
-    # from the fasta deflines. Returns dictionary of {GeneID: [values]}
+    # from the fasta deflines. Creates nested dictionaries for both genomes
+    # containing dictionaries of {GeneID: [values]} for each genome.
     CDS = {
         'A': defaultdict(lambda: defaultdict(list)),
         'B': defaultdict(lambda: defaultdict(list))
@@ -112,9 +120,13 @@ def parse_aai_rbm(rbm, gAid, gBid):
 
     # Parses the rbm file and returns a dictionary with lists as values.
     # Dictionary with a list of gene IDs for genome A and genome B
-    # F100 is genes with 100% sequence similarity
-    # Fno is genes without 100% sequence similarity
-    RBM = {'A': defaultdict(list), 'B': defaultdict(list)}
+    # F100 is genes with 100% sequence similarity are set = 1
+    # else F100 is set to 0 indicates < 100% RBMs
+
+    RBM = {
+            'A': defaultdict(lambda: defaultdict(int)),
+            'B': defaultdict(lambda: defaultdict(int))
+            }
 
     with open(rbm, 'r') as file:
         for line in file:
@@ -132,8 +144,8 @@ def parse_aai_rbm(rbm, gAid, gBid):
             F100 = 1 if ID == 100 else 0
 
             if genomeIDA == gAid and genomeIDB == gBid:
-                RBM['A'][contigIDA].append([geneIDA, F100])
-                RBM['B'][contigIDB].append([geneIDB, F100])
+                RBM['A'][contigIDA][geneIDA] = F100
+                RBM['B'][contigIDB][geneIDB] = F100
 
     return RBM
 
@@ -156,51 +168,211 @@ def parse_pangenome_categories(PC):
 
     return pancats
 
+###############################################################################
+##### SECTION 02: COMPUTATIONS AND PLOTS ######################################
+###############################################################################
 
-def compute_gene_distances(RBM, CDS, genomes, pancats):
-    # puts all the data together and returns a dataframe.
+def combine_input_data(RBM, CDS, genomes, pancats):
+    # combines the parsed input into a single dataframe.
+    # concatenates contigs and adjusts gene start and stop positions
+    # returns pandas dataframe with columns of dict D keys and
+    # returns contig positions for each genome.
 
     D = {
-        'Genome': [], 'Contig': [], 'Gene': [], 'F100': [],
+        'Genome': [], 'Gene': [], 'F100': [],
         'PanCat': [], 'Start': [], 'Stop': [], 'Strand': [], 
         }
 
     contig_positions = {'A': [], 'B': []}
 
-    for genome, contigs in RBM.items():
-        draft_length = 0
-        for contig, genes in contigs.items():
-            for gene in genes:
-                geneID = gene[0]
-                F100 = gene[1]
-                try: pc = pancats[f'{contig}_{geneID}']
-                except: pc = 'NA'
-                geneInfo = CDS[genome][contig][geneID]
-                start = geneInfo[0] + draft_length
-                stop = geneInfo[1] + draft_length
+    for genome, contigs in genomes.items():
+        genome_length = 0
+        for contig, contig_length in contigs.items():
+            contig_genes = CDS[genome][contig]
+            for gene, geneInfo in contig_genes.items():
+                # 100% RBM = 1 or else = 0
+                F100 = RBM[genome][contig][gene]
+                # occasionally (< 1/1000) some genes do not make the pancat file
+                # this seems to be from the mmseqs align step some sequences are
+                # dropped from clusters failing an evalue cutoff. Since we 
+                # have the evalue set super high and the occasional gene is
+                # still removed. I label these genes and genome specific as in
+                # they are not belonging to a gene cluster. This mmseqs issue
+                # is noted in Part 03, Step 05 of the github readme.
+                pc = pancats.get(f'{contig}_{gene}', 'Specific')
+                start = geneInfo[0] + genome_length
+                stop = geneInfo[1] + genome_length
                 strand = geneInfo[2]
 
                 D['Genome'].append(genome)
-                D['Contig'].append(genome) # contig name == genome name draftmode
-                D['Gene'].append(f'{contig}_{geneID}')
+                D['Gene'].append(f'{contig}_{gene}')
                 D['F100'].append(F100)
                 D['PanCat'].append(pc)
                 D['Start'].append(start)
                 D['Stop'].append(stop)
                 D['Strand'].append(strand)
 
-            # draftmode keep track of draft genome length of concatenated contigs
-            contig_length = genomes[genome][contig]
-            draft_length += contig_length
-            # used to add contig markers to plot
-            contig_positions[genome].append(draft_length)
-            #print(f'{genome}\t{contig}\t{contig_length}\t{draft_length}')
+            # increment genome_length. used to adjust gene start positions
+            # and keep track of contig positions to add markers to plot
+            genome_length += contig_length
+            contig_positions[genome].append(genome_length)
 
-    df = pd.DataFrame(D).sort_values(by=['Genome', 'Contig', 'Start'])
+    # convert dictionary to dataframe
+    df = pd.DataFrame(D) #.sort_values(by=['Genome', 'Start'])
+    # add gene lengths to Width column
     df['Width'] = df['Stop'] - df['Start']
 
     return df, contig_positions
 
+
+def build_some_plots(df, genomes, pancats, outpre, cpos):
+
+    # cpos is contig position array to mark them on the plot.
+    
+    colors = [
+            '#fee391', # yellow for highly conserved genes (HC)
+            '#dd3497', # pink recombining core (RC) 
+            '#41ab5d', # green recombining accessory (RA)
+            '#6baed6', # light blue non-recombining (NR)
+            '#f03b20', # red genome specific genes (GS)
+            '#000000', # neutral gray non-coding genome
+            ]
+
+    genome_out = f'{outpre}_genomes'
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    ax.set_xlabel('Gene location in genome (bp)')
+
+    # Define label order
+    labord = [
+            "gA-HC", "gA-RC", "gA-RA", "gA-NR", "gA-GS",
+            "gB-HC", "gB-RC", "gB-RA", "gB-NR", "gB-GS"
+            ]
+
+    # For each label add pc label and blank barplot point.
+    for lab in labord:
+        genome = lab[1]
+        length = sum(genomes[genome].values())
+        # neutral gray for genome length
+        ax.barh(lab, length, left=0, color=colors[5], height=0.75)
+        #ax.barh(lab, 1, left=0, color='w', height=0.75, alpha=0)
+
+    pc_switch = {'Core': 'RC', 'Conserved': 'HC', 'Accessory': 'RA', 'Specific': 'GS'}
+
+    for genome in genomes.keys():
+
+        print(f'Computing and building plots for genome {genome} ...')
+
+        # plot genes on the genome - select current genome (A or B)
+        dfX = df[(df['Genome'] == genome)]
+        dfX.sort_values(by='Start', inplace=True, ignore_index=True)
+        dfX.to_csv(f'{outpre}_{genome}_gene_table.tsv', sep='\t', index=False)
+        
+        ## compute gene distances, run poisson simulation, KS test and plot
+        dist_title = f'Genome {genome}'
+        dist_out = f'{outpre}_{genome}_distance'
+        length = sum(genomes[genome].values())
+        _ = distance_plots(dfX, length, colors, dist_title, dist_out)
+
+        genes = dfX['Gene'].to_numpy() # gene number
+        pcat = dfX['PanCat'].to_numpy() # pancat
+        Sta = dfX['Start'].to_numpy() # start position
+        Wid = dfX['Width'].to_numpy() # Length or width of gene
+        F10 = dfX['F100'].to_numpy() # F100 status
+        Str = dfX['Strand'].to_numpy() # Strand
+        #Pan = dfX['PanClass'].to_numpy() # Future - Pangenome category
+
+        label = f'g{genome}'
+    
+        for G, P, S, W, F, Z in zip(genes, pcat, Sta, Wid, F10, Str):
+
+            # get pancat abbreviation
+            pc = pc_switch[P]
+
+            # prep genome spceific genes for plot
+            if pc == 'GS': c = colors[4]
+            # prep non-recombinant genes for plot
+            elif F < 1:
+                c = colors[3]
+                pc = 'NR'
+            # prep recombinant genes for plot
+            elif F == 1:
+                if pc == 'RC': c = colors[1]
+                elif pc == 'HC': c = colors[0]
+                elif pc == 'RA': c = colors[2]
+                else:
+                    print('!!Panick!! How is a specific gene recombinant?')
+
+            else:
+                print('!!Panick!! something wrong lines 253-259 ish!')
+
+            ylab = f'{label}-{pc}'
+            ax.barh(ylab, W, left=S, color=c, height=0.75)
+
+
+    # add contig markers
+    mark_bars = {"gA-HC": ["v", -0.5], "gB-GS": ["^", 9.5]}
+    for lab, marker in mark_bars.items():
+        genome = lab[1]
+        mark_pos = cpos[genome][:-1]
+        ypos = [marker[1]] * len(mark_pos)
+        ax.plot(mark_pos, ypos, marker="|", linestyle="", color='#969696')
+
+
+    # Plot aesthetics
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.invert_yaxis()
+
+    # add contig position markers
+
+    # Build the legend
+    legend_labels = [
+                    'Highly Conserved (HC)',
+                    'Recombant Core (RC)',
+                    'Recombant Accessory (RA)',
+                    'Non Recombinant (NR)',
+                    'Genome Specific (GS)',
+                    ]
+
+    legend_elements = []
+
+    for i, x in enumerate(legend_labels):
+        n = Line2D(
+            [0], [0], color='w', label=x, marker='s',
+            markersize=15, markerfacecolor=colors[i]
+            )
+        legend_elements.append(n)
+    marker_legend = Line2D(
+            [0], [0], color='#969696', label='Contig Marker', marker="|",
+            markersize=15, linestyle='None', #markerfacecolor='#969696'
+            )
+    legend_elements.append(marker_legend)
+
+    ax.legend(
+        handles=legend_elements,
+        fontsize=12,
+        fancybox=True,
+        framealpha=0.0,
+        frameon=False,
+        loc='lower center',
+        bbox_to_anchor=(0, 0.95, 1, 0.2),
+        ncol=2
+        )
+
+    fig.set_tight_layout(True)
+    plt.tick_params(left=False)
+    plt.savefig(f'{genome_out}.pdf')
+    plt.close()
+
+    return True
+
+
+###############################################################################
+##### SECTION 03: STATISTICS AND PLOTS ########################################
+###############################################################################
 
 def poisson_simulation(array, n):
 
@@ -307,7 +479,7 @@ def qqplots(qqdata, distance_title, distance_out):
     plt.close()
 
     '''
-    # Test example plot
+    # Test example plot for what a "good" Q-Q plot looks like
     print(qqdata)
     mu = np.mean(qqdata["nc_genes"])
     poisson_array = stats.poisson.rvs(mu=mu, size=10000) # emp analog
@@ -444,153 +616,8 @@ def distance_plots(df, length, colors, distance_title, distance_out):
 
     return True
 
-
-def build_some_plots(df, genomes, pancats, outpre, cpos):
-
-    # cpos is contig position array to mark them on the plot.
-    
-    colors = [
-            '#9e9ac8', # purple for highly conserved genes (HC) - og '#88419d'
-            '#dd3497', # pink recombining core (RC) - og '#c51b7d' 
-            '#41ab5d', # green recombining accessory (RA) - og '#4d9221'
-            '#6baed6', # light blue non-recombining (NR)
-            '#f03b20', # red genome specific genes (GS)
-            '#000000', # neutral gray non-coding genome
-            ]
-
-    genome_out = f'{outpre}_genomes'
-
-    fig, ax = plt.subplots(figsize=(7, 6))
-
-    ax.set_xlabel('Gene location in genome (bp)')
-
-    # Define label order
-    labord = [
-            "gA-HC", "gA-RC", "gA-RA", "gA-NR", "gA-GS",
-            "gB-HC", "gB-RC", "gB-RA", "gB-NR", "gB-GS"
-            ]
-
-    # For each label add pc label and blank barplot point.
-    for lab in labord:
-        genome = lab[1]
-        length = sum(genomes[genome].values())
-        # neutral gray for genome length
-        ax.barh(lab, length, left=0, color=colors[5], height=0.75)
-        #ax.barh(lab, 1, left=0, color='w', height=0.75, alpha=0)
-
-    pc_switch = {'Core': 'RC', 'Conserved': 'HC', 'Accessory': 'RA', 'Specific': 'GS'}
-
-    for genome in genomes.keys():
-
-        print(f'Computing and building plots for genome {genome} ...')
-
-        # plot genes on the genome - select current genome (A or B)
-        dfX = df[(df['Genome'] == genome)]
-        dfX.sort_values(by='Start', inplace=True, ignore_index=True)
-        dfX.to_csv(f'{outpre}_{genome}_gene_table.tsv', sep='\t')
-        
-        ## compute gene distances, run poisson simulation, KS test and plot
-        dist_title = f'Genome {genome}'
-        dist_out = f'{outpre}_{genome}_distance'
-        length = sum(genomes[genome].values())
-        _ = distance_plots(dfX, length, colors, dist_title, dist_out)
-
-        genes = dfX['Gene'].to_numpy() # gene number
-        Sta = dfX['Start'].to_numpy() # start position
-        Wid = dfX['Width'].to_numpy() # Length or width of gene
-        F10 = dfX['F100'].to_numpy() # F100 status
-        Str = dfX['Strand'].to_numpy() # Strand
-        #Pan = dfX['PanClass'].to_numpy() # Future - Pangenome category
-
-        label = f'g{genome}'
-    
-        for G, S, W, F, Z in zip(genes, Sta, Wid, F10, Str):
-
-            pc = pc_switch[pancats[G]]
-            # add genome spceific genes to plot
-            if pc == 'GS': c = colors[4]
-            elif F < 1:
-                c = colors[3]
-                pc = 'NR'
-            elif F == 1:
-                #try:
-                if pc == 'RC': c = colors[1]
-                elif pc == 'HC': c = colors[0]
-                elif pc == 'RA': c = colors[2]
-                else:
-                    print('!!Panick!! How is a specific gene recombinant?')
-                #except:
-                    #c = colors[3]
-                    #pc = 'NR'
-                    #print(f'{contig}_{G}')
-            else:
-                print('!!Panick!! something wrong lines 253-259 ish!')
-
-            #l = pos if Z == 1 else neg#removed pos neg strand labels
-            #ax.barh(l, W, left=S, color=c, height=0.5)
-            ylab = f'{label}-{pc}'
-            ax.barh(ylab, W, left=S, color=c, height=0.75)
-
-
-
-    # add contig markers
-    mark_bars = {"gA-HC": ["v", -0.5], "gB-GS": ["^", 9.5]}
-    for lab, marker in mark_bars.items():
-        genome = lab[1]
-        mark_pos = cpos[genome][:-1]
-        ypos = [marker[1]] * len(mark_pos)
-        ax.plot(mark_pos, ypos, marker="|", linestyle="", color='#969696')
-
-
-    # Plot aesthetics
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.invert_yaxis()
-
-    # add contig position markers
-
-    # Build the legend
-    legend_labels = [
-                    'Highly Conserved (HC)',
-                    'Recombant Core (RC)',
-                    'Recombant Accessory (RA)',
-                    'Non Recombinant (NR)',
-                    'Genome Specific (GS)',
-                    ]
-
-    legend_elements = []
-
-    for i, x in enumerate(legend_labels):
-        n = Line2D(
-            [0], [0], color='w', label=x, marker='s',
-            markersize=15, markerfacecolor=colors[i]
-            )
-        legend_elements.append(n)
-    marker_legend = Line2D(
-            [0], [0], color='#969696', label='Contig Marker', marker="|",
-            markersize=15, linestyle='None', #markerfacecolor='#969696'
-            )
-    legend_elements.append(marker_legend)
-
-    ax.legend(
-        handles=legend_elements,
-        fontsize=12,
-        fancybox=True,
-        framealpha=0.0,
-        frameon=False,
-        loc='lower center',
-        bbox_to_anchor=(0, 0.95, 1, 0.2),
-        ncol=2
-        )
-
-    fig.set_tight_layout(True)
-    plt.tick_params(left=False)
-    plt.savefig(f'{genome_out}.pdf')
-    plt.close()
-
-    return True
-
+###############################################################################
+###############################################################################
 
 def main():
 
@@ -642,6 +669,14 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-m', '--minimum_contig_length',
+        help='OPTIONAL: specify minimum contig length (default 2000)',
+        metavar='',
+        type=int,
+        required=False,
+        default=2000
+        )
+    parser.add_argument(
         '-o', '--output_file_prefix',
         help='Please specify a prefix for the output file names!',
         metavar='',
@@ -660,11 +695,13 @@ def main():
     gA = args['input_genome_A']
     gB = args['input_genome_B']
     PC = args['pangenome_categories']
+    m = args['minimum_contig_length']
     outpre = args['output_file_prefix']
 
     # setup a switch
     switch = {0: 'A', 1: 'B'}
 
+    ## SECTION 01: Parse input data
     # read in the data
     # Get genome contig lengths
     genomes, gAid, gBid = parse_genome_fasta(gA, gB, switch)
@@ -675,12 +712,15 @@ def main():
     # get the pancat info
     pancats = parse_pangenome_categories(PC)
 
+    
+
+    ## SECTION 02: Computations and Plots
     # process the data and build some plots
     # cpos is contig positions to use to mark them on the plot
     # cpos = {'A': [position array], 'B': [position array]}
-    df, cpos = compute_gene_distances(RBM, CDS, genomes, pancats)
+    df, cpos = combine_input_data(RBM, CDS, genomes, pancats)
     _ = build_some_plots(df, genomes, pancats, outpre, cpos)
-
+    ## SECTION 03 RUNS FROM INSIDE build_some_plots
 
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
