@@ -366,9 +366,9 @@ def build_some_plots(df, genomes, pancats, outpre, cpos):
     # Build the legend
     legend_labels = [
                     'Highly Conserved (HC)',
-                    'Recombant Core (RC)',
-                    'Recombant Accessory (RA)',
-                    'Non Recombinant (NR)',
+                    'Recombinant Core (RC)',
+                    'Recombinant Accessory (RA)',
+                    'Non-Recombinant (NR)',
                     'Genome Specific (GS)',
                     ]
 

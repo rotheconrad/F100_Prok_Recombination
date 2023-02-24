@@ -136,23 +136,27 @@ python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -i fastANI_allV.ani -s 
 
 ![Shared fraction vs. ANI](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_sharedfrac_ANI.png)
 
-# PART 02: F100 frequency model
+# PART 02: Recombinant genomes analysis
 
-In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. Using F100 as a signal for recent recombination we fit a generalize additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes, or 3. your own set of genomes) showing expected F100 per ANI of a genome pair.
+In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. Using F100 as a signal for recent recombination we fit a generalize additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes, or 3. your own set of genomes) showing expected F100 per ANI of a genome pair. We also identify clusters of frequently recombining genome pairs.
 
 ### Step 01: Predict genes using Prodigal
+
+We use the predicted CDS to calculate reciprocal best matches (RBMs) from which we derive the frequency of genes with 100% RBM sequence similarity (F100) and we also use the genes for clustering in the pangenome analysis and to get functional annotation information.
 
 ```bash
 # make new directory for gene CDS fastas we'll refer to this as ${genes_dir}
 mkdir ${genes_dir}
 # loop through genome fasta files and predict genes for each with prodigal
-for f in ${genomes_dir}/*; do name=`basename $f | cut -d. -f1`; prodigal -q -d ${genes_dir}/${name}.fnn -i $f; echo $f; done
+for f in ${genomes_dir}/*; do name=`basename $f | cut -d. -f1`; prodigal -q -d ${fnn_genes_dir}/${name}.fnn -a ${faa_genes_dir}/${name}.faa -i $f; echo $f; done
 # in our experience Prodigal tends to predict a lot of short genes. While some of these may be real, we think a lot of them are likely noise.
 # Filter by gene length to remove tiny genes
 for f in ${gene_dir}/*; do python 00d_Workflow_Scripts/02a_len_filter_genes.py -i $f; done
 ```
 
 ### Step 02: All vs all aai.rb in nucleotide mode
+
+This step calculated the RBMs so we can get the F100.
 
 ```bash
 # make new directory for aai.rb reciprocal best match results we'll refer to this as ${rbm_dir}
@@ -191,6 +195,8 @@ for f in genes_filenames_allV_*; do (run pbs or sbatch script with the while rea
 
 ### Step 03: Compute F100s
 
+This step gets the F100 for each genome pair. It can write out histograms of the RBM sequence identity distribution.
+
 *replace ${my_species_name} with your species name (use underscore instead of space) and replace ${my_species} with the output prefix of your choice. This will create an important file ${my_species}_F100.tsv needed for the next steps.*
 
 ```bash
@@ -201,7 +207,7 @@ python 00d_Workflow_Scripts/02b_AAI_RBM_F100.py -h
 python 00d_Workflow_Scripts/02b_AAI_RBM_F100.py -i RBMs_allV.rbm -s ${my_species_name} -o ${my_species}
 ```
 
-(OPTIONAL) set -p True to Build histograms of RBM sequence similarities for each genome pair
+(OPTIONAL) set -p True to Build histograms of RBM sequence similarities for each genome pair. The x-axis is automatically calculated to fit the data so if the values extend low down into the 70s etc it means at least one RBM has a low sequence similarity but these typically aren't visible in the plot due to the high counts above 95.
 
 ```bash
 # this will create a pdf for each genome pair
@@ -222,6 +228,8 @@ To view model info/options:
 python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -h
 ```
 
+This step shows which genome pairs have a higher frequency of recently recombining genes (F100).
+
 This step will create a PDF of your genomes on top of the models and write out a sig-pairs.tsv file that can be used in Excel, R or etc. to sort by the xx column and select interesting genome pairs. The sig-pairs file labels any genome pairs with F100 and ANI values outside the 95% confidence interval of the model as "Recombining," and anything within the confidence interval as Non-recombining. But please be aware this is just a simplified terminology. This method is ranking genome pairs with higher to lower F100 scores based on the ANI between the genome pair. Genes with 100% sequence similarity are a proxy for recent homologous recombination or strict evolutionary conservation. Any genome pair, even the points at the bottom of the confidence interval may still have some 100% similar genes and as such could possibly have undergone a small amount of recent homologous recombination. 
 
 #### Option 01: Complete genomes model
@@ -239,7 +247,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Complete_Genome_Model_D
 
 #### Option 02: Simulated Neutral model
 
-*This model comes from [SpecSim](link-to-spec-sim-github) introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. Replace ${my_species_simulated_model} with a  file name prefix of your choosing.*
+*This model comes from [SpecSim](link-to-spec-sim-github) introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. Replace ${my_species_simulated_model} with a  file name prefix of your choosing. I plan to make a github for this code and users can generate their own sets of simulated genomes by tweaking various parameters. Then follow Option 03 for building a custom model.*
 
 ```bash
 # Uncompress the Simulated_Neutral_Model_Data.tsv.zip file
@@ -261,14 +269,23 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv 
 
 ![Your data on top of a model build from your own data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_custom_model_GAMplot.png)
 
-# PART 03: Investigate recombinant positions in specific genome pairs
+### Step 05: Clusters of frequently recombining genomes
 
-STEP 02 generates output containing F100 data for all genome pairs. In this step we select specific genome pairs of interest from STEP 02 and take a closer look.
+This step uses F100 as a distance metrix and creates a hierarchical clustered heatmap and also uses the HDBSCAN algorithm to partition groups of genomes with frequent recent recombination events with eachother.
+
+```bash
+# I think it should be easy enough to have a single code here take F100 file and generate a matrix, the seaborn clustermap, and write out HDBSCAN cluster results.
+```
+
+# PART 03: Recombinant Genes Analysis
+
+STEP 02 generates output containing F100 data for all genome pairs. In this step we investigate recombinant gene positions and annotions from specific genome pairs of interest, and we investigate recombinant gene positions and annotations for 1 genome to many genomes.
 
 ### Step 01: Concatenate all gene CDS
 
 ```bash
-cat ${genes_dir}/* > all_genes_CDS.fnn
+cat ${fnn_genes_dir}/* > all_genes_CDS.fnn
+cat ${faa_genes_dir}/* > all_genes_CDS.faa
 ```
 
 ### Step 02: create some directories that we'll need
@@ -298,19 +315,33 @@ mmseqs cluster ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered tempfiles --min-
 *Super high -e prevents sequences getting dropped from clusters. If you notice you are missing sequencing downstream try increasing -e even higher. See [MMseqs2 GitHub Issue](https://github.com/soedinglab/MMseqs2/issues/598)*
 
 ```bash
-mmseqs align ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered ${mmseqs_dir}/DBaligned -e 1.0E30
+mmseqs align ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered ${mmseqs_dir}/DBaligned -e 1.0E60
 ```
 
 ### Step 06: Write mmseqs database to TSV format
 
 ```bash
-mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} {mmseqs_dir}/DBaligned all_genes_CDS_aligned.tsv
+mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBaligned all_genes_CDS_aligned.tsv
 
 # You can remove the tempfiles directory at this point
 rm -r tempfiles
 ```
 
-### Step 07: Create a binary matrix of genomes and gene clusters
+### Step 07: Write out cluster representative fasta file
+
+```bash
+mmseqs createsubdb ${mmseqs_dir}/DBaligned ${mmseqs_dir}/${my_db} ${mmseqs_dir}/my_rep_seqs
+mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fna
+```
+
+### Step 08: Annotate representative sequences
+
+```bash
+# First we have to grab the amino acid sequence for the representative sequences
+```
+
+
+### Step 08: Create a binary matrix of genomes and gene clusters
 
 Each genome is a column. Each gene cluster is row. 1 if the genome has a gene in the cluster else 0. This is used to identify core genes or accessory genes. Conserved genes are the core gene clusters with the least average sequence difference. You can proceed to STEP 05 after you have the binary matrix file. 
 
@@ -320,7 +351,7 @@ python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_al
 
 *side quest: create two optional plots just for fun because you can once you have the binary matrix file.*
 
-### Step 08 (OPTIONAL): create pangenome model
+### Step 09 (OPTIONAL): create pangenome model
 
 ```bash
 # for script info/options
@@ -332,7 +363,7 @@ python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -b pangenome_m
 
 ![Pangenome curve model of your genomes](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_model_pangenome_curves.png)
 
-### Step 09 (OPTIONAL): create clustermap
+### Step 10 (OPTIONAL): create clustermap
 
 ```bash
 # for script info/options
