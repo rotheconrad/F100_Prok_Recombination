@@ -253,27 +253,62 @@ def build_some_plots(df, genomes, pancats, outpre, cpos):
     # For each label add pc label and blank barplot point.
     for lab in labord:
         genome = lab[1]
-        length = sum(genomes[genome].values())
-        # neutral gray for genome length
-        ax.barh(lab, length, left=0, color=colors[5], height=0.75)
-        #ax.barh(lab, 1, left=0, color='w', height=0.75, alpha=0)
+        pclass = lab.split('-')[1]
+        glength = sum(genomes[genome].values())
+        dfY = df[(df['Genome'] == genome)]
+        # black for full genome length background
+        ax.barh(lab, glength, left=0, color=colors[5], height=0.75)
+        # Add percent of total genes to end of each bar
+        # this is probably an ugly way to do this that i've added at the end.
+        total_genes = len(dfY)
+        # iterate over each bar and annotate the value 
+        if pclass == 'HC':
+            # subset conserved genes 
+            conserved = dfY[dfY['PanCat'] == 'Conserved']
+            tc = colors[0]
+            tl = round(len(conserved) / total_genes * 100, 2)
+        elif pclass == 'RC':
+            # subset recombinant core genes
+            core = dfY[(dfY['PanCat'] == 'Core') & (dfY['F100'] == 1)]
+            tc = colors[1]
+            tl = round(len(core) / total_genes * 100, 2)
+        elif pclass == 'RA':
+            # subset recombinant accessory genes
+            accessory = dfY[(dfY['PanCat'] == 'Accessory') & (dfY['F100'] == 1)]
+            tc = colors[2]
+            tl = round(len(accessory) / total_genes * 100, 2)
+        elif pclass == 'NR':
+            # subset non conserved and non recombining genes
+            nc_genes = dfY[(dfY['PanCat'] != 'Conserved') & (dfY['PanCat'] != 'Specific') & (dfY['F100'] != 1)]
+            tc = colors[3]
+            tl = round(len(nc_genes) / total_genes * 100, 2)
+        elif pclass == 'GS':
+            # subset genome specific genes
+            specific = dfY[dfY['PanCat'] == 'Specific']
+            tc = colors[4]
+            tl = round(len(specific) / total_genes * 100, 2)
+        # add it to the plot
+        ax.text(glength+(glength/100), lab, f'{tl}%', color=tc, va='center')
 
     pc_switch = {'Core': 'RC', 'Conserved': 'HC', 'Accessory': 'RA', 'Specific': 'GS'}
 
     for genome in genomes.keys():
 
         print(f'Computing and building plots for genome {genome} ...')
-
+        # genome length
+        glength = sum(genomes[genome].values())
         # plot genes on the genome - select current genome (A or B)
         dfX = df[(df['Genome'] == genome)]
         dfX.sort_values(by='Start', inplace=True, ignore_index=True)
         dfX.to_csv(f'{outpre}_{genome}_gene_table.tsv', sep='\t', index=False)
-        
+
         ## compute gene distances, run poisson simulation, KS test and plot
         dist_title = f'Genome {genome}'
         dist_out = f'{outpre}_{genome}_distance'
-        length = sum(genomes[genome].values())
-        _ = distance_plots(dfX, length, colors, dist_title, dist_out)
+        # changed doing by pangenome category to doing 1 for each genome.
+        # and collapsing consecutive F100 genes to 1 event
+        # returns percent recently recombining genes
+        _ = distance_plots_2(dfX, colors, dist_title, dist_out)
 
         genes = dfX['Gene'].to_numpy() # gene number
         pcat = dfX['PanCat'].to_numpy() # pancat
@@ -394,7 +429,30 @@ def poisson_simulation(array, n):
     # data do not follow a poisson distribution and are not evenly spaced.
     # hence they are randomly spaced events across the genome.
 
-    emperical_mean_dist = np.diff(array)
+    # the input array is the sorted index position of the genes in the genome
+    # for each pangenome category. So the distance between index positions for
+    # recombinant core genes is the number of genes between recombinant events
+    # Using the diff method below the minimum distance is 1 instead of zero
+    # because index position 4 - index position 5 equals 1.
+
+    # make sure the array is sorted in ascending order.
+    sorted_array = np.sort(array)
+
+    # get the difference between gene index positions (genes between events)
+    # and subtract 1 so the minimum distance is 0 instead of 1.
+    temp_dist = np.diff(sorted_array) - 1
+
+    # now we drop all zeros because theoretically adjacent genes both with
+    # 100% sequence identity to their RBMs are a single recombination event.
+    #emperical_mean_dist = temp_dist
+    emperical_mean_dist = temp_dist[temp_dist != 0]
+    #emperical_mean_dist = temp_dist[np.logical_and(temp_dist != 0, temp_dist != 1)]
+
+    # print out value counts of distances between events
+    values, counts = np.unique(emperical_mean_dist,return_counts=True)
+    for v, c in zip(values, counts):
+        print(v, c)
+    
 
     mu =  np.mean(emperical_mean_dist) # genes per kilo base pair
     poisson_array = stats.poisson.rvs(mu=mu, size=10000)
@@ -415,110 +473,31 @@ def poisson_simulation(array, n):
     return emperical_mean_dist, poisson_array, mu, k, p
 
 
-def qqplots(qqdata, distance_title, distance_out):
-    # builds qq plots of distance between genes(emp) vs poisson simulation (psn)
+def distance_plots_2(df, colors, distance_title, distance_out):
 
-    axlabsz = 12 # set ax title font size
-    # initialize the plot object
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
-                                                2, 2, figsize=(7, 5),
-                                                )
-    # set the title
-    #tt = f'Q-Q Plots: Genes Between Events\n{distance_title}'
-    #fig.suptitle(tt, fontsize=14)
-
-    if "nc_genes" in qqdata:
-        emp = qqdata["nc_genes"]
-        qdist = stats.poisson(np.mean(emp))
-        sm.qqplot(emp, dist=qdist, line="45", ax=ax1)
-    else:
-        _ = ax1.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax1.transAxes
-                )
-    ax1.set_title('Non-recombinant genes', fontsize=axlabsz)
-    ax1.set_xlabel('')
-    if "conserved" in qqdata:
-        emp = qqdata["conserved"]
-        qdist = stats.poisson(np.mean(emp))
-        sm.qqplot(emp, dist=qdist, line="45", ax=ax2)
-    else:
-        _ = ax2.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax2.transAxes
-                )
-    ax2.set_title('Conserved genes', fontsize=axlabsz)
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
-
-    if "core" in qqdata:
-        emp = qqdata["core"]
-        qdist = stats.poisson(np.mean(emp))
-        sm.qqplot(emp, dist=qdist, line="45", ax=ax3)
-    else:
-        _ = ax3.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax3.transAxes
-                )
-    ax3.set_title('Recombinant core genes', fontsize=axlabsz)
-
-    if "accessory" in qqdata:
-        emp = qqdata["accessory"]
-        qdist = stats.poisson(np.mean(emp))
-        sm.qqplot(emp, dist=qdist, line="45", ax=ax4)
-    else:
-        _ = ax4.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax4.transAxes
-                )
-    ax4.set_title('Recombinant accessory genes', fontsize=axlabsz)
-    ax4.set_ylabel('')
-
-    fig.set_tight_layout(True)
-    plt.savefig(f'{distance_out}-qq.pdf')
-    plt.close()
-
-    '''
-    # Test example plot for what a "good" Q-Q plot looks like
-    print(qqdata)
-    mu = np.mean(qqdata["nc_genes"])
-    poisson_array = stats.poisson.rvs(mu=mu, size=10000) # emp analog
-    fig, ax = plt.subplots(figsize=(7, 5))
-    ax.set_title("Poisson vs Poisson Example Q-Q Plot", fontsize=14)
-    qdist = stats.poisson(np.mean(poisson_array))
-    sm.qqplot(poisson_array, dist=qdist, line="45", ax=ax)
-
-    fig.set_tight_layout(True)
-    plt.savefig(f'{distance_out}-qqex.pdf')
-    plt.close()
-    '''
-
-    return True
-
-
-def distance_plots(df, length, colors, distance_title, distance_out):
-
-    # Calculate distance between genes of four classes
-    # Non-recombinant, conserved, recombinant core, and recombinant accessory
+    # Calculate distance between F100 gene events in the genome
+    # Collapse consecutive F100 genes to single event.
     # simulate poisson distribution
     # run kolmogorov-smirnov test
     # plot results
     # changed from contig length in bp to simply the length of the df
-    length = len(df)
+    total_genes = len(df) # total events for poisson simulation
     # the dataframe index is the gene position in the genome
     # distance between genes is distance between index and the preceeding index 
-    # subset conserved genes and select index as array
-    conserved = df[df['PanCat'] == 'Conserved'].index
-    # subset non conserved genes
-    non_conserved = df[df['PanCat'] != 'Conserved']
-    # subset non conserved and non recombining genes and select index as array
-    nc_genes = non_conserved[non_conserved['F100'] < 1].index
-    # subset non conserved but recombining genes
-    recomb_genes = non_conserved[non_conserved['F100'] == 1]
-    # subset recombinant core genes and select index as array
-    core = recomb_genes[recomb_genes['PanCat'] == 'Core'].index
-    # subset recombinant accessory genes and select index as array
-    accessory = recomb_genes[recomb_genes['PanCat'] == 'Accessory'].index
+    # subset non conserved genes ie disregard conserved genes
+    # subset recombinant all genes that are not "conserved"
+    recomb_genes = df[(df['F100'] == 1) & (df['PanCat'] != 'Conserved')].index
+
+    # percent of genes that are recently recombining
+    # 100% RBMs / total genes
+
+    # skip statistical tests if fewer than 5 genes.
+    if len(recomb_genes) < 5:
+        print('Fewer than 5 recombinant genes. Skipping statistical test.')
+        return False
+
+    # calcuate distances, run poisson simulation, and ks test.
+    emp, psn, mu, k, p = poisson_simulation(recomb_genes, total_genes)
 
     tx, ty = 0.72, 0.82 # stats test text position
     pcol = 'r' # poisson model kde line plot color
@@ -526,93 +505,25 @@ def distance_plots(df, length, colors, distance_title, distance_out):
     axlabsz = 12 # ax label sizes
     ts = 8 # stat test text size
     bw, ct = 3, 0 # kdeplot bw_adjus t and cut params
-    minimum_genes = 5 # need at least 5 genes to test and plot
 
-    # added this bit after the fact because I wanted to look at Q-Q plots
-    # dicitonary of key nc_genes, conserved, core, accessory with
-    # values of emp (the emperical distance between events array).
-    qqdata = {} 
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7))
 
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
-                                                2, 2, figsize=(7, 5),
-                                                #sharex=True, sharey=True
-                                                )
-
-    #tt = f'Genes Between Events\n{distance_title}'
-    #fig.suptitle(tt, fontsize=14)
-
-    if len(nc_genes) > minimum_genes:
-        # calcuate distances, run poisson simulation, and ks test.
-        emp, psn, mu, k, p = poisson_simulation(nc_genes, length)
-        qqdata["nc_genes"] = emp
-        _ = sns.histplot(x=emp, color=colors[5], ax=ax1, stat='density')
-        _ = ax1.axvline(mu, color=colors[5], linestyle='dashed', linewidth=mlw)
-        _ = sns.kdeplot(x=psn, color=pcol, ax=ax1, cut=ct, bw_adjust=bw)
-        line = f'k = {k:.4f}\np = {p:.4f}'
-        _ = ax1.text(tx, ty, line, transform=ax1.transAxes, fontsize=ts)
-    else:
-        _ = ax1.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax1.transAxes
-                )
+    # plot emp distribution, poissoin distribution and stats test results
+    _ = sns.histplot(x=emp, color=colors[5], ax=ax1, stat='density')
+    _ = ax1.axvline(mu, color=colors[5], linestyle='dashed', linewidth=mlw)
+    _ = sns.kdeplot(x=psn, color=pcol, ax=ax1, cut=ct, bw_adjust=bw)
+    line = f'k = {k:.4f}\np = {p:.4f}'
+    _ = ax1.text(tx, ty, line, transform=ax1.transAxes, fontsize=ts)
     ax1.set_ylabel('Density', fontsize=axlabsz)
-    ax1.set_xlabel('Non-recombinant genes', fontsize=axlabsz)
+    ax1.set_xlabel('Genes between recombinant events', fontsize=axlabsz)
 
-    if len(conserved) > minimum_genes:
-        emp, psn, mu, k, p = poisson_simulation(conserved, length)
-        qqdata["conserved"] = emp
-        _ = sns.histplot(x=emp, color=colors[0], ax=ax2, stat='density')
-        _ = ax2.axvline(mu, color=colors[0], linestyle='dashed', linewidth=mlw)
-        _ = sns.kdeplot(x=psn, color=pcol, ax=ax2, cut=ct, bw_adjust=bw)
-        line = f'k = {k:.4f}\np = {p:.4f}'
-        _ = ax2.text(tx, ty, line, transform=ax2.transAxes, fontsize=ts)
-    else:
-        _ = ax2.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax2.transAxes
-                )
-    ax2.set_ylabel('Density', fontsize=axlabsz)
-    ax2.set_xlabel('Highly conserved genes', fontsize=axlabsz)
+    # plot Q-Q plot emperical vs theoretical
+    qdist = stats.poisson(np.mean(emp))
+    sm.qqplot(emp, dist=qdist, line="45", ax=ax2)
 
-    if len(core) > minimum_genes:
-        emp, psn, mu, k, p = poisson_simulation(core, length)
-        qqdata["core"] = emp
-        _ = sns.histplot(x=emp, color=colors[1], ax=ax3, stat='density')
-        _ = ax3.axvline(mu, color=colors[1], linestyle='dashed', linewidth=mlw)
-        _ = sns.kdeplot(x=psn, color =pcol, ax=ax3, cut=ct, bw_adjust=bw)
-        line = f'k = {k:.4f}\np = {p:.4f}'
-        _ = ax3.text(tx, ty, line, transform=ax3.transAxes, fontsize=ts)
-    else:
-        _ = ax3.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax3.transAxes
-                )
-    ax3.set_ylabel('Density', fontsize=axlabsz)
-    ax3.set_xlabel('Recombinant core genes', fontsize=axlabsz)
-
-    if len(accessory) > minimum_genes:
-        emp, psn, mu, k, p = poisson_simulation(accessory, length)
-        qqdata["accessory"] = emp
-        _ = sns.histplot(x=emp, color=colors[2], ax=ax4, stat='density')
-        _ = ax4.axvline(mu, color=colors[2], linestyle='dashed', linewidth=mlw)
-        _ = sns.kdeplot(x=psn, color=pcol, ax=ax4, cut=ct, bw_adjust=bw)
-        line = f'k = {k:.4f}\np = {p:.4f}'
-        _ = ax4.text(tx, ty, line, transform=ax4.transAxes, fontsize=ts)
-    else:
-        _ = ax4.text(
-                0.5, 0.5, 'No Data',
-                fontsize=18, ha='center',transform=ax4.transAxes
-                )
-    ax4.set_ylabel('Density', fontsize=axlabsz)
-    ax4.set_xlabel('Recombinant accessory genes', fontsize=axlabsz)
-
-    #ax1.set_yscale('log')
     fig.set_tight_layout(True)
     plt.savefig(f'{distance_out}.pdf')
     plt.close()
-
-    # build qq plots
-    _ = qqplots(qqdata, distance_title, distance_out)
 
     return True
 
