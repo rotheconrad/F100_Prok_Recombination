@@ -78,7 +78,7 @@ def fastANI_visual_dist_plot(xs, title, outfile, stat):
     g.ax.set_title(title, fontsize=18, y=1.02)
 
     g.ax.set_xlabel(
-        'Fragment sequence similarity (%)',
+        'RBM sequence similarity (%)',
         fontsize=12, y=-0.02
         )
     g.ax.set_ylabel(

@@ -140,7 +140,7 @@ Output: all vs. all fastANI tsv outfile file saved as fastANI_allV.ani
 for f in ${genomes_dir}/*; do echo $f; done > genome_file_list.txt
 
 # run fastANI in many to many mode
-./fastANI --ql genome_file_list.txt --rl genome_file_list.txt -o fastANI_allV.ani
+fastANI --ql genome_file_list.txt --rl genome_file_list.txt -o fastANI_allV.ani
 ```
 
 Once you have the all vs. all fastANI output, here is a script to easily create a scatter plot of the results. The shared genome fraction is the number of shared fragments between two genomes divided by the total number of fragments from the larger genome as determined by fastANI. ANI is the genome-aggregate average nucleotide identity as determined by fastANI. Species-like genome clusters are generally ≥95% ANI between them but it may be interesting to investigate the differences between groupings of genomes you find at any ANI level.
