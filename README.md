@@ -40,9 +40,11 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 - [Prodigal](https://github.com/hyattpd/Prodigal)
 - [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 - [MMseqs2](https://github.com/soedinglab/MMseqs2)
-- [enveomics](http://enve-omics.ce.gatech.edu/enveomics/docs) (for aai.rb)
-- [ruby](https://www.ruby-lang.org/en/) (for enveomics)
-- [python](https://www.python.org/)
+- [EggNog Mapper](https://github.com/eggnogdb/eggnog-mapper) (optional for functional annotation hypothesis testing)
+- [COGclassifier](https://github.com/moshi4/COGclassifier/) (optional alternative to EggNog Mapper)
+- [Enveomics Collection](http://enve-omics.ce.gatech.edu/enveomics/docs) (for aai.rb)
+- [Ruby](https://www.ruby-lang.org/en/) (for enveomics)
+- [Python](https://www.python.org/) (for all custom code in this workflow)
 
 #### References
 
@@ -64,7 +66,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 - [datashader](https://datashader.org/)
 - [pygam](https://pygam.readthedocs.io/)
 
-*Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed with [Conda](https://docs.conda.io/en/latest/miniconda.html).*
+*Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed easily with [Conda](https://docs.conda.io/en/latest/miniconda.html). Just search "conda install name"*
 
 #### References
 
@@ -347,10 +349,7 @@ STEP 02 generates output containing F100 data for all genome pairs. In this step
 
 ### Step 01: Concatenate all gene CDS
 
-This step requires
-
-Input:
-Output:
+In this step we prepare to cluster and annotate our genes with MMSeqs2 and EggNog mapper (or COGclassifier) by concatenate predicted CDS from all genomes into a single file for nucleotide and a single file for amino acid sequence. 
 
 ```bash
 cat ${fnn_genes_dir}/* > all_genes_CDS.fnn
