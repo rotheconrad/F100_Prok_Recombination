@@ -83,12 +83,11 @@ This workflow is intended for a collection of genomes belonging to the same spec
 
 ### Step 01: Rename fasta deflines
 
-Rename the fasta deflines of your genome files. This is necessary to ensure all contigs (or chromosomes/plasmids) in your genome files follow the same format for downstream processing. 
+Rename the fasta deflines of your genome files. This is necessary to ensure all contigs (or chromosomes/plasmids) in your genome files follow the same naming format for downstream processing. 
 
-Because genomes downloaded from NCBI follow a typical naming convention of, "GCF_000007105.1_ASM710v1_genomic.fna," the default behavior of this script is cut the third underscore position ("\_") and use it as a prefix for renaming the fasta deflines in numeric consecutive order.
+Because genomes downloaded from NCBI follow a typical naming convention of, "GCF_000007105.1_ASM710v1_genomic.fna," the default behavior of this script is to cut the third underscore position ("\_") and use it as a prefix for renaming the fasta deflines in numeric consecutive order.
 
-So for a fasta file with three contigs or chromosomes the script cuts
-"ASM710v1" from filename and renames fasta deflines as:
+So with default settings the script will cut "ASM710v1" from filename "GCF_000007105.1_ASM710v1_genomic.fna" and renames the fasta deflines (Contigs/Scaffolds/Chromosomes) as:
 
 >\>ASM710v1_1  
 >AATGGATCAGTCCGCCGACCGCGCCTGGAACGAATGTCTCGACATCATCCGGGACAATGT...  
@@ -103,19 +102,28 @@ To use the renaming script on all files in a directory with default setting:
 for f in ${genomes_dir}/*; do python 00d/Workflow_Scripts/01a_rename_fasta.py -i $f; done
 ```
 
-Alternatively, the user can input their own desired prefix:
+Alternatively, the user can input their own desired prefix using the "-p" flag in which case the input filename is ignored. Replace "${name}" with anything you want:
 
 ```bash
 for f in ${genomes_dir}/*; do name=`echo basename $f | cut -d_ -f3`; python 00d/Workflow_Scripts/01a_rename_fasta.py -i $f -p ${name}; done
 ```
 
+So with -p my_genome the script will output:
+
+>\>my_genome_1  
+>AATGGATCAGTCCGCCGACCGCGCCTGGAACGAATGTCTCGACATCATCCGGGACAATGT...  
+>\>my_genome_2  
+>GAGCCGCCAGAGCTTCACGACCTGGTTTGAGCCGCTGGAGGCCCACTCCTTGGAGGACGA...  
+>\>my_genome_n  
+>GGACGACCTGCGCAAGCTGACGATCCAACTTCCGAGCCGGTTTTACTACGAGTGGATTGA...  
+
 ### Step 02: Inspect genome similarity
 
-(OPTIONAL) Check shared fraction vs ANI of your genomes (fastANI)
+(OPTIONAL) Check shared genome fraction vs ANI of your genomes using fastANI.
 
-It is a good idea to know how similar your genomes are to eachother. Sometimes you may split your genomes into two or more groups, or remove a few outlier genomes. This can be done manually as needed by removing the desired fasta files from ${genomes_dir} after reviewing the fastANI plot(s).
+It is a good idea to know how similar your genomes are to eachother. Sometimes you may split your genomes into two or more groups, or remove a few outlier genomes based on their ANI distributions. This can be done manually as needed by removing the desired fasta files from ${genomes_dir} after reviewing the fastANI plot(s).
 
-The end result we want is a single file with all vs. all genome pairs. There are many ways to achieve and depending if you're running fastANI locally or on a cluster there are multiple parallization options. Here is a simple example using the many to many option (consult the fastANI documentation and/or your clusters best practices for other options).
+To generate our plot, we want single file with all vs. all genome pair results from fastANI. There are many ways to achieve this depending if you're running fastANI locally or on a cluster and how many genomes you have, there are multiple parallization options. Here is a simple example using the many to many option (consult the fastANI documentation and/or your clusters best practices for other options).
 
 ```bash
 # make a list of your fasta files with the path
@@ -125,7 +133,7 @@ for f in ${genomes_dir}/*; do echo $f; done > genome_file_list.txt
 ./fastANI --ql genome_file_list.txt --rl genome_file_list.txt -o fastANI_allV.ani
 ```
 
-Plot results
+Plot results. The shared genome fraction is the number of shared fragments between two genomes divided by the total number of fragments from the larger genome. ANI is of course the genome-aggregate average nucleotide identity. Species-like genome clusters are generally >95% ANI between them but it may be interesting to investigate the differences between groupings of genomes you find at any ANI level.
 
 ```bash
 # look at script details and options
@@ -138,32 +146,38 @@ python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -i fastANI_allV.ani -s 
 
 # PART 02: Recombinant genomes analysis
 
-In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. Using F100 as a signal for recent recombination we fit a generalize additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes, or 3. your own set of genomes) showing expected F100 per ANI of a genome pair. We also identify clusters of frequently recombining genome pairs.
+In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. We use sequence similarity from reciprocal best blast matches (RBMs) of the genes between two genomes to calculate the frequency of 100% identical genes in the genome (F100). F100 is the number of RBMs with 100% sequence similarity divided by the total RBMs between two genomes. Using the F100 as a signal for recent recombination events, we fit a generalized additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes without recombination, or 3. a custom genome set provided by the user) to show the expected F100 per ANI of a genome pair. We also identify clusters of frequently recombining genome pairs by creating a hierarchical clustered heatmap from F100 scores as a distance metric matrix and use the HDBSCAN algorithm to partition this into clusters of highly recombining genomes.
 
 ### Step 01: Predict genes using Prodigal
 
-We use the predicted CDS to calculate reciprocal best matches (RBMs) from which we derive the frequency of genes with 100% RBM sequence similarity (F100) and we also use the genes for clustering in the pangenome analysis and to get functional annotation information.
+We use the predicted CDS to calculate reciprocal best matches (RBMs) from which we derive the frequency of genes with 100% RBM sequence similarity (F100) and we also use the genes for clustering in the pangenome analysis and to get functional annotation information. We need the nucleotide sequence in fasta format to calculate RBMs and F100 and also for gene clustering. We need the amino acid sequence in fasta format for functional annotation. Prodigal also writes a gbk or gff file as its main output. We won't use the gbk/gff output in this workflow, but it is sometimes useful to have on hand so we'll place them in their own directory.
+
+Prodigal has a habit of sometimes predicting very short genes and/or also very long genes which are suspicious and likely have high error rate potential, Since we are more interested in the average gene behavior for this analysis, which is about 1000bp in length, we have a filter script to remove predicted genes of outlier length (top and bottom 1% of gene lengths). Feel free to skip this step if you don't think it is necessary for your genomes. The script will write a histogram of the gene length distribution and output how many genes it removed, which genes, and their lengths. You can also bypass this default behavior and either 1) increase or decrease the percentile (default 0.5%) or 2) input the minimum and maximum values you prefer.
 
 ```bash
 # make new directory for gene CDS fastas we'll refer to this as ${genes_dir}
-mkdir ${genes_dir}
+mkdir ${genes_dir_fnn} ${genes_dir_faa} ${genes_dir_gff}
 # loop through genome fasta files and predict genes for each with prodigal
-for f in ${genomes_dir}/*; do name=`basename $f | cut -d. -f1`; prodigal -q -d ${fnn_genes_dir}/${name}.fnn -a ${faa_genes_dir}/${name}.faa -i $f; echo $f; done
+for f in ${genomes_dir}/*; do name=`basename $f | cut -d. -f1`; prodigal -q -f gff -o ${genes_dir_gff}/${name}.gff -d ${genes_dir_fnn}/${name}.fnn -a ${genes_dir_faa}/${name}.faa -i $f; echo $f; done
 # in our experience Prodigal tends to predict a lot of short genes. While some of these may be real, we think a lot of them are likely noise.
-# Filter by gene length to remove tiny genes
-for f in ${gene_dir}/*; do python 00d_Workflow_Scripts/02a_len_filter_genes.py -i $f; done
+# filter sequences. use -h for options
+python 00d_Workflow_Scripts/02a_len_filter_genes.py -h
+# Filter nucleotide sequences
+for f in ${genes_dir_fnn}/*.fnn; do python 00d_Workflow_Scripts/02a_len_filter_genes.py -i $f; done
+# Filter amino acid sequences
+for f in ${genes_dir_faa}/*.faa; do python 00d_Workflow_Scripts/02a_len_filter_genes.py -i $f; done
 ```
 
 ### Step 02: All vs all aai.rb in nucleotide mode
 
-This step calculated the RBMs so we can get the F100.
+This step calculates the RBMs so we can get the F100. We us the enveomics collections' aai.rb script in nucleotide mode for this step. aai.rb uses blast-plus to compute the one-way and two-way gene alignments and the best reciprocal best match hits for gene pair (RBMs). We filter the RBM alignments to remove spurious short high identity sequence alignments (alignments alignment length / gene length) ≥ 0.50 (e.g. an RBM gene pair need to have at least a 50% alignment across the length of the shorter gene sequence).
 
 ```bash
 # make new directory for aai.rb reciprocal best match results we'll refer to this as ${rbm_dir}
 mkdir ${rbm_dir}
 
 # generate all vs all gene file name combinations list
-f=(${genes_dir}/*)
+f=(${genes_dir_fnn}/*)
 for ((i = 0; i < ${#f[@]}; i++)); do for ((j = i + 1; j < ${#f[@]}; j++)); do echo ${f[i]} ${f[j]}; done; done > genes_filenames_allV.txt
 
 # run aai.rb in nucleotide mode
@@ -175,14 +189,14 @@ while read p;
         m=`basename $x | cut -d. -f1`;
         y=`echo $p | cut -d' ' -f2`;
         name=`basename $y | cut -d. -f1`;
-        aai.rb -1 ${x} -2 ${y} -N -R ${rbm_dir}/${m}-${name}.rbm;
+        aai.rb -1 ${x} -2 ${y} -N -R ${rbm_dir}/${m}-${name}.rbm -L 0.5;
   done < genes_filenames_allV.txt
 
 # concatenate rbm results to a single file.
 cat ${rbm_dir}/* > RBMs_allV.rbm
 
 # clean up individual rbm files
-# CAUTION - double the concatenated file is good before removing data
+# CAUTION - double check the concatenated file is good before removing data
 rm -r ${rbm_dir}/
 ```
 
