@@ -63,6 +63,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 - [scipy](https://scipy.org/)
 - [matplotlib](https://matplotlib.org/)
 - [seaborn](https://seaborn.pydata.org/)
+- [lmfit](https://lmfit.github.io/lmfit-py/)
 - [datashader](https://datashader.org/)
 - [pygam](https://pygam.readthedocs.io/)
 
@@ -76,6 +77,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 1. Virtanen P, Gommers R, Oliphant TE, Haberland M, Reddy T, Cournapeau D, et al. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature Methods. 2020;17:261–72.
 1. Hunter JD. Matplotlib: A 2D graphics environment. Computing in science & engineering. 2007;9(3):90–5.
 1. Waskom ML. Seaborn: statistical data visualization. Journal of Open Source Software. 2021 Apr 6;6(60):3021.
+1. Newville M, Stensitzki T, Allen DB, Rawlik M, Ingargiola A, Nelson A. LMFIT: Non-linear least-square minimization and curve-fitting for Python. Astrophysics Source Code Library. 2016 Jun:ascl-1606.
 1. James A. Bednar, Jim Crist, Joseph Cottam, and Peter Wang (2016). "Datashader: Revealing the Structure of Genuinely Big Data", 15th Python in Science Conference (SciPy 2016).
 1. Servén D., Brummitt C. (2018). pyGAM: Generalized Additive Models in Python. Zenodo. DOI: 10.5281/zenodo.1208723
 
@@ -356,7 +358,22 @@ python  00d_Workflow_Scripts/02d_F100_clustermap.py -i ${my_species}_F100.tsv -o
 
 STEP 02 generates output containing F100 data for all genome pairs. In this step we investigate recombinant gene positions and annotions from specific genome pairs of interest, and we investigate recombinant gene positions and annotations for 1 genome to many genomes.
 
-### Step 01: Concatenate all gene CDS
+### Step 01: Generate gene clusters with MMSeqs2
+
+For this part of the analysis, we want to identify highly conserved genes, core genes, accessory genes, and genome specific genes to make our recent recombination position analysis more informative. To do this, we will use MMSeqs2 to cluster the nucleotide sequences for the predicted CDS into gene clusters based on 90% sequence similarity and 50% sequence alignment overlap. As a bonus, we can plot the permutational pangenome curve, and a clustermap of shared genomes across the pangenome.
+
+This step requires MMSeqs2 and Python with Numpy, Pandas, LMFIT, , Matplotlib, and Seaborn packages.
+
+Input: all_genes_CDS.fnn
+
+Output:
+      1) MMSeqs2 cluster file
+      2) Cluster representative sequence fasta file
+      3) Binary matrix for gene to genome presence/absence
+      4) Pangenome model figure
+      5) Pangenome clustermap
+
+#### Concatenate all gene CDS to single file
 
 In this step we prepare to cluster and annotate our genes with MMSeqs2 and EggNog mapper (or COGclassifier) by concatenate predicted CDS from all genomes into a single file for nucleotide and a single file for amino acid sequence. 
 
@@ -365,67 +382,37 @@ cat ${fnn_genes_dir}/* > all_genes_CDS.fnn
 cat ${faa_genes_dir}/* > all_genes_CDS.faa
 ```
 
-### Step 02: create some directories that we'll need
+#### Create a directory that we'll use for MMSeq2 intermediates
 
 *replace ${mmseqs_dir} with your own directory name*
-
-This step requires
-
-Input:
-
-Output:
 
 ```bash
 mkdir ${mmseqs_dir}
 ```
 
-### Step 03: Create an mmseqs database using all_genes_CDS.fnn
+#### Create an mmseqs database using all_genes_CDS.fnn
 
 *replace ${my_db} with your own database name - just pick a name, whatever you want to call it*
-
-This step requires
-
-Input:
-
-Output:
 
 ```bash
 mmseqs createdb all_genes_CDS.fnn ${mmseqs_dir}/${my_db}
 ```
 
-### Step 04: Cluster at 90% nucleotide ID
-
-This step requires
-
-Input:
-
-Output:
+#### Cluster at 90% nucleotide ID
 
 ```bash
 mmseqs cluster ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered tempfiles --min-seq-id 0.90 --cov-mode 1 -c 0.5 --cluster-mode 2 --cluster-reassign
 ```
 
-### Step 05: Add sequence identity and alignment information to clustering result
+#### Add sequence identity and alignment information to clustering result
 
 *Super high -e prevents sequences getting dropped from clusters. If you notice you are missing sequencing downstream try increasing -e even higher. See [MMseqs2 GitHub Issue](https://github.com/soedinglab/MMseqs2/issues/598)*
-
-This step requires
-
-Input:
-
-Output:
 
 ```bash
 mmseqs align ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered ${mmseqs_dir}/DBaligned -e 1.0E60
 ```
 
-### Step 06: Write mmseqs database to TSV format
-
-This step requires
-
-Input:
-
-Output:
+#### Write mmseqs database to TSV format
 
 ```bash
 mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBaligned all_genes_CDS_aligned.tsv
@@ -434,54 +421,24 @@ mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBa
 rm -r tempfiles
 ```
 
-### Step 07: Write out cluster representative fasta file
-
-This step requires
-
-Input:
-
-Output:
+#### Write out cluster representative fasta file
 
 ```bash
 mmseqs createsubdb ${mmseqs_dir}/DBaligned ${mmseqs_dir}/${my_db} ${mmseqs_dir}/my_rep_seqs
 mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fna
 ```
 
-### Step 08: Annotate representative sequences
-
-This step requires
-
-Input:
-
-Output:
-
-```bash
-# First we have to grab the amino acid sequence for the representative sequences
-```
-
-### Step 09: Create a binary matrix of genomes and gene clusters
+#### Create a binary matrix of genomes and gene clusters
 
 Each genome is a column. Each gene cluster is row. 1 if the genome has a gene in the cluster else 0. This is used to identify core genes or accessory genes. Conserved genes are the core gene clusters with the least average sequence difference. You can proceed to STEP 05 after you have the binary matrix file. 
-
-This step requires
-
-Input:
-
-Output:
 
 ```bash
 python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_aligned.tsv -o pangenome_matrix.tsv
 ```
 
-*side quest: create two optional plots just for fun because you can once you have the binary matrix file.*
+*side quest: create two plots just for fun because we can once we have the binary matrix file. The code for these side quest figures was developed for a [previous publication](https://doi.org/10.1038/s41396-021-01149-9)*
 
-### Step 10 (OPTIONAL): create pangenome model
-
-This step requires
-
-Input:
-
-Output:
+#### (OPTIONAL): create pangenome model
 
 ```bash
 # for script info/options
@@ -493,13 +450,7 @@ python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -b pangenome_m
 
 ![Pangenome curve model of your genomes](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_model_pangenome_curves.png)
 
-### Step 11 (OPTIONAL): create clustermap
-
-This step requires
-
-Input:
-
-Output:
+#### (OPTIONAL): create clustermap
 
 ```bash
 # for script info/options
@@ -511,15 +462,23 @@ python 00d_Workflow_Scripts/03c_Clustermap_fromBinary.py -b pangenome_matrix.tsv
 
 ![Gene clusters vs genomes from your data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_clustermap.png)
 
-# PART 04: Investigate specific genome pairs recombinant positions
+### Step 02: Annotate representative genes with EggNog Mapper or COGclassifier
+
+This step requires
+
+Input:
+
+Output:
+
+### Step 03: Investigate recombinant positions between specific genome pairs 
 
 In this section, we tie all previous steps together and look at the types and distribution of recent plausible recombination events between specific genome pairs.
 
-### Step 01: Assign pangenome class to genes
+This step requires
+
+#### Assign pangenome class to genes
 
 Create list of genes with pangenome category (conserved, core, accessory). This step writes a tsv file needed for next step plust a Histogram PDF of average gene distance within core gene clsuters. The bottom 5% are designated as conserved genes.
-
-This step requires
 
 Input:
 
@@ -532,17 +491,15 @@ python 00d_Workflow_Scripts/04a_Get_Genes_Clusters_PanCat.py -b pangenome_matrix
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
 
 
-### OPTIONAL STEP: Reorder contigs of draft genomes and MAGs
+#### (OPTIONAL) Reorder contigs of draft genomes and MAGs
 
 Contigs in draft genome and MAG assemblies are not typically aligned to any particular order. It can be helpful for the figure created in Step 02 to align the genome pair to each other or to a common reference genome. One way to do that is with [Mauve](https://darlinglab.org/mauve/mauve.html). See "Reordering contigs" section of the User Guide here: [https://darlinglab.org/mauve/user-guide/reordering.html](https://darlinglab.org/mauve/user-guide/reordering.html).
 
-### Step 02: Run analysis for each genome pair of interest
+#### Run analysis for each genome pair of interest
 
 Repeat this step as many times as you have genome pairs you're interested in.
 
 cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here).
-
-This step requires
 
 Input:
 
@@ -574,22 +531,10 @@ The Q-Q plot shows how the quantiles from your emperical data align with quantil
 Example of what a Q-Q plot of a good fit looks like:
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
 
-### Step 03: Hypothesis test gene annotation bins
+#### Hypothesis test gene annotation bins - I think I will add this feature into the 04b code and the 04c code below.
 
 After the mmseq clustering step we end up with a fasta file containing representative genes for each gene cluster. Here we will annotate this file using either EggNog Mapper or COGclassifier, summarize the gene annotations by gene pair and by recombinant pangenome category, and then perform a parametric and non-parametric hypothesis test for recombinant genes against non-recombinant genes.
 
-This step requires
+### Step 04: Investigate recombinant positions for one to many genomes
 
-Input:
-
-Output:
-
-(make sure we output the rep gene fasta from mmseq step)
-
-- add EggNog Mapper to depency list (optional)
-- add COGclassifier to depency list (optional)
-
-- breif commands for option 1 or option 2
-
-- write code to parse inputs
 
