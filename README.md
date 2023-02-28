@@ -14,14 +14,15 @@ This workflow will yeild many intermediate files and several publication ready f
 
 1. DataTable: All vs All genome pair fastANI results (PART 01, Step 02)
 1. Figure: Shared fraction vs ANI scatter plot (PART 01, Step 02)
+1. Figure: ANI distance hierarchical clustered heatmap (PART 01, Step 02)
 1. Fasta: CDC gene predictions from Prodigal (PART 02, Step 01)
 1. Figures: Histogram of gene length distributions (PART 02, Step 01)
 1. DataTable: RBM sequence similarities for each genome pair (PART 02, Step 02)
 1. DataTable: F100 score for each genome pair (PART 02, Step 03)
 1. Figure: Histogram of RBM sequence similarity for each genome pair (PART 02, Step 03)
 1. Figure: F100 vs ANI with various GAM models (PART 02, Step 04)
-1. DataTable: p-value of F100 at ANI for each genome pair (PART 02, Step 04)
-1. DataTable: F100 vs ANI data by genome pair (PART 02, Step 04)
+1. DataTable: F100 vs ANI data, confidence interval and p value for each genome pair (PART 02, Step 04)
+1. Figure: F100 distance hierarchical clustered heatmap (PART 02, Step 05)
 1. DataTable: Gene clusters from MMSeqs2 clustered and aligned (PART 03, Step 06)
 1. DataTable: Presence/Absence binary matrix of genomes and gene cluster. (PART 03, Step 07)
 1. Figure: Pangenome model figures (PART 03, Step 08-09)
@@ -86,7 +87,7 @@ Rename the fasta deflines of your genome files. This is necessary to ensure all 
 
 Because genomes downloaded from NCBI follow a typical naming convention of, "GCF_000007105.1_ASM710v1_genomic.fna," the default behavior of this script is to cut the third underscore position ("\_") and use it as a prefix for renaming the fasta deflines in numeric consecutive order.
 
-So with default settings the script will cut "ASM710v1" from filename "GCF_000007105.1_ASM710v1_genomic.fna" and renames the fasta deflines (Contigs/Scaffolds/Chromosomes) as:
+So with default settings the script will cut "ASM710v1" from filename "GCF_000007105.1_ASM710v1_genomic.fna" and rename the fasta deflines (Contigs/Scaffolds/Chromosomes) as:
 
 >\>ASM710v1_1  
 >AATGGATCAGTCCGCCGACCGCGCCTGGAACGAATGTCTCGACATCATCCGGGACAATGT...  
@@ -94,6 +95,11 @@ So with default settings the script will cut "ASM710v1" from filename "GCF_00000
 >GAGCCGCCAGAGCTTCACGACCTGGTTTGAGCCGCTGGAGGCCCACTCCTTGGAGGACGA...  
 >\>ASM710v1_n  
 >GGACGACCTGCGCAAGCTGACGATCCAACTTCCGAGCCGGTTTTACTACGAGTGGATTGA...  
+
+This step requires Python.
+
+Input: genome fasta files in ${my_genomes} directory
+Output: overwrites genome fasta files with new names 
 
 To use the renaming script on all files in a directory with default setting:
 
@@ -120,9 +126,14 @@ So with -p my_genome the script will output:
 
 (OPTIONAL) Check shared genome fraction vs ANI of your genomes using fastANI.
 
-It is a good idea to know how similar your genomes are to eachother. Sometimes you may split your genomes into two or more groups, or remove a few outlier genomes based on their ANI distributions. This can be done manually as needed by removing the desired fasta files from ${genomes_dir} after reviewing the fastANI plot(s).
+It is a good idea to know how similar your genomes are to each other. Sometimes you may split your genomes into two or more groups, or remove a few outlier genomes based on their ANI distribution. This can be done manually as needed by removing the desired fasta files from ${genomes_dir} or partition files into separate directories after reviewing the fastANI plot(s).
 
-To generate our plot, we want single file with all vs. all genome pair results from fastANI. There are many ways to achieve this depending if you're running fastANI locally or on a cluster and how many genomes you have, there are multiple parallization options. Here is a simple example using the many to many option (consult the fastANI documentation and/or your clusters best practices for other options).
+To generate the fastANI plots, we want a single file with all vs. all genome pair results from fastANI. There are many ways to achieve this depending on how many genomes you have and if you're running fastANI locally or on a cluster. Here is a simple example using the many to many option (consult the fastANI documentation and/or your clusters best practices for other options - I frequently use the one to many mode and distribute the work across multiple instances and node. At the end I simply concatenate the outputs for the same results as the many to many mode).
+
+This step requires fastANI.
+
+Input: genome fasta files in ${my_genomes} directory
+Output: all vs. all fastANI tsv outfile file saved as fastANI_allV.ani
 
 ```bash
 # make a list of your fasta files with the path
@@ -132,16 +143,27 @@ for f in ${genomes_dir}/*; do echo $f; done > genome_file_list.txt
 ./fastANI --ql genome_file_list.txt --rl genome_file_list.txt -o fastANI_allV.ani
 ```
 
-Plot results. The shared genome fraction is the number of shared fragments between two genomes divided by the total number of fragments from the larger genome. ANI is of course the genome-aggregate average nucleotide identity. Species-like genome clusters are generally >95% ANI between them but it may be interesting to investigate the differences between groupings of genomes you find at any ANI level.
+Once you have the all vs. all fastANI output, here is a script to easily create a scatter plot of the results. The shared genome fraction is the number of shared fragments between two genomes divided by the total number of fragments from the larger genome as determined by fastANI. ANI is the genome-aggregate average nucleotide identity as determined by fastANI. Species-like genome clusters are generally ≥95% ANI between them but it may be interesting to investigate the differences between groupings of genomes you find at any ANI level.
 
 ```bash
 # look at script details and options
 python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -h
-# basic plot
+# run with default settings
 python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -i fastANI_allV.ani -s test_species -o fastANI_allV_sharedfrac_ANI.pdf -m True
 ```
 
 ![Shared fraction vs. ANI](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_sharedfrac_ANI.png)
+
+And here is another script to easily create a hierarchical clustered heatmap of the results. A square ANI distance (100 - ANI) matrix is generated from the all vs. all fastANI output. The result shows which genomes are the most similar to each other. (future addition: clustering algorithm to automatically partition the distance matrix into clusters)
+
+```bash
+# look at script details and options
+python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -h
+# run with default settings
+python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -i fastANI_allV.ani -o fastANI_allV.pdf
+```
+
+![ANI Distance Clustered Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_heatmap.png)
 
 # PART 02: Recombinant genomes analysis
 
@@ -156,7 +178,7 @@ Prodigal has a habit of sometimes predicting very short genes and/or also very l
 This step requires Prodigal and Python with Numpy and Matplotlib packages.
 
 Input: Genomes fasta files
-Output: CDS fasta files of nucleotide and amino acid sequence
+Output: CDS fasta files of nucleotide and amino acid sequence. Histogram gene length distribution PDFs.
 
 ```bash
 # make new directory for gene CDS fastas we'll refer to this as ${genes_dir}
@@ -171,6 +193,8 @@ for f in ${genes_dir_fnn}/*.fnn; do python 00d_Workflow_Scripts/02a_len_filter_g
 # Filter amino acid sequences
 for f in ${genes_dir_faa}/*.faa; do python 00d_Workflow_Scripts/02a_len_filter_genes.py -i $f -aa True; done
 ```
+
+![Gene Length Distribution](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/geneLenDist.png)
 
 ### Step 02: All vs all aai.rb in nucleotide mode
 
@@ -304,7 +328,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv 
 
 ### Step 05: Clusters of the most frequently recombining genomes
 
-This step reads in the ${my_species}\_F100.tsv file from Step 02 and generates an a square F100 distance matrix (1 - F100) then creates a hierarchical clustered heatmap figure saved as a PDF.
+This step reads in the ${my_species}\_F100.tsv file from Step 02 and generates a square F100 distance (1 - F100) matrix then creates a hierarchical clustered heatmap figure saved as a PDF. (future addition: clustering algorithm to automatically partition the distance matrix into clusters)
 
 This step requires Python with Pandas, Matplotlib, and Seaborn packages.
 
@@ -314,6 +338,8 @@ Output: Clustered heatmap PDF
 ```bash
 python  00d_Workflow_Scripts/02d_F100_clustermap.py -i ${my_species}_F100.tsv -o ${my_species}_F100.pdf
 ```
+
+![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
 
 # PART 03: Recombinant Genes Analysis
 
