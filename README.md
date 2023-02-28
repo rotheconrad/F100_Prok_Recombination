@@ -252,7 +252,7 @@ This step calculates the F100 for each genome pair using the outputs from aai.rb
 
 *replace ${my_species} with the output prefix of your choice. This will create an important file ${my_species}_F100.tsv needed for the next steps.*
 
-This step requires Python with Matplotlib, and Seaborn packages.
+This step requires Python with Matplotlib and Seaborn packages.
 
 Input: RBMs_alV.rbm
 
@@ -295,7 +295,7 @@ This step requires Python with Numpy, Pandas, Matplotlib, Seaborn, Datashader, a
 
 Input: ${my_species}\_F100.tsv from Step 02 and one of the three model tsv files from the options below.
 
-Output: 2 files: ${my_species}\_complete_model_sig-pairs.tsv and ${my_species}\_complete_model_GAMplot.pdf
+Output: 2 files: \${my_species}\_complete_model_sig-pairs.tsv and \${my_species}\_complete_model_GAMplot.pdf
 
 #### Option 01: Complete genomes model
 
