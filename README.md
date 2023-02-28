@@ -101,6 +101,7 @@ So with default settings the script will cut "ASM710v1" from filename "GCF_00000
 This step requires Python.
 
 Input: genome fasta files in ${my_genomes} directory
+
 Output: overwrites genome fasta files with new names 
 
 To use the renaming script on all files in a directory with default setting:
@@ -135,6 +136,7 @@ To generate the fastANI plots, we want a single file with all vs. all genome pai
 This step requires fastANI.
 
 Input: genome fasta files in ${my_genomes} directory
+
 Output: all vs. all fastANI tsv outfile file saved as fastANI_allV.ani
 
 ```bash
@@ -180,6 +182,7 @@ Prodigal has a habit of sometimes predicting very short genes and/or also very l
 This step requires Prodigal and Python with Numpy and Matplotlib packages.
 
 Input: Genomes fasta files
+
 Output: CDS fasta files of nucleotide and amino acid sequence. Histogram gene length distribution PDFs.
 
 ```bash
@@ -205,6 +208,7 @@ This step calculates the RBMs for each genome pair that we need to compute the F
 This step requires the aai.rb script from the enveomics collection, Ruby, and Blast-plus.
 
 Input: CDS fasta files of nucleotide and amino acid sequence
+
 Output: Tabular blast table with filtered RBMs (RBMs_alV.rbm)
 
 ```bash
@@ -251,6 +255,7 @@ This step calculates the F100 for each genome pair using the outputs from aai.rb
 This step requires Python with Matplotlib, and Seaborn packages.
 
 Input: RBMs_alV.rbm
+
 Output: ${my_species}\_F100.tsv
 
 ```bash
@@ -289,6 +294,7 @@ This step will create a PDF of your genomes on top of the models and write out a
 This step requires Python with Numpy, Pandas, Matplotlib, Seaborn, Datashader, and PyGAM packages.
 
 Input: ${my_species}\_F100.tsv from Step 02 and one of the three model tsv files from the options below.
+
 Output: 2 files: ${my_species}\_complete_model_sig-pairs.tsv and ${my_species}\_complete_model_GAMplot.pdf
 
 #### Option 01: Complete genomes model
@@ -335,6 +341,7 @@ This step reads in the ${my_species}\_F100.tsv file from Step 02 and generates a
 This step requires Python with Pandas, Matplotlib, and Seaborn packages.
 
 Input: ${my_species}\_F100.tsv from Step 02.
+
 Output: Clustered heatmap PDF 
 
 ```bash
@@ -363,6 +370,7 @@ cat ${faa_genes_dir}/* > all_genes_CDS.faa
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -376,6 +384,7 @@ mkdir ${mmseqs_dir}
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -387,6 +396,7 @@ mmseqs createdb all_genes_CDS.fnn ${mmseqs_dir}/${my_db}
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -400,6 +410,7 @@ mmseqs cluster ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered tempfiles --min-
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -411,6 +422,7 @@ mmseqs align ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclust
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -425,6 +437,7 @@ rm -r tempfiles
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -437,6 +450,7 @@ mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fna
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -450,6 +464,7 @@ Each genome is a column. Each gene cluster is row. 1 if the genome has a gene in
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -463,6 +478,7 @@ python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_al
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -480,6 +496,7 @@ python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -b pangenome_m
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -503,6 +520,7 @@ Create list of genes with pangenome category (conserved, core, accessory). This 
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -525,6 +543,7 @@ cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal
 This step requires
 
 Input:
+
 Output:
 
 ```bash
@@ -560,6 +579,7 @@ After the mmseq clustering step we end up with a fasta file containing represent
 This step requires
 
 Input:
+
 Output:
 
 (make sure we output the rep gene fasta from mmseq step)
