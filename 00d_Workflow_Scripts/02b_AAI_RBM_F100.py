@@ -22,7 +22,6 @@ from collections import defaultdict
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-#import numpy as np, pandas as pd; np.random.seed(0)
 import seaborn as sns; sns.set(style="white", color_codes=True)
 
 """
@@ -191,13 +190,6 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-s', '--species_name',
-        help='Species name for plot title. ex: Escherichia_coli',
-        metavar='',
-        type=str,
-        required=True
-        )
-    parser.add_argument(
         '-o', '--output_file_prefix',
         help='Please specify the output file prefix?',
         metavar='',
@@ -220,7 +212,6 @@ def main():
     # define parameters
     infile = args['input_file']
     outpre = args['output_file_prefix']
-    species = args['species_name']
     plots = args['plot_histograms']
 
     # run it
@@ -229,10 +220,9 @@ def main():
     # build the plots
     if plots:
         for gpair, xs in data.items():
-            title = f'{species}: {gpair}'
             outfile = f'{outpre}_{gpair}.pdf'
             stat = stats[gpair]
-            _ = fastANI_visual_dist_plot(xs, title, outfile, stat)
+            _ = fastANI_visual_dist_plot(xs, gpair, outfile, stat)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
 

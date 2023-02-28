@@ -6,24 +6,24 @@
 
 Intended for gene prediction fasta files such as Prodigal output.
 
-Looks at predicted CDS length distribution from input file and removes
-the top and bottom 0.5% of gene lengths. Use -qnt to change the default of
-0.01. Since the length filter is determined from the data, this setting
-works with nucleotide or amino acid sequences.
+This script filters a fasta file by minimum and maximum gene length in 
+base pairs for nucleotide sequences with a min of 100bp and a max of
+8000bp by default. You can use the -min and -max parameter flags to
+change these defaults.
 
-Writes out histogram of the gene length distribution. Notes the x-axis
-units will be in amino acid residue length for amino acid sequence fasta
-files rather than the default label of base pairs (bp).
+(OPTIONAL) set -aa True for amino acid input which will divide the min
+and max by 3 before filtering.
 
-(OPTIONAL) set -ul True to remove predicted CDS sequences based on
-a minimum and maximum sequence length in base pairs. default min of 100
-base pairs and max of 40,000 base pairs. Use -min and -max to change
-the default lengths. If the input is amino acid sequence, divide the min
-and max bp filters by 3.
+(CAUTION) This script filters inplace e.g. it replaces the input file.
 
-Caution:
-This script effectively filters the file inplace.
-eg. Writes temporary file then replaces the original.
+This script writes gene name, gene length, and filter summary for the
+genes that are removed by the filter. This script also writes out a
+histogram of the gene length distribution and labels the top and bottom
+0.5% quantile lengths. This plot can used to inform custom length
+selection. Use -qnt to change the 0.005 default.
+
+(OPTIONAL) set -uq True to use the quantile lengths for the min and max
+gene lengths of the filter.
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -66,7 +66,7 @@ def parse_gene_fasta(infile):
     return data
 
 
-def plot_dist(data, out, min_qnt, max_qnt):
+def plot_dist(data, out, min_qnt, max_qnt, aa):
 
     plot_out = out.split('.')[0] + '_geneLenDist.pdf'
     input_array = list(data.values())
@@ -78,7 +78,8 @@ def plot_dist(data, out, min_qnt, max_qnt):
     ax.hist(input_array, bins=75, edgecolor='k', color='#08519c', alpha=0.6,)
     ax.axvline(qmn, color='#ae017e', linestyle='dashed', linewidth=1)
     ax.axvline(qmx, color='#ae017e', linestyle='dashed', linewidth=1)
-    ax.set_xlabel('Gene Length (bp)', fontsize=14)
+    xlab = 'Gene length (bp)' if aa == False else 'Gene length (aa)'
+    ax.set_xlabel(xlab, fontsize=14)
     ax.set_ylabel('Count', fontsize=14)
     mline = f'Min: {qmn:.2f}\nMax: {qmx:.2f}'
     ax.text(0.99, 0.99, mline, transform=ax.transAxes, ha='right', va='top')
@@ -120,10 +121,10 @@ def Fasta_filter_sequences(data, infile, min_len, max_len):
         for line, glen in data.items():
             c += 1
             gname = line.split('\n')[0].split(' ')[0][1:]
-            if glen < min_len:
+            if glen <= min_len:
                 print(f'{gname} to short: {glen}')
                 small += 1
-            elif glen > max_len:
+            elif glen >= max_len:
                 print(f'{gname} to long: {glen}')
                 large += 1
             else:
@@ -158,6 +159,14 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-aa', '--amino_acid_input',
+        help='(OPTIONAL) For amino acid input, divide legnth filter by 3 (default: False)',
+        metavar='',
+        type=str,
+        required=False,
+        default=False
+        )
+    parser.add_argument(
         '-qnt', '--quantile_gene_length',
         help='(OPTIONAL) Specify filter quantile (default: 0.005)',
         metavar='',
@@ -166,8 +175,8 @@ def main():
         default=0.005
         )
     parser.add_argument(
-        '-ul', '--use_min_max',
-        help='(OPTIONAL) use min and max gene length (default: False)',
+        '-uq', '--use_qnt_min_max',
+        help='(OPTIONAL) use quantiles for min and max gene length (default: False)',
         metavar='',
         type=str,
         required=False,
@@ -183,19 +192,20 @@ def main():
         )
     parser.add_argument(
         '-max', '--max_gene_length',
-        help='(OPTIONAL) Specify minimum gene length (default: 40000)',
+        help='(OPTIONAL) Specify minimum gene length (default: 8000)',
         metavar='',
         type=int,
         required=False,
-        default=40000
+        default=8000
         )
     args=vars(parser.parse_args())
 
     # define input params
     infile = args['input_file']
+    aa = args['amino_acid_input']
     min_qnt = args['quantile_gene_length']
     max_qnt = 1 - min_qnt
-    ul = args['use_min_max']
+    uq = args['use_qnt_min_max']
     min_len = args['min_gene_length']
     max_len = args['max_gene_length']
 
@@ -204,14 +214,17 @@ def main():
 
     # plot the gene length distribution
     # calculates and returns quantile lengths
-    lmin, lmax = plot_dist(data, infile, min_qnt, max_qnt)
+    lmin, lmax = plot_dist(data, infile, min_qnt, max_qnt, aa)
 
-    # if ul is true use min and max length for the filter instead of quantiles
-    if ul:
-        lmin, lmax = min_len, max_len
+    # if uq is true use min and max quantile length for the filter
+    if uq:
+        min_len, max_len = lmin, lmax
+    # if aa is true divide min max length by 3.
+    if aa:
+        min_len, max_len = int(min_len / 3), int(max_len / 3)
 
     # filter the sequences and write the output file.
-    _ = Fasta_filter_sequences(data, infile, lmin, lmax)
+    _ = Fasta_filter_sequences(data, infile, min_len, max_len)
 
     print(f'\nFasta file filtered successfully!\n\n')
     

@@ -366,9 +366,9 @@ def build_some_plots(df, genomes, pancats, outpre, cpos):
     # Build the legend
     legend_labels = [
                     'Highly Conserved (HC)',
-                    'Recombinant Core (RC)',
-                    'Recombinant Accessory (RA)',
-                    'Non-Recombinant (NR)',
+                    'Recombant Core (RC)',
+                    'Recombant Accessory (RA)',
+                    'Non Recombinant (NR)',
                     'Genome Specific (GS)',
                     ]
 
@@ -546,7 +546,14 @@ def main():
         )
     parser.add_argument(
         '-PC', '--pangenome_categories',
-        help='Please specify the tsv from 04d_Get_Genes_Clusters_PanCat.py',
+        help='Please specify the tsv from 04d_Get_Genes_Clusters_PanCat.py!',
+        metavar='',
+        type=str,
+        required=True
+        )
+    parser.add_argument(
+        '-a', '--annotation_file',
+        help='Please specify the representative gene annotation file!',
         metavar='',
         type=str,
         required=True
@@ -580,14 +587,6 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-m', '--minimum_contig_length',
-        help='OPTIONAL: specify minimum contig length (default 2000)',
-        metavar='',
-        type=int,
-        required=False,
-        default=2000
-        )
-    parser.add_argument(
         '-o', '--output_file_prefix',
         help='Please specify a prefix for the output file names!',
         metavar='',
@@ -606,7 +605,6 @@ def main():
     gA = args['input_genome_A']
     gB = args['input_genome_B']
     PC = args['pangenome_categories']
-    m = args['minimum_contig_length']
     outpre = args['output_file_prefix']
 
     # setup a switch
@@ -633,6 +631,11 @@ def main():
     _ = build_some_plots(df, genomes, pancats, outpre, cpos)
     ## SECTION 03 RUNS FROM INSIDE build_some_plots
 
+
+    ## SECTION 03: Annotations
+    # match genes to their annotations
+    # partition into recombinant genes vs non-recombinant
+    # test distributions and functional category differences
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
     
