@@ -436,7 +436,7 @@ Each genome is a column. Each gene cluster is row. 1 if the genome has a gene in
 python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_aligned.tsv -o pangenome_matrix.tsv
 ```
 
-*side quest: create two plots just for fun because we can once we have the binary matrix file. The code for these side quest figures was developed for a [previous publication](https://doi.org/10.1038/s41396-021-01149-9)*
+*side quest: create two plots just for fun because we can once we have the binary matrix file. The code for these side quest figures was developed for a [previous publication](https://doi.org/10.1038/s41396-021-01149-9).*
 
 #### (OPTIONAL): create pangenome model
 
@@ -451,6 +451,8 @@ python 00d_Workflow_Scripts/03b_Pangenome_Calculate_Model_Plot.py -b pangenome_m
 ![Pangenome curve model of your genomes](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_model_pangenome_curves.png)
 
 #### (OPTIONAL): create clustermap
+
+Genomes are the  columns and genes are the rows. A 1 (dark gray) indicates the gene cluster is present and a 0 (light gray) indicates a gene is absent in a genome.
 
 ```bash
 # for script info/options
