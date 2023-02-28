@@ -375,11 +375,10 @@ Output:
 
 #### Concatenate all gene CDS to single file
 
-In this step we prepare to cluster and annotate our genes with MMSeqs2 and EggNog mapper (or COGclassifier) by concatenate predicted CDS from all genomes into a single file for nucleotide and a single file for amino acid sequence. 
+In this step we prepare to cluster our representative genes with MMSeqs2 by concatenating the nucleotide sequences of the predicted CDS from all genomes into a single fasta file.
 
 ```bash
-cat ${fnn_genes_dir}/* > all_genes_CDS.fnn
-cat ${faa_genes_dir}/* > all_genes_CDS.faa
+cat ${genes_dir_fnn}/*.fnn > all_genes_CDS.fnn
 ```
 
 #### Create a directory that we'll use for MMSeq2 intermediates
@@ -416,9 +415,6 @@ mmseqs align ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclust
 
 ```bash
 mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBaligned all_genes_CDS_aligned.tsv
-
-# You can remove the tempfiles directory at this point
-rm -r tempfiles
 ```
 
 #### Write out cluster representative fasta file
@@ -426,6 +422,13 @@ rm -r tempfiles
 ```bash
 mmseqs createsubdb ${mmseqs_dir}/DBaligned ${mmseqs_dir}/${my_db} ${mmseqs_dir}/my_rep_seqs
 mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fna
+```
+
+#### Cleanup tempory files
+
+```bash
+# You can remove the tempfiles directory at this point
+rm -r tempfiles
 ```
 
 #### Create a binary matrix of genomes and gene clusters
@@ -466,11 +469,37 @@ python 00d_Workflow_Scripts/03c_Clustermap_fromBinary.py -b pangenome_matrix.tsv
 
 ### Step 02: Annotate representative genes with EggNog Mapper or COGclassifier
 
-This step requires
+In this step we prepare to annotate our representative genes with EggNog mapper (or COGclassifier) by concatenating the amino acid sequences of the predicted CDS from all genomes into a single fasta file. 
+
+This step requires EggNog mapper or COGclassifier
 
 Input:
 
 Output:
+
+#### Concatenate
+
+```bash
+cat ${genes_dir_faa}/*.faa > all_genes_CDS.faa
+```
+
+#### Retrieve amino acid sequence for representative genes
+
+```bash
+
+```
+
+#### Annotate genes with EggNog Mapper
+
+```bash
+
+```
+
+#### Annotate genes with COGclassifier
+
+```bash
+
+```
 
 ### Step 03: Investigate recombinant positions between specific genome pairs 
 
