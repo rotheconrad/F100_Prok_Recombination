@@ -421,7 +421,7 @@ mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBa
 
 ```bash
 mmseqs createsubdb ${mmseqs_dir}/DBaligned ${mmseqs_dir}/${my_db} ${mmseqs_dir}/my_rep_seqs
-mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fna
+mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fnn
 ```
 
 #### Cleanup tempory files
@@ -473,11 +473,11 @@ In this step we prepare to annotate our representative genes with EggNog mapper 
 
 This step requires EggNog mapper or COGclassifier
 
-Input:
+Input: Representative gene fasta from mmseqs (my_rep_seqs.fnn)
 
-Output:
+Output: tsv file of gene annotations from EggNog or COGclassifier
 
-#### Concatenate
+#### Concatenate all amino acid sequence predicted CDS
 
 ```bash
 cat ${genes_dir_faa}/*.faa > all_genes_CDS.faa
@@ -486,19 +486,32 @@ cat ${genes_dir_faa}/*.faa > all_genes_CDS.faa
 #### Retrieve amino acid sequence for representative genes
 
 ```bash
-
+python 00d_Workflow_Scripts/03d_get_AA_reps_fasta.py -i my_rep_seqs.fnn -a all_genes_CDS.faa -o my_rep_seqs.faa
 ```
 
 #### Annotate genes with EggNog Mapper
 
-```bash
+For EggNog we followed the installation instructions on their [GitHub](https://github.com/eggnogdb/eggnog-mapper) page to create a bacteria database for diamond. However, since the EggNog mapper output format is the same regardless of the database you use, you can create and use whatever database you'd like. Annotation can take several hours.
 
+```bash
+# create directory for EggNog Mapper
+mkdir EggNog
+# specify paths to EggNog databases on your system
+db1="/path/to/eggnog-mapper/data"
+db2="${db1}/bacteria.dmnd"
+# run emapper
+emapper.py --data_dir $db1 --dmnd_db $db2 -i my_rep_seqs.faa -o $outpre --output_dir EggNog/${my_annotations}
 ```
 
 #### Annotate genes with COGclassifier
 
-```bash
+For COGclassifier we follow the installation instructions on their [GitHub](https://github.com/moshi4/COGclassifier/) page. Annotation can take several hours.
 
+```bash
+# create output directory
+mkdir COGclass
+# run COGclassifier
+COGclassifier -i my_rep_seqs.faa -o COGclass
 ```
 
 ### Step 03: Investigate recombinant positions between specific genome pairs 
@@ -516,7 +529,7 @@ Input:
 Output:
 
 ```bash
-python 00d_Workflow_Scripts/04a_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -c all_genes_CDS_aligned.tsv -o pancat_file.tsv
+python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -c all_genes_CDS_aligned.tsv -o pancat_file.tsv
 ```
 
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
@@ -530,23 +543,22 @@ Contigs in draft genome and MAG assemblies are not typically aligned to any part
 
 Repeat this step as many times as you have genome pairs you're interested in.
 
-cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here).
+This script writes a tsv file for each genome with columns: Genome, Gene, F100, PanCat, Start, Stop, Strand, Width.
+The gene name should contain the genome identifier_contigNumberFromAssembly_geneNumberOnContig. The F100 column is assigned a 0 or 1. 1 indicates the gene sequence has 100% identity with its corresponding RBM in the other genome and thus a candidate for recent homoloug recombination. A 0 indicates the gene does not have 100% sequence identity with its RBM. The PanCat column indicates the pangenome class assigned to the gene. Start and stop positions are relative to the genome with all contigs concatenated in fasta file order. Strand indicates the strand sense (1) or antisense (-1) the gene is predicted on. Width indicates the gene length or distance between the start and stop positions.
 
-Input:
+Input: 1) RBMs_allV.rbm 2) pancat_file.tsv 4) annotation file 3) genome pair fastas cA, cB, gA, gB
 
-Output:
+cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here). For input 4) annotation file, use -ano EggNog/my_annotations.emapper.annotations for EggNog Mapper results or -ano COGclassifier/classifier_result.tsv for COGclassifier results. You only need one or the other annotation file, not both.
+
+Output: 1) tsv file 2) recombinant gene position plot 3) recombinant distribution plot 4) recombinant annotations plot
 
 ```bash
 # for script info/option
 python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -h
 
 # with default settings
-python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
+python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
-
-This script writes a tsv file for each genome with columns: Genome, Gene, F100, PanCat, Start, Stop, Strand, Width.
-The gene name should contain the genome identifier_contigNumberFromAssembly_geneNumberOnContig. The F100 column is assigned a 0 or 1. 1 indicates the gene sequence has 100% identity with its corresponding RBM in the other genome and thus a candidate for recent homoloug recombination. A 0 indicates the gene does not have 100% sequence identity with its RBM. The PanCat column indicates the pangenome class assigned to the gene. Start and stop positions are relative to the genome with all contigs concatenated in fasta file order. Strand indicates the strand sense (1) or antisense (-1) the gene is predicted on. Width indicates the gene length or distance between the start and stop positions.
-
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
 ![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_genomes.png)
