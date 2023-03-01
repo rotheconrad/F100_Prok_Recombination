@@ -554,10 +554,10 @@ Output: 1) tsv file 2) recombinant gene position plot 3) recombinant distributio
 
 ```bash
 # for script info/option
-python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -h
+python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -h
 
 # with default settings
-python 00d_Workflow_Scripts/04b_F100_distance_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
+python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
@@ -574,10 +574,10 @@ The Q-Q plot shows how the quantiles from your emperical data align with quantil
 Example of what a Q-Q plot of a good fit looks like:
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
 
-#### Hypothesis test gene annotation bins - I think I will add this feature into the 04b code and the 04c code below.
-
-After the mmseq clustering step we end up with a fasta file containing representative genes for each gene cluster. Here we will annotate this file using either EggNog Mapper or COGclassifier, summarize the gene annotations by gene pair and by recombinant pangenome category, and then perform a parametric and non-parametric hypothesis test for recombinant genes against non-recombinant genes.
+*Add gene annotation figure and hypothesis test figue*
 
 ### Step 04: Investigate recombinant positions for one to many genomes
+
+*similar to above but this time the plots are just for the 1st genome and data is added to the first genome compared to many genomes*
 
 
