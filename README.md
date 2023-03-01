@@ -12,23 +12,38 @@ This workflow will yeild many intermediate files and several publication ready f
 
 *Figures are publication quality PDF files, DataTables are tab separated value (tsv) files*
 
-1. DataTable: All vs All genome pair fastANI results (PART 01, Step 02)
-1. Figure: Shared fraction vs ANI scatter plot (PART 01, Step 02)
-1. Figure: ANI distance hierarchical clustered heatmap (PART 01, Step 02)
-1. Fasta: CDC gene predictions from Prodigal (PART 02, Step 01)
-1. Figures: Histogram of gene length distributions (PART 02, Step 01)
-1. DataTable: RBM sequence similarities for each genome pair (PART 02, Step 02)
-1. DataTable: F100 score for each genome pair (PART 02, Step 03)
-1. Figure: Histogram of RBM sequence similarity for each genome pair (PART 02, Step 03)
-1. Figure: F100 vs ANI with various GAM models (PART 02, Step 04)
-1. DataTable: F100 vs ANI data, confidence interval and p value for each genome pair (PART 02, Step 04)
-1. Figure: F100 distance hierarchical clustered heatmap (PART 02, Step 05)
-1. DataTable: Gene clusters from MMSeqs2 clustered and aligned (PART 03, Step 06)
-1. DataTable: Presence/Absence binary matrix of genomes and gene cluster. (PART 03, Step 07)
-1. Figure: Pangenome model figures (PART 03, Step 08-09)
-1. DataTable: Genes assigned to pangenome classes: Conserved, Core, Accessory (PART 04, Step 01)
-1. Figure: Recombinant gene class and location between genome pairs (PART 04, Step 02)
-1. Figure: Stats test recombinant gene spacing vs. Poisson distribution (PART 04, Step 02)
+#### Part 01:
+1. DataTable: All vs All genome pair fastANI results
+1. Figure: Shared fraction vs ANI scatter plot
+1. Figure: ANI distance hierarchical clustered heatmap
+
+#### Part 02:
+1. Fasta: Predicted CDS gene sequences from Prodigal
+1. Figures: Histograms of gene length distributions
+1. DataTable: RBM sequence similarities for each genome pair
+1. DataTable: F100 score for each genome pair
+1. Figure: Histogram of RBM sequence similarity for each genome pair
+1. Figure: F100 vs ANI with various GAM models
+1. DataTable: F100 vs ANI data, confidence interval and p value for each genome pair
+1. Figure: F100 distance hierarchical clustered heatmap
+
+#### Part 03:
+1. DataTable: Gene clusters from MMSeqs2 clustered and aligned
+1. Fasta: Representative sequence fasta for each gene cluster
+1. DataTable: Presence/Absence binary matrix of genomes and gene cluster
+1. Figure: Pangenome curve model
+1. Figure: Pangenome clustered heatmap
+1. DataTable: Gene annotations
+1. DataTable: Genes assigned to pangenome classes: Conserved, Core, Accessory, Specific
+1. Figure: Histogram of average within gene cluster sequence distance for Core genes
+1. Figure: genome pairs: Recombinant gene class and location
+1. Figure: genome pairs: Stats test recombinant gene spacing vs. Poisson distribution
+1. Figure: genome pairs: Gene annotations, recombinant vs non-recombinant hypothesis test
+1. DataTable: genome pairs:
+1. Figure: one to many:
+1. Figure: one to many:
+1. Figure: one to many:
+1. DataTable: one to many:
 
 See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
 
@@ -514,13 +529,9 @@ mkdir COGclass
 COGclassifier -i my_rep_seqs.faa -o COGclass
 ```
 
-### Step 03: Investigate recombinant positions between specific genome pairs 
+### Step 03: Assign pangenome class to genes
 
-In this section, we tie all previous steps together and look at the types and distribution of recent plausible recombination events between specific genome pairs.
-
-This step requires
-
-#### Assign pangenome class to genes
+In this step we assign pangenome gene categories to our gene clusters and designate a conserved gene class from core gene clusters with the least sequence divergence.
 
 Create list of genes with pangenome category (conserved, core, accessory). This step writes a tsv file needed for next step plust a Histogram PDF of average gene distance within core gene clsuters. The bottom 5% are designated as conserved genes.
 
@@ -535,9 +546,16 @@ python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
 
 
-#### (OPTIONAL) Reorder contigs of draft genomes and MAGs
+### Step 04: (OPTIONAL) Reorder contigs of draft genomes and MAGs
 
 Contigs in draft genome and MAG assemblies are not typically aligned to any particular order. It can be helpful for the figure created in Step 02 to align the genome pair to each other or to a common reference genome. One way to do that is with [Mauve](https://darlinglab.org/mauve/mauve.html). See "Reordering contigs" section of the User Guide here: [https://darlinglab.org/mauve/user-guide/reordering.html](https://darlinglab.org/mauve/user-guide/reordering.html).
+
+
+### Step 05: Investigate recombinant positions between specific genome pairs 
+
+In this section, we tie all previous steps together and look at the types and distribution of recent plausible recombination events between specific genome pairs.
+
+This step requires
 
 #### Run analysis for each genome pair of interest
 
@@ -576,7 +594,7 @@ Example of what a Q-Q plot of a good fit looks like:
 
 *Add gene annotation figure and hypothesis test figue*
 
-### Step 04: Investigate recombinant positions for one to many genomes
+### Step 06: Investigate recombinant positions between one to many genomes
 
 *similar to above but this time the plots are just for the 1st genome and data is added to the first genome compared to many genomes*
 
