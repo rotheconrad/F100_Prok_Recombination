@@ -3,9 +3,17 @@
 '''Generate .tsv file Genes Clusters Pangenome Categories
 
 Takes the Binary Matrix .tsv file from 03 and the Mmseqs2 cluster file 
-as input and outputs a .tsv file of:
-Gene_Name Cluster_Name Pangenome_Category
-Where Pangenome_Category is one of: (Core, Accessory, Specific)
+as input and outputs a .tsv file with columns:
+Gene_Name, Cluster_Name, Pangenome_Category, n/N, Distance
+Gene name is the name of all individual genes in the pangenome
+Cluster_Name is the representative gene of the assigned cluster
+Pangenome_Category is one of: (Conserved, Core, Accessory, Specific)
+n/N is number of genomes with gene category over total genomes in analysis
+Distance is the average sequence distance from the representative gene.
+Conserved genes are a subset (10%) of core genes with the least Distance.
+Core genes are found in ≥ 90% of genomes in the analysis.
+Specific genes are found in only 1 genome in the analysis.
+Accessory genes are all other genes.
 
 This tool takes the following input parameters:
 
@@ -20,13 +28,6 @@ This script returns the following files:
 This script requires the following packages:
 
     * argparse
-
-This file can also be imported as a module and contains the follwing 
-functions:
-
-    * get_category - reads the bnry file and assigns pangenome category
-    * build_the_list - Orchestrates Parsing, computing, and output
-    * main - the main function of the script
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -131,12 +132,14 @@ def plot_dist(input_array, out):
 
     plot_out = out.split('.')[0] + '.pdf'
     qarray = sorted(input_array)
-    q05 = np.quantile(qarray, 0.05)
+    #q05 = np.quantile(qarray, 0.05) # switched from 5% to 10%
+    q10 = np.quantile(qarray, 0.10)
 
     fig, ax = plt.subplots(figsize=(7, 5))
 
     ax.hist(input_array, bins=75, edgecolor='k', color='#08519c', alpha=0.6,)
-    ax.axvline(q05, color='#ae017e', linestyle='dashed', linewidth=1)
+    #ax.axvline(q05, color='#ae017e', linestyle='dashed', linewidth=1)
+    ax.axvline(q10, color='#ae017e', linestyle='dashed', linewidth=1)
     ax.set_xlabel('Average sequence distance of cluster', fontsize=14)
     ax.set_ylabel('Count', fontsize=14)
 
@@ -162,7 +165,7 @@ def plot_dist(input_array, out):
     plt.savefig(plot_out)
     plt.close()
 
-    return q05
+    return q10 #q05
 
 
 def build_the_list(bnry, clstr, out):
@@ -176,9 +179,12 @@ def build_the_list(bnry, clstr, out):
     cluster_dist, cluster_genes = get_avg_dists(cluster_data)
     # select the lowest 5% of clusters as highly conserved.
     q05 = plot_dist(cluster_dist['Avg_dist'], out)
+    # Change from 5% to 10%
+    q10 = plot_dist(cluster_dist['Avg_dist'], out)
     tmp_data = zip(cluster_dist['Cluster'], cluster_dist['Avg_dist'])
     for clust, dist in tmp_data:
-        if dist <= q05:
+        #if dist <= q05:
+        if dist <= q10:
             for gene in cluster_genes[clust]:
                 data[gene][2] = 'Conserved' 
     # write out the data
