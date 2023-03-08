@@ -237,5 +237,7 @@ def main():
         args['output_file']
         )
 
+    print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
+
 if __name__ == "__main__":
     main()
