@@ -531,13 +531,23 @@ COGclassifier -i my_rep_seqs.faa -o COGclass
 
 ### Step 03: Assign pangenome class to genes
 
-In this step we assign pangenome gene categories to our gene clusters and designate a conserved gene class from core gene clusters with the least sequence divergence.
+In this step we assign pangenome gene categories to our gene clusters. This step generates a .tsv file with columns: Gene_Name, Cluster_Name, Pangenome_Category, n/N, Distance, and a PDF hitsogram of average within cluster sequence distance of core gene clusters.
 
-Create list of genes with pangenome category (conserved, core, accessory). This step writes a tsv file needed for next step plust a Histogram PDF of average gene distance within core gene clsuters. The bottom 5% are designated as conserved genes.
+ - Gene_Name is the name of all individual genes in the pangenome
+ - Cluster_Name is the representative gene of the assigned cluster
+ - Pangenome_Category is one of: (Conserved, Core, Accessory, Specific)
+ - n/N is number of genomes with gene category over total genomes in analysis
+ - Distance is the average within cluster sequence distance from the representative gene.
+ - Conserved genes are a subset (10%) of core genes with the least within cluster sequence distance.
+ - Core genes are found in ≥ 90% of genomes in the analysis.
+ - Specific genes are found in only 1 genome in the analysis.
+ - Accessory genes are all other genes.
 
-Input:
+The histogram shows the distribution of average within cluster sequence distance. Sequence distance is calculated for each gene as 1 - sequence identity [0:1] compared to the cluster representative sequence. The vertical dashed red line shows the 0.10 quantile.
 
-Output:
+Input: pangenome_matrix.tsv, all_genes_CDS_aligned.tsv
+
+Output: 1 tsv file, 1 pdf file
 
 ```bash
 python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -c all_genes_CDS_aligned.tsv -o pancat_file.tsv

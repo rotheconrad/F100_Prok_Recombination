@@ -2,7 +2,7 @@
 
 '''Generate .tsv file Genes Clusters Pangenome Categories
 
-Takes the Binary Matrix .tsv file from 03 and the Mmseqs2 cluster file 
+Takes the Binary Matrix .tsv file and the Mmseqs2 cluster file 
 as input and outputs a .tsv file with columns:
 Gene_Name, Cluster_Name, Pangenome_Category, n/N, Distance
 Gene name is the name of all individual genes in the pangenome
