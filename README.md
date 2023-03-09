@@ -419,7 +419,7 @@ mkdir ${mmseqs_dir}
 mmseqs createdb all_genes_CDS.fnn ${mmseqs_dir}/${my_db}
 ```
 
-#### Cluster at 90% nucleotide ID
+#### Cluster at 90% nucleotide identity
 
 ```bash
 mmseqs cluster ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered tempfiles --min-seq-id 0.90 --cov-mode 1 -c 0.5 --cluster-mode 2 --cluster-reassign
