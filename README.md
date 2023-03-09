@@ -640,7 +640,7 @@ Annotation categories are based on COG categories with specific labeling as foll
 	- S: Conserved Hypothetical
 	- R: Conserved Hypothetical
 
-At the time of writing, the current EggNog 5.5 database does not include an X category and so Mobile genes are assigned based on a keyword search for the following: transposase, phage, integrase, viral, plasmid, integron, or transposon.
+At the time of writing, the current EggNog 5.5 database does not include an X category and so Mobile genes are assigned based on a keyword search for the following: transposase, phage, integrase, viral, plasmid, integron, or transposon. Here is a [list of COG categories](http://www.sbg.bio.ic.ac.uk/~phunkee/html/old/COG_classes.html) and [here is another](https://ecoliwiki.org/colipedia/index.php/Clusters_of_Orthologous_Groups_(COGs)). Also see the [NCBI COG database](https://www.ncbi.nlm.nih.gov/research/cog/).
 
 Any gene without an assigned anotation is labeled as Hypothetical.
 
