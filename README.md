@@ -608,28 +608,28 @@ Annotation categories are based on COG categories with specific labeling as foll
 
 	- X: Mobile
 	- C: Metabolism 1
-	- G: 'Metabolism 1
+	- G: Metabolism 1
 	- E: Metabolism 1
 	- F: Metabolism 1
 	- H: Metabolism 1
 	- I: Metabolism 1
 	- P: Metabolism 2
 	- Q: Metabolism 2
-	- J: Translation ribosomal structure and biogenesis
-	- A: Information Storage and Processing
-	- K: Information Storage and Processing
-	- L: Information Storage and Processing
-	- B: Information Storage and Processing
-	- D: Cellular Processing and Signaling
-	- Y: Cellular Processing and Signaling
-	- V: Cellular Processing and Signaling
-	- T: Cellular Processing and Signaling
-	- M: Cellular Processing and Signaling
-	- N: Cellular Processing and Signaling
-	- Z: Cellular Processing and Signaling
-	- W: Cellular Processing and Signaling
-	- U: Cellular Processing and Signaling
-	- O: Cellular Processing and Signaling
+	- J: Ribosomal (Translation ribosomal structure and biogenesis)
+	- A: Information (Information Storage and Processing) 
+	- K: Information (Information Storage and Processing) 
+	- L: Information (Information Storage and Processing) 
+	- B: Information (Information Storage and Processing) 
+	- D: Cellular (Cellular Processing and Signaling)
+	- Y: Cellular (Cellular Processing and Signaling)
+	- V: Cellular (Cellular Processing and Signaling)
+	- T: Cellular (Cellular Processing and Signaling)
+	- M: Cellular (Cellular Processing and Signaling)
+	- N: Cellular (Cellular Processing and Signaling)
+	- Z: Cellular (Cellular Processing and Signaling)
+	- W: Cellular (Cellular Processing and Signaling)
+	- U: Cellular (Cellular Processing and Signaling)
+	- O: Cellular (Cellular Processing and Signaling)
 	- S: Conserved Hypothetical
 	- R: Conserved Hypothetical
 
