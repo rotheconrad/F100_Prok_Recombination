@@ -602,7 +602,42 @@ The Q-Q plot shows how the quantiles from your emperical data align with quantil
 Example of what a Q-Q plot of a good fit looks like:
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
 
-*Add gene annotation figure and hypothesis test figue*
+This step also bins annotations by COG category and plots recombinant vs non-recombinant gene annotations. Performs Chi-square test of independence with post hoc chi-square tests if initial significance is found. Asterisks in the plot denote significant difference between a category after Benjamini/Hochberg multiple test correction. Detailed Chi-square results are printed to the screen.
+
+Annotation categories are based on COG categories with specific labeling as follows:
+
+	- X: Mobile
+	- C: Metabolism 1
+	- G: 'Metabolism 1
+	- E: Metabolism 1
+	- F: Metabolism 1
+	- H: Metabolism 1
+	- I: Metabolism 1
+	- P: Metabolism 2
+	- Q: Metabolism 2
+	- J: Translation ribosomal structure and biogenesis
+	- A: Information Storage and Processing
+	- K: Information Storage and Processing
+	- L: Information Storage and Processing
+	- B: Information Storage and Processing
+	- D: Cellular Processing and Signaling
+	- Y: Cellular Processing and Signaling
+	- V: Cellular Processing and Signaling
+	- T: Cellular Processing and Signaling
+	- M: Cellular Processing and Signaling
+	- N: Cellular Processing and Signaling
+	- Z: Cellular Processing and Signaling
+	- W: Cellular Processing and Signaling
+	- U: Cellular Processing and Signaling
+	- O: Cellular Processing and Signaling
+	- S: Conserved Hypothetical
+	- R: Conserved Hypothetical
+
+At the time of writing, the current EggNog 5.5 database does not include an X category and so Mobile genes are assigned based on a keyword search for the following: transposase, phage, integrase, viral, plasmid, integron, or transposon.
+
+Any gene without an assigned anotation is labeled as Hypothetical.
+
+*Add gene annotation figure and hypothesis test output*
 
 ### Step 06: Investigate recombinant positions between one to many genomes
 
