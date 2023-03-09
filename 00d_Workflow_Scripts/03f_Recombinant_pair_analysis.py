@@ -21,6 +21,12 @@ recombining core genes, recombing accessory genes, and non-recombining
 genes. A gene is said to be recombining if the RBM value equals 100 and
 if it is not highly conserved.
 
+This script performs some statistical tests on the distance between
+recombinant genes, and on the distributions of gene annotations.
+
+see the github for a detail description of output files.
+https://github.com/rotheconrad/F100_Prok_Recombination
+
 # COG one letter code descriptions
 # http://www.sbg.bio.ic.ac.uk/~phunkee/html/old/COG_classes.html
 
@@ -37,6 +43,7 @@ All rights reserved
 
 import argparse
 from collections import defaultdict
+from itertools import combinations
 import pandas as pd; import numpy as np
 pd.options.mode.chained_assignment = None
 import matplotlib.pyplot as plt
@@ -44,6 +51,7 @@ from matplotlib.lines import Line2D
 from scipy import stats
 import seaborn as sns
 import statsmodels.api as sm
+from statsmodels.stats.multitest import multipletests
 
 
 ###############################################################################
@@ -68,6 +76,7 @@ def parse_genome_fasta(gA, gB, switch):
     # contig/chromosome. Creates nested dictionaries for both genomes
     # containing dictionaries of {contigID: len(contig)} for each genome.
 
+    print('\n\tReading genome fasta files ...')
     genomes = {
             'A': defaultdict(list),
             'B': defaultdict(list)
@@ -92,6 +101,9 @@ def parse_prodigal_CDS(cA, cB, switch):
     # parses the prodigal fasta and retrieves gene start, stop, and strand
     # from the fasta deflines. Creates nested dictionaries for both genomes
     # containing dictionaries of {GeneID: [values]} for each genome.
+
+    print('\n\tReading CDS fasta files ...')
+
     CDS = {
         'A': defaultdict(lambda: defaultdict(list)),
         'B': defaultdict(lambda: defaultdict(list))
@@ -126,6 +138,8 @@ def parse_aai_rbm(rbm, gAid, gBid):
     # F100 is genes with 100% sequence similarity are set = 1
     # else F100 is set to 0 indicates < 100% RBMs
 
+    print('\n\tReading RBM file ...')
+
     RBM = {
             'A': defaultdict(lambda: defaultdict(int)),
             'B': defaultdict(lambda: defaultdict(int))
@@ -159,6 +173,8 @@ def parse_pangenome_categories(PC):
     # where pancat equals Core, Accessory, or Specific.
     # Returns the dictionary
 
+    print('\n\tReading PanCat file ...')
+
     pancats = {}
     repgenes = {}
 
@@ -186,9 +202,14 @@ def parse_annotations(ano):
     annos = {}
     # define dictionary to assign category for COGclassifier
     COGclass = {
-            'X': 'Mobile', 'C': 'Metabolism', 'G': 'Metabolism',
-            'E': 'Metabolism', 'F': 'Metabolism', 'H': 'Metabolism',
-            'I': 'Metabolism', 'J': 'Metabolism', 'Q': 'Metabolism',
+            'X': 'Mobile', 'C': 'Metabolism 1', 'G': 'Metabolism 1',
+            'E': 'Metabolism 1', 'F': 'Metabolism 1', 'H': 'Metabolism 1',
+            'I': 'Metabolism 1', 'P': 'Metabolism 2', 'Q': 'Metabolism 2',
+            'J': 'Ribosomal', 'A': 'Information', 'K': 'Information',
+            'L': 'Information', 'B': 'Information', 'D': 'Cellular',
+            'Y': 'Cellular', 'V': 'Cellular', 'T': 'Cellular',
+            'M': 'Cellular', 'N': 'Cellular', 'Z': 'Cellular',
+            'W': 'Cellular', 'U': 'Cellular', 'O': 'Cellular',
             'S': 'Conserved Hypothetical', 'R': 'Conserved Hypothetical'
             }
 
@@ -199,11 +220,11 @@ def parse_annotations(ano):
                 'transposase', 'phage', 'integrase', 'viral', 'plasmid',
                 'integron', 'transposon'
                 ]
-    metabolism = ['C', 'G', 'E', 'F', 'H', 'I', 'P', 'Q']
 
     with open(ano, 'r') as file:
         header = file.readline()
         if header[0] == 'Q':
+            print('\n\tReading COGclassifier annotation file ...')
             for line in file:
                 X = line.rstrip().split('\t')
                 name = X[0]
@@ -211,6 +232,7 @@ def parse_annotations(ano):
                 cat = COGclass.get(annotation, 'Other')
                 annos[name] = cat
         elif header[0] == '#':
+            print('\n\tReading EggNog annotation file ...')
             for line in file:
                 if line.startswith('#'): continue
                 X = line.rstrip().split('\t')
@@ -222,9 +244,7 @@ def parse_annotations(ano):
                 if any(mbl in description.lower() for mbl in mobile):
                     cat = 'Mobile'
                 elif COG_cat == '-': cat = 'Hypothetical'
-                elif COG_cat == 'S': cat = 'Conserved Hypothetical'
-                elif COG_cat in metabolism: cat = 'Metabolism'
-                else: cat = 'Other'
+                else: cat = COGclass.get(COG_cat, 'Other')
                 # assigne the annotation to the gene
                 annos[name] = cat
         else:
@@ -367,7 +387,7 @@ def build_some_plots(df, genomes, pancats, outpre, cpos):
 
     for genome in genomes.keys():
 
-        print(f'Computing and building plots for genome {genome} ...')
+        print(f'\n\tBuilding recombinant position plots for genome {genome} ...')
         # genome length
         glength = sum(genomes[genome].values())
         # plot genes on the genome - select current genome (A or B)
@@ -515,25 +535,32 @@ def poisson_simulation(array, n):
     # and subtract 1 so the minimum distance is 0 instead of 1.
     temp_dist = np.diff(sorted_array) - 1
 
-    # now we drop all zeros because theoretically adjacent genes both with
-    # 100% sequence identity to their RBMs are a single recombination event.
-    #emperical_mean_dist = temp_dist
-    emperical_mean_dist = temp_dist[temp_dist != 0]
-    #emperical_mean_dist = temp_dist[np.logical_and(temp_dist != 0, temp_dist != 1)]
+    ''' A zero here indicates adjacent genes with 100% sequence identity to
+    their respective RBMs which is likely a signal from a single recombination
+    event. Likewise, a 1 indicates their is only 1 non 100% sequence identity
+    gene between two events which could also indicate a single recombination
+    event. The array show the number of genes between each recombination event,
+    so if we drop 0's or 1's or both from the array, this is the same as 
+    combining consecutive 0's and 1's into a single event. '''
+    #emperical_dist = temp_dist # retain all distances
+    # collapse consectuve 0's into a single event
+    emperical_dist = temp_dist[temp_dist != 0]
+    # or collapse consecutive 0's and 1's into a single event.
+    #emperical_dist = temp_dist[np.logical_and(temp_dist != 0, temp_dist != 1)]
 
-    # print out value counts of distances between events
+    ''' print out value counts of distances between events
     values, counts = np.unique(emperical_mean_dist,return_counts=True)
     for v, c in zip(values, counts):
         print(v, c)
-    
+    '''
 
-    mu =  np.mean(emperical_mean_dist) # genes per kilo base pair
+    mu =  np.mean(emperical_dist) # genes per kilo base pair
     poisson_array = stats.poisson.rvs(mu=mu, size=10000)
     # decided on a sample size of 10,000 instead of array length or gene count
 
     # Kolmogorov-Smirnov test emperical data against poisson distribution
     # returns ks_statistic, p_value
-    k, p = stats.kstest(array, poisson_array)
+    k, p = stats.kstest(emperical_dist, poisson_array)
 
     # Unit test / sanity check use poisson array instead of input array
     # k is small and p is large when the distributions are likely the same
@@ -543,7 +570,34 @@ def poisson_simulation(array, n):
     # k, p = stats.kstest(poisson_A, poisson_B)
     # emperical_mean_dist = poisson_A
 
-    return emperical_mean_dist, poisson_array, mu, k, p
+    return emperical_dist, poisson_array, mu, k, p
+
+
+def geom_dist(array, n):
+
+    # each gene is an event. 100% RBM is a success
+    # array should contain indexed positions of all 100% RBM genes.
+    # n should be the total genes in the genome.
+
+    # make sure the array is sorted in ascending order.
+    sorted_array = np.sort(array)
+
+    # get the difference between gene index positions (genes between events)
+    # and subtract 1 so the minimum distance is 0 instead of 1.
+    geom_emp = np.diff(sorted_array) - 1
+
+    # Geometric distributions are built around the probability of success
+    # in this case the input array is the number of successes (recombinations)
+    # and n is the total number of events (genes in the genome)
+    # so p = len(array) / n
+    p = len(array) / n
+    geom_array = stats.geom.rvs(p=p, size=10000)
+
+    # Kolmogorov-Smirnov test emperical data against geometric distribution
+    # returns ks_statistic, p_value
+    geom_k, geom_p = stats.kstest(geom_emp, geom_array)
+    
+    return geom_emp, geom_array, p, geom_k, geom_p
 
 
 def distance_plots_2(df, colors, distance_title, distance_out):
@@ -554,7 +608,7 @@ def distance_plots_2(df, colors, distance_title, distance_out):
     # run kolmogorov-smirnov test
     # plot results
     # changed from contig length in bp to simply the length of the df
-    total_genes = len(df) # total events for poisson simulation
+    total_genes = len(df) # total events for poisson simulation (total genes)
     # the dataframe index is the gene position in the genome
     # distance between genes is distance between index and the preceeding index 
     # subset non conserved genes ie disregard conserved genes
@@ -572,6 +626,8 @@ def distance_plots_2(df, colors, distance_title, distance_out):
     # calcuate distances, run poisson simulation, and ks test.
     emp, psn, mu, k, p = poisson_simulation(recomb_genes, total_genes)
 
+    geom_emp, gmt, p, geom_k, geom_p = geom_dist(recomb_genes, total_genes)
+
     tx, ty = 0.72, 0.82 # stats test text position
     pcol = 'r' # poisson model kde line plot color
     mlw = 2 # kdeplot line width
@@ -579,7 +635,7 @@ def distance_plots_2(df, colors, distance_title, distance_out):
     ts = 8 # stat test text size
     bw, ct = 3, 0 # kdeplot bw_adjus t and cut params
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 7))
 
     # plot emp distribution, poissoin distribution and stats test results
     _ = sns.histplot(x=emp, color=colors[5], ax=ax1, stat='density')
@@ -588,11 +644,30 @@ def distance_plots_2(df, colors, distance_title, distance_out):
     line = f'k = {k:.4f}\np = {p:.4f}'
     _ = ax1.text(tx, ty, line, transform=ax1.transAxes, fontsize=ts)
     ax1.set_ylabel('Density', fontsize=axlabsz)
-    ax1.set_xlabel('Genes between recombinant events', fontsize=axlabsz)
+    ax1.set_xlabel(' ')
 
-    # plot Q-Q plot emperical vs theoretical
-    qdist = stats.poisson(np.mean(emp))
-    sm.qqplot(emp, dist=qdist, line="45", ax=ax2)
+    # plot emp distribution, geometric distribution and stats test results
+    _ = sns.histplot(x=geom_emp, bins=30, color=colors[5], ax=ax2, stat='density')
+    _ = sns.kdeplot(x=gmt, color=pcol, ax=ax2, cut=ct, bw_adjust=bw)
+    line = f'k = {geom_k:.4f}\np = {geom_p:.4f}'
+    _ = ax2.text(tx, ty, line, transform=ax2.transAxes, fontsize=ts)
+    ax2.set_ylabel('', fontsize=axlabsz)
+    ax2.set_xlabel('')
+
+    # plot Q-Q plot emperical vs theoretical poisson
+    qdist = stats.poisson(mu)
+    sm.qqplot(emp, dist=qdist, line="45", ax=ax3)
+    ax3.set_ylabel('Sample quantiles', fontsize=axlabsz)
+    ax3.set_xlabel('')
+
+    # plot Q-Q plot emperical vs theoretical geomitric
+    qdist = stats.geom(p)
+    sm.qqplot(geom_emp, dist=qdist, line="45", ax=ax4)
+    ax4.set_ylabel('', fontsize=axlabsz)
+    ax4.set_xlabel(' ')
+
+    fig.text(0.55, 0.51, 'Genes between recombinant events', ha='center', fontsize=axlabsz,)
+    fig.text(0.55, 0.02, 'Theoretical quantiles', ha='center', fontsize=axlabsz,)
 
     fig.set_tight_layout(True)
     plt.savefig(f'{distance_out}.pdf')
@@ -608,15 +683,38 @@ def plot_annotation_barplot(df, outpre):
 
     '''Plots annotation categories for recombinant vs non-recombinant genes'''
 
+    print('\n\tBuilding annotation plot and tests ...')
+
     # set colors
-    colors = ['#c51b7d', '#e9a3c9', '#fde0ef', '#e6f5d0', '#a1d76a', '#4d9221']
-    # set order
-    aorder = ['Other', 'Hypothetical', 'Conserved Hypothetical', 'Metabolism', 'Mobile']
+    #colors = ['#c51b7d', '#e9a3c9', '#fde0ef', '#e6f5d0', '#a1d76a', '#4d9221']
+    colors = [
+            '#8dd3c7', '#ffffb3', '#bebada', '#fb8072',
+            '#80b1d3', '#fdb462', '#b3de69', '#fccde5'
+            ]
+
+    # set annotation category order
+    if 'Other' in df['Annotation'].unique():
+        aorder = [
+                'Other', 'Hypothetical', 'Conserved Hypothetical',
+                'Ribosomal', 'Information', 'Cellular',
+                'Metabolism 1', 'Metabolism 2', 'Mobile'
+                ]
+    else:
+        aorder = [
+                'Hypothetical', 'Conserved Hypothetical',
+                'Ribosomal', 'Information', 'Cellular',
+                'Metabolism 1', 'Metabolism 2', 'Mobile'
+                ]
+
     xorder = ['Recombinant', 'Non-recombinant']
     # subset df
     adf = df.groupby(['Recombinant', 'Annotation'])['Gene'].count().unstack()
     adf = adf[aorder].T
     adf = adf[xorder]
+
+    # categorical hypothesis testing with raw counts
+    chip, pvals_corrected = annotation_hypothesis_test(adf)
+
     # calculate the percents of total per category
     total = adf.sum().to_list()
     ptots = [f'({round(i/sum(total) * 100, 2)}%)' for i in total]
@@ -624,7 +722,7 @@ def plot_annotation_barplot(df, outpre):
 
     fig, ax = plt.subplots(figsize=(7,5))
 
-    ax = adf.plot.bar(stacked=True, ax=ax, color=colors, width=.9)
+    ax = adf.plot.bar(stacked=True, ax=ax, color=colors, width=.7)
     # change axis labels
     ax.set_xlabel('')
     ax.set_ylabel("Gene fraction", fontsize=12)
@@ -646,26 +744,31 @@ def plot_annotation_barplot(df, outpre):
     ax.annotate(ptots[0], (0, 0.01), transform=ax.transAxes, ha='center')
     ax.annotate(ptots[1], (1, 0.01), transform=ax.transAxes, ha='center')
 
-    # annotate individual percents
-    for p in ax.patches:
+    # annotate individual percents and add asterisk if significant post hoc
+    # double the corrected p value array since our plot has two columns
+    sig = [i for i in pvals_corrected for _ in range(2)]
+    for i, p in enumerate(ax.patches):
         width, height = p.get_width(), p.get_height()
-        x, y = p.get_xy() 
+        x, y = p.get_xy()
+        
+        # add asterisk if significant of alpha 0.05
+        line = f'*{height:.2f}*' if sig[i] < 0.05 else f'{height:.2f}'
         ax.text(x+width/2, 
                 y+height/2, 
-                f'{height:.2f}', 
+                line, 
                 horizontalalignment='center', 
                 verticalalignment='center')
 
     # create legend to separate file
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(
-                handles,
-                labels,
-                ncol=3,
-                loc='center',
+                reversed(handles),
+                reversed(labels),
+                ncol=1,
+                loc='center left',
                 frameon=False,
                 fontsize=12,
-                bbox_to_anchor=(0.5, 1.1)
+                bbox_to_anchor=(1, 0.5)
                 )
 
     # adjust layout, save, and close
@@ -674,6 +777,69 @@ def plot_annotation_barplot(df, outpre):
     plt.close() 
 
     return True
+
+def annotation_hypothesis_test(adf):
+    ''' performs chi square and post hoc tests between annotation
+    categorgies for recombining vs non-recombining genes.
+    '''
+    
+    # create and print contingency table
+    ctab = adf.copy(deep=True)
+    ctab['Total'] = ctab.sum(axis=1)
+    ctab.loc['Total'] = ctab.sum(axis=0)
+    print(f'\nInitial Chi2 test contingency table:\n\n{ctab}')
+
+    # chi2 test on the full data
+    chi2, chip, dof, ex = stats.chi2_contingency(adf, correction=True)
+    # create expected frequency table
+    efreq = pd.DataFrame(ex, index=adf.index, columns=adf.columns)
+    efreq['Total'] = efreq.sum(axis=1)
+    efreq.loc['Total'] = efreq.sum(axis=0)
+    print(f'\nChi2 expected frequency table:\n\n{efreq}')
+    # print test statitic and p value
+    print(f'\nchi2 statistic: {chi2:.4f}, dof: {dof}, chi2 pvalue: {chip:.6f}')
+
+    # perform post hoc test on combinations if significant (< 0.05)
+    if chip < 0.05:
+        pvals, pvals_corrected = post_hoc_test(adf)
+        print('\nPost hoc p values:\n', pvals)
+        print('\nBenjamini/Hochberg corrected p values:\n', pvals_corrected)
+
+    else:
+        pvals_corrected = [1] * len(adf)
+
+    return chip, pvals_corrected
+
+
+def post_hoc_test(adf):
+    ''' loops through individual rows and performs chi2 post hoc '''
+    pvals = []
+
+    bdf = adf.T
+    for name in bdf.columns:
+        xdf = bdf.drop(name, axis=1)
+        xdf['OTHERs'] = xdf.sum(axis=1)
+        xdf[name] = bdf[name]
+        ydf = xdf[['OTHERs', name]].T
+        c, p, d, x = stats.chi2_contingency(ydf, correction=True)
+        # create expected frequency table
+        extab = pd.DataFrame(x, index=ydf.index, columns=ydf.columns)
+        extab['Total'] = extab.sum(axis=1)
+        extab.loc['Total'] = extab.sum(axis=0)
+        # create post hoc test contingency table
+        ydf['Total'] = ydf.sum(axis=1)
+        ydf.loc['Total'] = ydf.sum(axis=0)
+        # print post hoc info
+        print(f'\nPost hoc Chi2 test contingency table for {name}:\n')
+        print(ydf)
+        print(f'\nChi2 expected frequency table:\n\n{extab}')
+        print(f'\nchi2 statistic: {c:.4f}, dof: {d}, chi2 pvalue: {p:.6f}')
+
+        pvals.append(p)
+
+        reject_list, pvals_corrected = multipletests(pvals, method='fdr_bh')[:2]
+
+    return pvals, pvals_corrected
 
 ###############################################################################
 ###############################################################################
@@ -772,19 +938,16 @@ def main():
     # get the gene annotations
     annos = parse_annotations(ano)
 
-    
-
     ## SECTION 02a: Computations and Plots
     # process the data and build some plots
     # cpos is contig positions to use to mark them on the plot
     # cpos = {'A': [position array], 'B': [position array]}
     df, cpos = combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos)
-    #_ = build_some_plots(df, genomes, pancats, outpre, cpos)
+    _ = build_some_plots(df, genomes, pancats, outpre, cpos)
     ## SECTION 02b RUNS FROM INSIDE build_some_plots function
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant F100 = 1 or 0
-    # test distributions and functional category differences
     _ = plot_annotation_barplot(df, outpre)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
