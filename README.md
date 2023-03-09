@@ -35,11 +35,13 @@ This workflow will yeild many intermediate files and several publication ready f
 1. Figure: Pangenome clustered heatmap
 1. DataTable: Gene annotations
 1. DataTable: Genes assigned to pangenome classes: Conserved, Core, Accessory, Specific
+- Genome pairs
 1. Figure: Histogram of average within gene cluster sequence distance for Core genes
 1. Figure: genome pairs: Recombinant gene class and location
 1. Figure: genome pairs: Stats test recombinant gene spacing vs. Poisson distribution
 1. Figure: genome pairs: Gene annotations, recombinant vs non-recombinant hypothesis test
 1. DataTable: genome pairs:
+- One genome to many genomes
 1. Figure: one to many:
 1. Figure: one to many:
 1. Figure: one to many:
@@ -185,6 +187,9 @@ python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -i fastANI_allV.ani -o fas
 ```
 
 ![ANI Distance Clustered Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_heatmap.png)
+
+
+As you can see in the figures above, there is a small cluster of genomes between 3-5% different than the other genomes. In other words we have two fairly distinct clusters. This indicates we may want to split them into two separate analyses. For now, we will leave them together.
 
 # PART 02: Recombinant genomes analysis
 
@@ -565,7 +570,9 @@ Contigs in draft genome and MAG assemblies are not typically aligned to any part
 
 In this section, we tie all previous steps together and look at the types and distribution of recent plausible recombination events between specific genome pairs.
 
-This step requires
+This step has several outputs. It plots the positions of recombinant and non-recombinant genes by their genome coordinates separated by their pangenome class. It does some statitistical testing on the distance between recombinant events, and it plots recombinant vs. non-recombinant gene annotations by COG categories and performs Chi-square hypothesis testing.
+
+This step requires Python with Numpy, Pandas, Scipy, StatsModels, MatPlotLib, and Seaborn packages.
 
 #### Run analysis for each genome pair of interest
 
@@ -589,15 +596,13 @@ python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm 
 ```
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
-![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_genomes.png)
+![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_genomes.png)
 
 The distribution of recombinant gene location is also assessed and compared to a Null Model using the Poisson distribution as a proxy for evenly distributed recombination events across the genome. If the p-value is low and the and the k value is close to 1, the spacing of genes in that category does not fit a Poisson model for evenly spaced events. If the p-value is high, but the k value is still close 1 (and not to 0) this indicates a majority of the data falls inside the Poisson distribution but the overal shape of the distribution is still not a great fit. See the Q-Q plot to visualy why. The mean of the data is shown as a dashed line, a poisson model based on this mean is shown as a red curve, and the emperical data (the number of genes between events) is plotted as a histogram.
 
-![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_B_distance.png)
-
 The Q-Q plot shows how the quantiles from your emperical data align with quantiles from the Poisson distribution fit to your data.
 
-![Q-Q plot of your data to a Poisson fit](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/genome01-genome02_B_distance-qq.png)
+![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_distance.png)
 
 Example of what a Q-Q plot of a good fit looks like:
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
@@ -637,7 +642,214 @@ At the time of writing, the current EggNog 5.5 database does not include an X ca
 
 Any gene without an assigned anotation is labeled as Hypothetical.
 
-*Add gene annotation figure and hypothesis test output*
+![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_annotations_bar.png)
+
+Detail script output to screen for Chi-square tests:
+
+```bash
+Running Script...
+
+
+	Reading genome fasta files ...
+
+	Reading CDS fasta files ...
+
+	Reading RBM file ...
+
+	Reading PanCat file ...
+
+	Reading EggNog annotation file ...
+
+	Building recombinant position plots for genome A ...
+
+	Building recombinant position plots for genome B ...
+
+	Building annotation plot and tests ...
+
+Initial Chi2 test contigency table:
+
+Recombinant             Recombinant  Non-recombinant  Total
+Annotation                                                 
+Hypothetical                    216              996   1212
+Conserved Hypothetical          168              852   1020
+Ribosomal                        32              272    304
+Information                      76              484    560
+Cellular                        170              975   1145
+Metabolism 1                    274             1227   1501
+Metabolism 2                     96              281    377
+Mobile                            6              129    135
+Total                          1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant             Recombinant  Non-recombinant   Total
+Annotation                                                  
+Hypothetical             201.160217      1010.839783  1212.0
+Conserved Hypothetical   169.293252       850.706748  1020.0
+Ribosomal                 50.456028       253.543972   304.0
+Information               92.945315       467.054685   560.0
+Cellular                 190.039974       954.960026  1145.0
+Metabolism 1             249.126639      1251.873361  1501.0
+Metabolism 2              62.572114       314.427886   377.0
+Mobile                    22.406460       112.593540   135.0
+Total                   1038.000000      5216.000000  6254.0
+
+chi2 statistic: 54.4502, dof: 7, chi2 pvalue: 0.000000
+
+Post hoc Chi2 test contingency table for Hypothetical:
+
+Recombinant   Recombinant  Non-recombinant  Total
+Annotation                                       
+OTHERs                822             4220   5042
+Hypothetical          216              996   1212
+Total                1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant   Recombinant  Non-recombinant   Total
+Annotation                                        
+OTHERs         836.839783      4205.160217  5042.0
+Hypothetical   201.160217      1010.839783  1212.0
+Total         1038.000000      5216.000000  6254.0
+
+chi2 statistic: 1.5203, dof: 1, chi2 pvalue: 0.217580
+
+Post hoc Chi2 test contingency table for Conserved Hypothetical:
+
+Recombinant             Recombinant  Non-recombinant  Total
+Annotation                                                 
+OTHERs                          870             4364   5234
+Conserved Hypothetical          168              852   1020
+Total                          1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant             Recombinant  Non-recombinant   Total
+Annotation                                                  
+OTHERs                   868.706748      4365.293252  5234.0
+Conserved Hypothetical   169.293252       850.706748  1020.0
+Total                   1038.000000      5216.000000  6254.0
+
+chi2 statistic: 0.0053, dof: 1, chi2 pvalue: 0.941827
+
+Post hoc Chi2 test contingency table for Ribosomal:
+
+Recombinant  Recombinant  Non-recombinant  Total
+Annotation                                      
+OTHERs              1006             4944   5950
+Ribosomal             32              272    304
+Total               1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant  Recombinant  Non-recombinant   Total
+Annotation                                       
+OTHERs        987.543972      4962.456028  5950.0
+Ribosomal      50.456028       253.543972   304.0
+Total        1038.000000      5216.000000  6254.0
+
+chi2 statistic: 8.0532, dof: 1, chi2 pvalue: 0.004542
+
+Post hoc Chi2 test contingency table for Information:
+
+Recombinant  Recombinant  Non-recombinant  Total
+Annotation                                      
+OTHERs               962             4732   5694
+Information           76              484    560
+Total               1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant  Recombinant  Non-recombinant   Total
+Annotation                                       
+OTHERs        945.054685      4748.945315  5694.0
+Information    92.945315       467.054685   560.0
+Total        1038.000000      5216.000000  6254.0
+
+chi2 statistic: 3.8319, dof: 1, chi2 pvalue: 0.050285
+
+Post hoc Chi2 test contingency table for Cellular:
+
+Recombinant  Recombinant  Non-recombinant  Total
+Annotation                                      
+OTHERs               868             4241   5109
+Cellular             170              975   1145
+Total               1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant  Recombinant  Non-recombinant   Total
+Annotation                                       
+OTHERs        847.960026      4261.039974  5109.0
+Cellular      190.039974       954.960026  1145.0
+Total        1038.000000      5216.000000  6254.0
+
+chi2 statistic: 2.9488, dof: 1, chi2 pvalue: 0.085941
+
+Post hoc Chi2 test contingency table for Metabolism 1:
+
+Recombinant   Recombinant  Non-recombinant  Total
+Annotation                                       
+OTHERs                764             3989   4753
+Metabolism 1          274             1227   1501
+Total                1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant   Recombinant  Non-recombinant   Total
+Annotation                                        
+OTHERs         788.873361      3964.126639  4753.0
+Metabolism 1   249.126639      1251.873361  1501.0
+Total         1038.000000      5216.000000  6254.0
+
+chi2 statistic: 3.7620, dof: 1, chi2 pvalue: 0.052429
+
+Post hoc Chi2 test contingency table for Metabolism 2:
+
+Recombinant   Recombinant  Non-recombinant  Total
+Annotation                                       
+OTHERs                942             4935   5877
+Metabolism 2           96              281    377
+Total                1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant   Recombinant  Non-recombinant   Total
+Annotation                                        
+OTHERs         975.427886      4901.572114  5877.0
+Metabolism 2    62.572114       314.427886   377.0
+Total         1038.000000      5216.000000  6254.0
+
+chi2 statistic: 22.1090, dof: 1, chi2 pvalue: 0.000003
+
+Post hoc Chi2 test contingency table for Mobile:
+
+Recombinant  Recombinant  Non-recombinant  Total
+Annotation                                      
+OTHERs              1032             5087   6119
+Mobile                 6              129    135
+Total               1038             5216   6254
+
+Chi2 expected frequency table:
+
+Recombinant  Recombinant  Non-recombinant   Total
+Annotation                                       
+OTHERs        1015.59354       5103.40646  6119.0
+Mobile          22.40646        112.59354   135.0
+Total         1038.00000       5216.00000  6254.0
+
+chi2 statistic: 13.8379, dof: 1, chi2 pvalue: 0.000199
+
+Post hoc p values:
+ [0.21757988944901951, 0.9418273956553266, 0.00454232505440978, 0.0502849911270642, 0.0859413619504977, 0.05242922236818852, 2.5759744269878553e-06, 0.00019927122428812193]
+
+Benjamini/Hochberg corrected p values:
+ [2.48662731e-01 9.41827396e-01 1.21128668e-02 8.38867558e-02
+ 1.14588483e-01 8.38867558e-02 2.06077954e-05 7.97084897e-04]
+
+
+Complete success space cadet!! Finished without errors.
+```
 
 ### Step 06: Investigate recombinant positions between one to many genomes
 
