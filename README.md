@@ -600,13 +600,12 @@ The first figure labeled as \_genomes.pdf shows the location of recombinant gene
 
 ![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_genomes.png)
 
-The distribution of recombinant gene location is also assessed and compared to a Null Model using the Poisson distribution as a proxy for evenly distributed recombination events across the genome. If the p-value is low and the and the k value is close to 1, the spacing of genes in that category does not fit a Poisson model for evenly spaced events. If the p-value is high, but the k value is still close 1 (and not to 0) this indicates a majority of the data falls inside the Poisson distribution but the overal shape of the distribution is still not a great fit. See the Q-Q plot to visualy why. The mean of the data is shown as a dashed line, a poisson model based on this mean is shown as a red curve, and the emperical data (the number of genes between events) is plotted as a histogram.
-
-The Q-Q plot shows how the quantiles from your emperical data align with quantiles from the Poisson distribution fit to your data.
+The distribution of recombinant gene location is also assessed and compared to a Null Model using the Poisson distribution (top left panel) as a proxy for evenly distributed recombination events across the genome or a Geometric distribution (top right panel). If the p-value is low and the k value is close to 1, the spacing of genes in that category does not fit the named distribution well. If the p-value is high, but the k value is still close 1 (and not to 0) this indicates a majority of the data falls inside the named distribution but the overal shape of the distribution is still not a great fit. See also the Q-Q plots (two lower panels) for a different perspective on distribution fit. The mean of the data is shown as a dashed line, the named model (Poisson left; Geometric right) fit to the data is shown as a red curve, and the emperical data (the number of genes between events) is plotted as a histogram in grey.
 
 ![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_distance.png)
 
-Example of what a Q-Q plot of a good fit looks like:
+Here is an example of what a Q-Q plot of a good fit looks like:
+
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
 
 This step also bins annotations by COG category and plots recombinant vs non-recombinant gene annotations. Performs Chi-square test of independence with post hoc chi-square tests if initial significance is found. Asterisks in the plot denote significant difference between a category after Benjamini/Hochberg multiple test correction. Detailed Chi-square results are printed to the screen.
