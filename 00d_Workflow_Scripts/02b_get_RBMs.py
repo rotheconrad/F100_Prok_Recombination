@@ -75,7 +75,7 @@ def parse_tab_blast(blast):
     return data
 
 
-def find_RBMs(query, subject1, b2_results, line, b1_RBMs, b2, out):
+def find_RBMs(query, subject1, b2_results, line, b1_RBMs, b2, out, P):
 
     ''' loops over b2_results to find RBMs '''
 
@@ -91,6 +91,8 @@ def find_RBMs(query, subject1, b2_results, line, b1_RBMs, b2, out):
             b1_RBMs[query] = ''
             # remove the query from b2 dict
             b2.pop(subject1)
+            # print the tie if P True
+            if P: print(f'{line}{b2_results[0]}')
     # if there are b2 ties, sort through the ties to find an RBM
     elif len(b2_results) > 1:
         # create a list of subject2's to match with query
@@ -134,6 +136,8 @@ def do_the_RBM_thing(b1, b2, out_file):
         # iterate through lines
         # lines is a list of tab blast lines with tied bitscores
         # or lines is a list with a single entry if no ties
+        # track if lines > 1 so we can print tied matches
+        P = True if len(lines) > 1 else False
         for line in lines:
             # get the subject for the current query
             subject1 = line.split('\t')[1]
@@ -142,7 +146,7 @@ def do_the_RBM_thing(b1, b2, out_file):
                 b2_results = b2[subject1]
                 b2, b1_RBMs = find_RBMs(
                                         query, subject1, b2_results,
-                                        line, b1_RBMs, b2, out
+                                        line, b1_RBMs, b2, out, P
                                         )
     ####################################################################
 
