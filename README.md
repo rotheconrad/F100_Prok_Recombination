@@ -8,6 +8,8 @@ This workflow uses 100% sequence similarity between reciprocal best matched gene
 
 A collection of genomes in fasta format is all that is required as input to begin. This workflow was designed focused on genome collections from the same species (≥95% ANI) but it will work at broader or finer genome similarity groupings as long as some 100% RBMs exist between the genomes.
 
+The steps are left separately so the user can more easily follow the workflow, and so individual steps can be more efficiently parallelized depending on the users system.
+
 This workflow will yeild many intermediate files and several publication ready figures.
 
 *Figures are publication quality PDF files, DataTables are tab separated value (tsv) files*
@@ -59,9 +61,7 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 - [MMseqs2](https://github.com/soedinglab/MMseqs2)
 - [EggNog Mapper](https://github.com/eggnogdb/eggnog-mapper) (optional for functional annotation hypothesis testing)
 - [COGclassifier](https://github.com/moshi4/COGclassifier/) (optional alternative to EggNog Mapper)
-- [Enveomics Collection](http://enve-omics.ce.gatech.edu/enveomics/docs) (for aai.rb)
-- [Ruby](https://www.ruby-lang.org/en/) (for enveomics)
-- [Python](https://www.python.org/) (for all custom code in this workflow)
+- [Python](https://www.python.org/) version 3.6+ (for all custom code in this workflow)
 
 #### References
 
@@ -69,8 +69,6 @@ See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to 
 1. Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC bioinformatics. 2010 Dec;11(1):1-1.
 1. Camacho C, Coulouris G, Avagyan V, Ma N, Papadopoulos J, Bealer K, Madden TL. BLAST+: architecture and applications. BMC bioinformatics. 2009 Dec;10(1):1-9.
 1. Steinegger M, Söding J. MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets. Nature biotechnology. 2017 Nov;35(11):1026-8.
-1. Rodriguez-R LM, Konstantinidis KT. The enveomics collection: a toolbox for specialized analyses of microbial genomes and metagenomes. PeerJ Preprints; 2016 Mar 27.
-1. Flanagan D, Matsumoto Y. The Ruby Programming Language: Everything You Need to Know. " O'Reilly Media, Inc."; 2008 Jan 25.
 1. Sanner MF. Python: a programming language for software integration and development. J Mol Graph Model. 1999 Feb 1;17(1):57-61.
 
 ## Required packages for Python
@@ -227,11 +225,11 @@ for f in ${genes_dir_faa}/*.faa; do python 00d_Workflow_Scripts/02a_len_filter_g
 
 ### Step 02: All vs all aai.rb in nucleotide mode
 
-This step calculates the RBMs for each genome pair that we need to compute the F100 scores. We us the enveomics collections' aai.rb script in nucleotide mode for this step. aai.rb uses blast-plus to compute the one-way and two-way gene alignments and the best reciprocal best match hits for gene pairs (RBMs). We filter the RBM alignments to remove spurious short high identity sequence alignments (alignments alignment length / gene length) ≥ 0.50 (e.g. an RBM gene pair need to have at least a 50% alignment across the length of the shorter gene sequence).
+This step calculates the RBMs for each genome pair that we need to compute the F100 scores. We use a basic two way BLAST search to identify matching best hits between the genes of two genomes. This script filters the RBM alignments to remove spurious short high identity sequence alignments (alignments alignment length / gene length) ≥ 0.50 (e.g. an RBM gene pair need to have at least a 50% alignment across the length of the shorter gene sequence). This script retains ties for RBMs.
 
-This step requires the aai.rb script from the enveomics collection, Ruby, and Blast-plus.
+This step requires Python and Blast-plus.
 
-Input: CDS fasta files of nucleotide and amino acid sequence
+Input: CDS fasta files of nucleotide sequences
 
 Output: Tabular blast table with filtered RBMs (RBMs_alV.rbm)
 
@@ -252,7 +250,7 @@ while read p;
         m=`basename $x | cut -d. -f1`;
         y=`echo $p | cut -d' ' -f2`;
         name=`basename $y | cut -d. -f1`;
-        aai.rb -1 ${x} -2 ${y} -N -R ${rbm_dir}/${m}-${name}.rbm -L 0.5;
+        python 00d_Workflow_Scripts/02b_get_RBMs.py -g1 ${x} -g2 ${y} -o ${rbm_dir}/${m}-${name}.rbm;
   done < genes_filenames_allV.txt
 
 # concatenate rbm results to a single file.
@@ -285,16 +283,16 @@ Output: ${my_species}\_F100.tsv
 ```bash
 # Calculate F100 scores and plot RBM sequence similarity histograms
 # to view script info/params
-python 00d_Workflow_Scripts/02b_AAI_RBM_F100.py -h
+python 00d_Workflow_Scripts/02c_get_F100.py -h
 # run with default
-python 00d_Workflow_Scripts/02b_AAI_RBM_F100.py -i RBMs_allV.rbm -o ${my_species}
+python 00d_Workflow_Scripts/02c_get_F100.py -i RBMs_allV.rbm -o ${my_species}
 ```
 
 (OPTIONAL) set -p True to Build histograms of RBM sequence similarities for each genome pair. The x-axis is automatically calculated to fit the data so if the values extend low down into the 70s etc it means at least one RBM has a low sequence similarity but these typically aren't visible in the plot due to the high counts above 95.
 
 ```bash
 # this will create a pdf for each genome pair
-python 00d_Workflow_Scripts/02b_AAI_RBM_F100.py -i RBMs_allV.rbm -s ${my_species_name} -o ${my_species} -p True
+python 00d_Workflow_Scripts/02c_get_F100.py -i RBMs_allV.rbm -s ${my_species_name} -o ${my_species} -p True
 
 # create a directory to store the PDFs
 mkdir 04_rbm_pdf
@@ -308,7 +306,7 @@ mv ${my_species}*.pdf 04_rbm_pdf
 To view model info/options:
 
 ```bash
-python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -h
+python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -h
 ```
 
 This step shows which genome pairs have a higher frequency of recently recombining genes (F100) expected for their ANI range compared to models built from other collections of other genomes.
@@ -331,7 +329,7 @@ Output:
 # Uncompress the Complete_Genome_Model_Data.tsv.zip file
 unzip Complete_Genome_Model_Data.tsv.zip
 # this input file is part of the git repository
-python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Complete_Genome_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species}_complete_model
+python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Complete_Genome_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species}_complete_model
 ```
 
 ![Your data on top of the complete genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_complete_model_GAMplot.png)
@@ -344,7 +342,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Complete_Genome_Model_D
 # Uncompress the Simulated_Neutral_Model_Data.tsv.zip file
 unzip Simulated_Neutral_Model_Data.tsv.zip
 # this input file is part of the git repository
-python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Simulated_Neutral_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species_simulated_model}
+python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Simulated_Neutral_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species_simulated_model}
 ```
 
 ![Your data on top of the simulated neutral genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.png)
@@ -355,7 +353,7 @@ python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i Simulated_Neutral_Model
 
 ```bash
 # For this step we use the input file generate in PART 02, Step 03 twice, or you can generate two diffent F100.tsv files for different genome sets to create your own custom genome model.
-python 00d_Workflow_Scripts/02c_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv -i2 ${my_species}_F100.tsv -o ${my_species_custom_model}
+python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv -i2 ${my_species}_F100.tsv -o ${my_species_custom_model}
 ```
 
 ![Your data on top of a model build from your own data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_custom_model_GAMplot.png)
@@ -371,7 +369,7 @@ Input: ${my_species}\_F100.tsv from Step 02.
 Output: Clustered heatmap PDF 
 
 ```bash
-python  00d_Workflow_Scripts/02d_F100_clustermap.py -i ${my_species}_F100.tsv -o ${my_species}_F100.pdf
+python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o ${my_species}_F100.pdf
 ```
 
 ![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
