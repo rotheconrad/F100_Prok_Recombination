@@ -2,6 +2,8 @@
 
 '''Generates genomes around ani values based on gene RBMs along ANI gradient
 
+** Needs python vs. 3.9 plus for rand.sample count parameter
+
     - uses a gamma distribution to model RBM gene distribution around ANI
     - Genome evolution is neutral random based on RBM distriubtion.
     - Average gene length and stdev (default 1000 bp, 250 stdev)
@@ -121,8 +123,11 @@ def generate_source(gnum, pandist, tgenomes, mu_gene, stdev_gene):
         inters.append(''.join(random.choice('CGTA') for _ in range(10)))
         running_length += len(gnseq)+10
 
-    # generate tgenomes*2 additional auxillary genes to sample from
-    for i in range(int(tgenomes*2)):
+    # generate additional auxillary genes to sample from to simulate the shared
+    # genome fraction.
+    # get the number of accessory genes.
+    accs = [i for i in pancats if i == 'Accessory']
+    for i in range(len(accs)):
         gl = int(random.gauss(994, 250))
         # generate random gene sequence
         rnd = ''.join(random.choice('CGTA') for _ in range(gl))
@@ -301,7 +306,7 @@ def generate_genome(gnum, SG, ani, outpre, gname):
         tmpgclst = axgeneclust
         if pancat == 'Accessory':
             event = random.randint(1,10000)/100
-            if event <= shared_frac:
+            if event >= shared_frac:
                 randv = random.randint(0, len(axgeneseq)-1)
                 seq = tmpgseq.pop(randv)
                 clust = tmpgclst.pop(randv)
