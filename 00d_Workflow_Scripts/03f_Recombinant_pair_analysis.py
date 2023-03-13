@@ -41,7 +41,7 @@ All rights reserved
 -------------------------------------------
 '''
 
-import argparse
+import argparse, math
 from collections import defaultdict
 from itertools import combinations
 import pandas as pd; import numpy as np
@@ -140,9 +140,11 @@ def parse_aai_rbm(rbm, gAid, gBid):
 
     print('\n\tReading RBM file ...')
 
+    # when lookin up a key in the defaultdict(int) a zero is returned
+    # if the key is not in the dict not an error
     RBM = {
-            'A': defaultdict(lambda: defaultdict(int)),
-            'B': defaultdict(lambda: defaultdict(int))
+            'A': defaultdict(lambda: defaultdict(list)),
+            'B': defaultdict(lambda: defaultdict(list))
             }
 
     with open(rbm, 'r') as file:
@@ -156,13 +158,21 @@ def parse_aai_rbm(rbm, gAid, gBid):
             contigIDB = '_'.join(B[:-1])
             genomeIDB = '_'.join(B[:-2])
             geneIDB = B[-1]
-            ID = float(X[2])
+            pID = float(X[2])
 
-            F100 = 1 if ID == 100 else 0
+            F100 = 1 if pID == 100 else 0
 
+            # the rbm file can could be the concatenated file form all genomes
+            # or a file with gA vs gB or gB vs gA
+            # This block should select only the input genomes gA or gB from
+            # a concatenated rbm file, and it should accept them in either
+            # order, gA vs gB or gB vs gA.
             if genomeIDA == gAid and genomeIDB == gBid:
-                RBM['A'][contigIDA][geneIDA] = F100
-                RBM['B'][contigIDB][geneIDB] = F100
+                RBM['A'][contigIDA][geneIDA] = [F100, pID]
+                RBM['B'][contigIDB][geneIDB] = [F100, pID]
+            elif genomeIDB == gAid and genomeIDA == gBid:
+                RBM['B'][contigIDA][geneIDA] = [F100, pID]
+                RBM['A'][contigIDB][geneIDB] = [F100, pID]
 
     return RBM
 
@@ -264,7 +274,7 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
 
     D = {
         'Genome': [], 'Gene': [], 'F100': [], 'PanCat': [], 'Recombinant': [],
-        'Annotation': [], 'Start': [], 'Stop': [], 'Strand': [], 
+        'Annotation': [], 'Start': [], 'Stop': [], 'Strand': [], 'pID': []
         }
 
     contig_positions = {'A': [], 'B': []}
@@ -275,7 +285,8 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
             contig_genes = CDS[genome][contig]
             for gene, geneInfo in contig_genes.items():
                 # 100% RBM = 1 or else = 0
-                F100 = RBM[genome][contig][gene]
+                F100 = RBM[genome][contig].get(gene, [0,0])[0]
+                pID = RBM[genome][contig].get(gene, [0,0])[1]
                 # occasionally (< 1/1000) some genes do not make the pancat file
                 # this seems to be from the mmseqs align step some sequences are
                 # dropped from clusters failing an evalue cutoff. Since we 
@@ -298,6 +309,7 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
                 D['Genome'].append(genome)
                 D['Gene'].append(f'{contig}_{gene}')
                 D['F100'].append(F100)
+                D['pID'].append(pID)
                 D['PanCat'].append(pc)
                 D['Annotation'].append(ano)
                 D['Recombinant'].append(rec)
@@ -318,8 +330,59 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
     return df, contig_positions
 
 
-def build_some_plots(df, genomes, pancats, outpre, cpos):
+def build_pos_line_plot(df, genomes, outpre, subs):
+    ''' plots gene sequence identity on y axis vs genome coords on x axis '''
 
+    df['Mid'] = df[['Start', 'Stop']].mean(axis=1)
+
+    colors = {
+            'Conserved': '#fee391', # yellow for highly conserved genes (HC)
+            'Core': '#dd3497', # pink recombining core (RC) 
+            'Accessory': '#41ab5d', # green recombining accessory (RA)
+            'Specific': '#f03b20', # red genome specific genes (GS)
+            }
+
+    for genome in genomes.keys():
+
+        print(f'\n\tBuilding gene line plot for genome {genome} ...')
+
+        # set current genome length / 4, rounded up to whole integer
+        glength = math.ceil(sum(genomes[genome].values()) / subs)
+        # yaxis min and max
+        ymin, ymax = 90, 100
+        # select current genome
+        dfG = df[df['Genome'] == genome]
+        
+        # initialize the figure with 4 axes
+        fig, axs = plt.subplots(subs, 1, figsize=(7, subs*3))
+
+        for i, ax in enumerate(axs):
+            xmin, xmax = i * glength, (i+1) * glength
+            dfS = dfG[dfG['Mid'] <= xmax]
+            x = dfS['Mid'].to_list()
+            # replace values < ymin with ymin
+            ids = dfS['pID'].to_numpy()
+            y = np.where(ids < ymin, ymin, ids).tolist()
+            c = [colors[i] for i in dfS['PanCat'].to_list()]
+
+            ax.scatter(x, y, color=c, marker='|', linestyle='-')
+            coords = f'Genome range: {xmin} - {xmax}'
+            ax.text(xmax, ymin-0.1, coords, ha='right', va='top', fontsize=8)
+            ax.set_xlim(xmin-0.5, xmax+0.5)
+            ax.set_ylim(ymin, ymax)
+            ax.set_xticks([], [])
+
+        fig.set_tight_layout(True)
+        plt.savefig(f'{outpre}_{genome}_posline_out.pdf')
+        plt.close()
+
+    return True
+
+
+def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
+
+    # Builds gene/genome position bar style plot with pangenome categories
+    # Runs evenness of recombinant gene positions tests
     # cpos is contig position array to mark them on the plot.
     
     colors = [
@@ -866,13 +929,6 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-ano', '--annotation_file',
-        help='Please specify the representative gene annotation file!',
-        metavar='',
-        type=str,
-        required=True
-        )
-    parser.add_argument(
         '-cA', '--input_CDS_A',
         help='Please specify the first prodigal CDS in fasta format!',
         metavar='',
@@ -907,6 +963,21 @@ def main():
         type=str,
         required=True
         )
+    parser.add_argument(
+        '-ano', '--annotation_file',
+        help='(OPTIONAL) Specify the representative gene annotation file.',
+        metavar='',
+        type=str,
+        required=False
+        )
+    parser.add_argument(
+        '-subs', '--lineplot_subdivisions',
+        help='(OPTIONAL)Specify subdivisions for lineplot (default = 4.',
+        metavar='',
+        type=int,
+        default=10,
+        required=False
+        )
     args=vars(parser.parse_args())
 
     # Do what you came here to do:
@@ -915,12 +986,13 @@ def main():
     # define parameters
     rbm = args['RBM_from_AAI']
     PC = args['pangenome_categories']
-    ano = args['annotation_file']
     cA = args['input_CDS_A']
     cB = args['input_CDS_B']
     gA = args['input_genome_A']
     gB = args['input_genome_B']
     outpre = args['output_file_prefix']
+    ano = args['annotation_file']
+    subs = args['lineplot_subdivisions']
 
     # setup a switch
     switch = {0: 'A', 1: 'B'}
@@ -931,7 +1003,9 @@ def main():
     genomes, gAid, gBid = parse_genome_fasta(gA, gB, switch)
     # get CDS info for each genome
     CDS = parse_prodigal_CDS(cA, cB, switch) 
-    # get values from the rbm file
+    # RBM is a nested defaultdict(int) that returns a 0 if a
+    # a requested key is not in the dict. This was the original
+    # intention as a gene not in the RBM list should get a 0.
     RBM = parse_aai_rbm(rbm, gAid, gBid)
     # get the pancat info
     pancats, repgenes = parse_pangenome_categories(PC)
@@ -943,12 +1017,14 @@ def main():
     # cpos is contig positions to use to mark them on the plot
     # cpos = {'A': [position array], 'B': [position array]}
     df, cpos = combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos)
-    _ = build_some_plots(df, genomes, pancats, outpre, cpos)
+    #_ = build_pos_bar_plots(df, genomes, pancats, outpre, cpos)
     ## SECTION 02b RUNS FROM INSIDE build_some_plots function
+    # Build line plot
+    _ = build_pos_line_plot(df, genomes, outpre, subs)
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant F100 = 1 or 0
-    _ = plot_annotation_barplot(df, outpre)
+    #if ano: _ = plot_annotation_barplot(df, outpre)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
     
