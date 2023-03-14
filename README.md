@@ -578,9 +578,6 @@ This step requires Python with Numpy, Pandas, Scipy, StatsModels, MatPlotLib, an
 
 Repeat this step as many times as you have genome pairs you're interested in.
 
-This script writes a tsv file for each genome with columns: Genome, Gene, REC, PanCat, Start, Stop, Strand, Width.
-The gene name should contain the genome identifier_contigNumberFromAssembly_geneNumberOnContig. The REC column is assigned a 0 or 1. 1 indicates the gene sequence has ≥ REC% identity with its corresponding RBM in the other genome and thus a candidate for recent homologous recombination. A 0 indicates the gene does not have ≥ REC% sequence identity with its RBM. The REC threshold is controlled by the -rec parameter (default 99.8) and sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests. The PanCat column indicates the pangenome class assigned to the gene. Start and stop positions are relative to the genome with all contigs concatenated in fasta file order. Strand indicates the strand sense (1) or antisense (-1) the gene is predicted on. Width indicates the gene length or distance between the start and stop positions. The COG Category column is the higher level COG category for the single letter COG assignments in the COG column. The Gene Annotation column contains the short gene name and the Annotation Description contains the description or long gene name.
-
 Input: 1) RBMs_allV.rbm 2) pancat_file.tsv 4) annotation file 3) genome pair fastas cA, cB, gA, gB
 
 cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here). For input 4) annotation file, use -ano EggNog/my_annotations.emapper.annotations for EggNog Mapper results or -ano COGclassifier/classifier_result.tsv for COGclassifier results. You only need one or the other annotation file, not both.
@@ -591,6 +588,23 @@ Output:
 	1. recombinant distribution plot
 	1. recombinant annotations plot
 	1. RBM sequence identity vs. genome position plot
+
+The tsv file contians the file columns and data:
+	- Genome: A or B as input by the user
+	- Gene: Sequence identifier contains the genome_identifier_contigNumberFromAssembly_geneNumberOnContig.
+	- PanCat:  column indicates the pangenome class assigned to the gene.
+	- pID: Nucleotide sequence identity of pairwise gene alignment of the RBM.
+	- REC: Assigned a 0 or 1. 1 indicates the gene sequence has ≥ REC% identity with its corresponding RBM in the other genome and thus a candidate for recent homologous recombination. A 0 indicates the gene does not. The REC threshold is controlled by the -rec parameter (default 99.8) and sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests.
+	- Recombinant: Recombinant or Non-Recombinant classification based on "REC"
+	- Start: Start of gene in genome coordinates
+	- Stop: End of gene in genome coordinates
+	- Strand: 1 for positive or sense and -1 for negative or anti-sense strand of predicted CDS.
+	- COG Category: Higher level COG category assignement based on COG.
+	- COG: Single letter COG assignment.
+	- Gene Annotation: Short gene name of the assigned gene annotation
+	- Annotation Description: Long form gene name or description of the assigned gene annotation
+	- Mismatch: Number of mismatches in the blast alignment for RBMs.
+	- Width: Gene length. Distance between stop and start.
 
 ```bash
 # for script info/option

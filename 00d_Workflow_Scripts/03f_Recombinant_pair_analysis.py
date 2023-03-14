@@ -140,8 +140,8 @@ def parse_aai_rbm(rbm, gAid, gBid, rec):
 
     # Parses the rbm file and returns a dictionary with lists as values.
     # Dictionary with a list of gene IDs for genome A and genome B
-    # F100 is genes with 100% sequence similarity are set = 1
-    # else F100 is set to 0 indicates < 100% RBMs
+    # REC is genes with 100% sequence similarity are set = 1
+    # else REC is set to 0 indicates < 100% RBMs
 
     print('\n\tReading RBM file ...')
 
@@ -164,8 +164,9 @@ def parse_aai_rbm(rbm, gAid, gBid, rec):
             genomeIDB = '_'.join(B[:-2])
             geneIDB = B[-1]
             pID = float(X[2])
+            mismatch = int(X[4])
 
-            F100 = 1 if pID >= rec else 0
+            REC = 1 if pID >= rec else 0
 
             # the rbm file can could be the concatenated file form all genomes
             # or a file with gA vs gB or gB vs gA
@@ -173,11 +174,11 @@ def parse_aai_rbm(rbm, gAid, gBid, rec):
             # a concatenated rbm file, and it should accept them in either
             # order, gA vs gB or gB vs gA.
             if genomeIDA == gAid and genomeIDB == gBid:
-                RBM['A'][contigIDA][geneIDA] = [F100, pID]
-                RBM['B'][contigIDB][geneIDB] = [F100, pID]
+                RBM['A'][contigIDA][geneIDA] = [REC, pID, mismatch]
+                RBM['B'][contigIDB][geneIDB] = [REC, pID, mismatch]
             elif genomeIDB == gAid and genomeIDA == gBid:
-                RBM['B'][contigIDA][geneIDA] = [F100, pID]
-                RBM['A'][contigIDB][geneIDB] = [F100, pID]
+                RBM['B'][contigIDA][geneIDA] = [REC, pID, mismatch]
+                RBM['A'][contigIDB][geneIDB] = [REC, pID, mismatch]
 
     return RBM
 
@@ -283,9 +284,10 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
     # returns contig positions for each genome.
 
     D = {
-        'Genome': [], 'Gene': [], 'F100': [], 'PanCat': [], 'Recombinant': [],
-        'COG Category': [], 'Start': [], 'Stop': [], 'Strand': [], 'pID': [],
-        'COG': [], 'Gene Annotation': [], 'Annotation Description': []
+        'Genome': [], 'Gene': [], 'PanCat': [], 'pID': [], 'REC': [],
+        'Recombinant': [], 'Start': [], 'Stop': [], 'Strand': [],
+        'COG Category': [], 'COG': [], 'Gene Annotation': [],
+        'Annotation Description': [], 'Mismatch': []
         }
 
     contig_positions = {'A': [], 'B': []}
@@ -296,8 +298,9 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
             contig_genes = CDS[genome][contig]
             for gene, geneInfo in contig_genes.items():
                 # 100% RBM = 1 or else = 0
-                F100 = RBM[genome][contig].get(gene, [0,0])[0]
-                pID = RBM[genome][contig].get(gene, [0,0])[1]
+                REC = RBM[genome][contig].get(gene, [0,0,'x'])[0]
+                pID = RBM[genome][contig].get(gene, [0,0,'x'])[1]
+                mismatch = RBM[genome][contig].get(gene, [0,0, 'x'])[2]
                 # occasionally (< 1/1000) some genes do not make the pancat file
                 # this seems to be from the mmseqs align step some sequences are
                 # dropped from clusters failing an evalue cutoff. Since we 
@@ -312,7 +315,7 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
                 ano = annos.get(repg, default)
                 cat, cog, gn, desc = ano[0], ano[1], ano[2], ano[3]
                 # assign recombinant or non-recombinant
-                if F100 == 1 and pc != 'Conserved':
+                if REC == 1 and pc != 'Conserved':
                     rec = 'Recombinant'
                 else: 
                     rec = 'Non-recombinant'
@@ -322,8 +325,9 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
 
                 D['Genome'].append(genome)
                 D['Gene'].append(f'{contig}_{gene}')
-                D['F100'].append(F100)
+                D['REC'].append(REC)
                 D['pID'].append(pID)
+                D['Mismatch'].append(mismatch)
                 D['PanCat'].append(pc)
                 D['COG Category'].append(cat)
                 D['Recombinant'].append(rec)
@@ -446,29 +450,46 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
             # subset conserved genes 
             conserved = dfY[dfY['PanCat'] == 'Conserved']
             tc = colors[0]
+            # percent of total genes
             tl = round(len(conserved) / total_genes * 100, 2)
+            # mutation rate
+            conserved = conserved[conserved['Mismatch'] != 'x']
+            mr = round(conserved['Mismatch'].sum() / conserved['Width'].sum() * 100, 4)
         elif pclass == 'RC':
             # subset recombinant core genes
-            core = dfY[(dfY['PanCat'] == 'Core') & (dfY['F100'] == 1)]
+            core = dfY[(dfY['PanCat'] == 'Core') & (dfY['REC'] == 1)]
             tc = colors[1]
             tl = round(len(core) / total_genes * 100, 2)
+            core = core[core['Mismatch'] != 'x']
+            mr = round(core['Mismatch'].sum() / core['Width'].sum() * 100, 4)
         elif pclass == 'RA':
             # subset recombinant accessory genes
-            accessory = dfY[(dfY['PanCat'] == 'Accessory') & (dfY['F100'] == 1)]
+            accessory = dfY[(dfY['PanCat'] == 'Accessory') & (dfY['REC'] == 1)]
             tc = colors[2]
             tl = round(len(accessory) / total_genes * 100, 2)
+            accessory = accessory[accessory['Mismatch'] != 'x']
+            mr = round(accessory['Mismatch'].sum() / accessory['Width'].sum() * 100, 4)
         elif pclass == 'NR':
             # subset non conserved and non recombining genes
-            nc_genes = dfY[(dfY['PanCat'] != 'Conserved') & (dfY['PanCat'] != 'Specific') & (dfY['F100'] != 1)]
+            nc_genes = dfY[
+                            (dfY['PanCat'] != 'Conserved') & 
+                            (dfY['PanCat'] != 'Specific') & 
+                            (dfY['REC'] != 1)
+                            ]
             tc = colors[3]
             tl = round(len(nc_genes) / total_genes * 100, 2)
+            nc_genes = nc_genes[nc_genes['Mismatch'] != 'x']
+            mr = round(nc_genes['Mismatch'].sum() / nc_genes['Width'].sum() * 100, 4)
         elif pclass == 'GS':
             # subset genome specific genes
-            specific = dfY[dfY['PanCat'] == 'Specific']
+            specific = dfY[dfY['PanCat'] == 'Specific'].copy()
             tc = colors[4]
             tl = round(len(specific) / total_genes * 100, 2)
+            specific = specific[specific['Mismatch'] != 'x']
+            mr = round(specific['Mismatch'].sum() / specific['Width'].sum() * 100, 4)
         # add it to the plot
-        ax.text(glength+(glength/100), lab, f'{tl}%', color=tc, va='center')
+        ax.text(glength+(glength/100), lab, f'{tl}%\n{mr}%', color=tc, va='center')
+
 
     pc_switch = {'Core': 'RC', 'Conserved': 'HC', 'Accessory': 'RA', 'Specific': 'GS'}
 
@@ -486,7 +507,7 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
         dist_title = f'Genome {genome}'
         dist_out = f'{outpre}_{genome}_distance'
         # changed doing by pangenome category to doing 1 for each genome.
-        # and collapsing consecutive F100 genes to 1 event
+        # and collapsing consecutive REC genes to 1 event
         # returns percent recently recombining genes
         _ = distance_plots_2(dfX, colors, dist_title, dist_out)
 
@@ -494,7 +515,7 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
         pcat = dfX['PanCat'].to_numpy() # pancat
         Sta = dfX['Start'].to_numpy() # start position
         Wid = dfX['Width'].to_numpy() # Length or width of gene
-        F10 = dfX['F100'].to_numpy() # F100 status
+        F10 = dfX['REC'].to_numpy() # REC status
         Str = dfX['Strand'].to_numpy() # Strand
         #Pan = dfX['PanClass'].to_numpy() # Future - Pangenome category
 
@@ -689,8 +710,8 @@ def geom_dist(array, n):
 
 def distance_plots_2(df, colors, distance_title, distance_out):
 
-    # Calculate distance between F100 gene events in the genome
-    # Collapse consecutive F100 genes to single event.
+    # Calculate distance between REC gene events in the genome
+    # Collapse consecutive REC genes to single event.
     # simulate poisson distribution
     # run kolmogorov-smirnov test
     # plot results
@@ -700,7 +721,7 @@ def distance_plots_2(df, colors, distance_title, distance_out):
     # distance between genes is distance between index and the preceeding index 
     # subset non conserved genes ie disregard conserved genes
     # subset recombinant all genes that are not "conserved"
-    recomb_genes = df[(df['F100'] == 1) & (df['PanCat'] != 'Conserved')].index
+    recomb_genes = df[(df['REC'] == 1) & (df['PanCat'] != 'Conserved')].index
 
     # percent of genes that are recently recombining
     # 100% RBMs / total genes
@@ -1056,7 +1077,7 @@ def main():
     _ = build_pos_line_plot(df, genomes, outpre, subs, cpos)
 
     ## SECTION 03: Annotations Hypothesis testing
-    # partition into recombinant genes vs non-recombinant F100 = 99.8 or 0
+    # partition into recombinant genes vs non-recombinant REC = 99.8 or 0
     if ano: _ = plot_annotation_barplot(df, outpre)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
