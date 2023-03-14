@@ -330,8 +330,9 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
     return df, contig_positions
 
 
-def build_pos_line_plot(df, genomes, outpre, subs):
-    ''' plots gene sequence identity on y axis vs genome coords on x axis '''
+def build_pos_line_plot(df, genomes, outpre, subs, cpos):
+    ''' plots gene sequence identity on y axis vs genome coords on x axis.
+        cpos is a list of contig lengths to add markers '''
 
     df['Mid'] = df[['Start', 'Stop']].mean(axis=1)
 
@@ -371,6 +372,12 @@ def build_pos_line_plot(df, genomes, outpre, subs):
             ax.set_xlim(xmin-0.5, xmax+0.5)
             ax.set_ylim(ymin, ymax)
             ax.set_xticks([], [])
+
+            # add contig markers
+            tcpos = [i for i in cpos[genome][:-1] if i <= xmax]
+            for mark in tcpos:
+                ax.text(mark, ymax,"l", color='#969696',
+                        fontsize=8, ha='center', va='bottom')
 
         fig.set_tight_layout(True)
         plt.savefig(f'{outpre}_{genome}_posline_out.pdf')
@@ -1020,7 +1027,7 @@ def main():
     _ = build_pos_bar_plots(df, genomes, pancats, outpre, cpos)
     ## SECTION 02b RUNS FROM INSIDE build_some_plots function
     # Build line plot
-    _ = build_pos_line_plot(df, genomes, outpre, subs)
+    _ = build_pos_line_plot(df, genomes, outpre, subs, cpos)
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant F100 = 1 or 0
