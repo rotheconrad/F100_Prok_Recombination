@@ -131,7 +131,7 @@ def parse_prodigal_CDS(cA, cB, switch):
     return CDS
 
 
-def parse_aai_rbm(rbm, gAid, gBid):
+def parse_aai_rbm(rbm, gAid, gBid, rec):
 
     # Parses the rbm file and returns a dictionary with lists as values.
     # Dictionary with a list of gene IDs for genome A and genome B
@@ -160,7 +160,7 @@ def parse_aai_rbm(rbm, gAid, gBid):
             geneIDB = B[-1]
             pID = float(X[2])
 
-            F100 = 1 if pID == 100 else 0
+            F100 = 1 if pID >= rec else 0
 
             # the rbm file can could be the concatenated file form all genomes
             # or a file with gA vs gB or gB vs gA
@@ -305,7 +305,7 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
                 # retrieve annotation information
                 default = ['Hypothetical', '-', '-', 'Hypothetical']
                 ano = annos.get(repg, default)
-                cat, cog, gene, desc = ano[0], ano[1], ano[2], ano[3]
+                cat, cog, gn, desc = ano[0], ano[1], ano[2], ano[3]
                 # assign recombinant or non-recombinant
                 if F100 == 1 and pc != 'Conserved':
                     rec = 'Recombinant'
@@ -326,7 +326,7 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
                 D['Stop'].append(stop)
                 D['Strand'].append(strand)
                 D['COG'].append(cog)
-                D['Gene Annotation'].append(gene)
+                D['Gene Annotation'].append(gn)
                 D['Annotation Description'].append(desc)
 
             # increment genome_length. used to adjust gene start positions
@@ -983,6 +983,14 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-rec', '--recombination_cutoff',
+        help='(OPTIONAL) Specify recombination cutoff (default = 99.8).',
+        metavar='',
+        type=float,
+        default=99.8,
+        required=False
+        )
+    parser.add_argument(
         '-ano', '--annotation_file',
         help='(OPTIONAL) Specify the representative gene annotation file.',
         metavar='',
@@ -991,7 +999,7 @@ def main():
         )
     parser.add_argument(
         '-subs', '--lineplot_subdivisions',
-        help='(OPTIONAL)Specify subdivisions for lineplot (default = 4.',
+        help='(OPTIONAL)Specify subdivisions for lineplot (default = 10).',
         metavar='',
         type=int,
         default=10,
@@ -1012,6 +1020,7 @@ def main():
     outpre = args['output_file_prefix']
     ano = args['annotation_file']
     subs = args['lineplot_subdivisions']
+    rec = args['recombination_cutoff']
 
     # setup a switch
     switch = {0: 'A', 1: 'B'}
@@ -1025,7 +1034,7 @@ def main():
     # RBM is a nested defaultdict(int) that returns a 0 if a
     # a requested key is not in the dict. This was the original
     # intention as a gene not in the RBM list should get a 0.
-    RBM = parse_aai_rbm(rbm, gAid, gBid)
+    RBM = parse_aai_rbm(rbm, gAid, gBid, rec)
     # get the pancat info
     pancats, repgenes = parse_pangenome_categories(PC)
     # get the gene annotations
@@ -1042,7 +1051,7 @@ def main():
     _ = build_pos_line_plot(df, genomes, outpre, subs, cpos)
 
     ## SECTION 03: Annotations Hypothesis testing
-    # partition into recombinant genes vs non-recombinant F100 = 1 or 0
+    # partition into recombinant genes vs non-recombinant F100 = 99.8 or 0
     if ano: _ = plot_annotation_barplot(df, outpre)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
