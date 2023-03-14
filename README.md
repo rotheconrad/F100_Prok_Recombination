@@ -582,7 +582,8 @@ Input: 1) RBMs_allV.rbm 2) pancat_file.tsv 4) annotation file 3) genome pair fas
 
 cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here). For input 4) annotation file, use -ano EggNog/my_annotations.emapper.annotations for EggNog Mapper results or -ano COGclassifier/classifier_result.tsv for COGclassifier results. You only need one or the other annotation file, not both.
 
-Output: 
+Output:
+
 	1. tsv file
 	1. recombinant gene position plot
 	1. recombinant distribution plot
@@ -590,6 +591,7 @@ Output:
 	1. RBM sequence identity vs. genome position plot
 
 The tsv file contians the file columns and data:
+
 	- Genome: A or B as input by the user
 	- Gene: Sequence identifier contains the genome_identifier_contigNumberFromAssembly_geneNumberOnContig.
 	- PanCat:  column indicates the pangenome class assigned to the gene.
@@ -620,7 +622,7 @@ The first figure labeled as \_genomes.pdf shows the location of recombinant gene
 
 The distribution of recombinant gene location is also assessed and compared to a Null Model using the Poisson distribution (top left panel) as a proxy for evenly distributed recombination events across the genome or a Geometric distribution (top right panel). If the p-value is low and the k value is close to 1, the spacing of genes in that category does not fit the named distribution well. If the p-value is high, but the k value is still close 1 (and not to 0) this indicates a majority of the data falls inside the named distribution but the overal shape of the distribution is still not a great fit. See also the Q-Q plots (two lower panels) for a different perspective on distribution fit. The mean of the data is shown as a dashed line, the named model (Poisson left; Geometric right) fit to the data is shown as a red curve, and the emperical data (the number of genes between events) is plotted as a histogram in grey.
 
-![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_distance.png)
+![Distance between events vs. Poisson or Geometric distribution](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_distance.png)
 
 Here is an example of what a Q-Q plot of a good fit looks like:
 
@@ -661,7 +663,7 @@ At the time of writing, the current EggNog 5.5 database does not include an X ca
 
 Any gene without an assigned anotation is labeled as Hypothetical.
 
-![Distance between events vs. Poisson](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_annotations_bar.png)
+![Gene Annotation COG Categories](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_annotations_bar.png)
 
 Detail script output to screen for Chi-square tests:
 
@@ -869,6 +871,10 @@ Benjamini/Hochberg corrected p values:
 
 Complete success space cadet!! Finished without errors.
 ```
+
+And finally, we have a figure with the sequence identity of RBMs vs. genome position. Each tik mark is a gene. The color represents the pangenome color Conserved (yellow), Core (pink), Accessory (green), or Specific (red) only. The colors in this figure do not indicate the recombinant classification. The y-axis sequence identities of the RBM alignments and the REC threshold (default 99.8) indicate this. The genome is divided into panels to fit the range of the genome sequence in base pairs (or nucleotides) along the x-axis. Each panel shows the genome range indicated in the lower rate. The -subs parameter allows to zoom in or out on the genome from the default of 10 panels. Only the first two panels are shown below.
+
+![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_posline_out.png)
 
 ### Step 06: Investigate recombinant positions between one to many genomes
 
