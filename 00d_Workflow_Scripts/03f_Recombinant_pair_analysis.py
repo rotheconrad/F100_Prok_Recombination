@@ -1017,14 +1017,14 @@ def main():
     # cpos is contig positions to use to mark them on the plot
     # cpos = {'A': [position array], 'B': [position array]}
     df, cpos = combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos)
-    #_ = build_pos_bar_plots(df, genomes, pancats, outpre, cpos)
+    _ = build_pos_bar_plots(df, genomes, pancats, outpre, cpos)
     ## SECTION 02b RUNS FROM INSIDE build_some_plots function
     # Build line plot
     _ = build_pos_line_plot(df, genomes, outpre, subs)
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant F100 = 1 or 0
-    #if ano: _ = plot_annotation_barplot(df, outpre)
+    if ano: _ = plot_annotation_barplot(df, outpre)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
     
