@@ -578,14 +578,19 @@ This step requires Python with Numpy, Pandas, Scipy, StatsModels, MatPlotLib, an
 
 Repeat this step as many times as you have genome pairs you're interested in.
 
-This script writes a tsv file for each genome with columns: Genome, Gene, F100, PanCat, Start, Stop, Strand, Width.
-The gene name should contain the genome identifier_contigNumberFromAssembly_geneNumberOnContig. The F100 column is assigned a 0 or 1. 1 indicates the gene sequence has 100% identity with its corresponding RBM in the other genome and thus a candidate for recent homoloug recombination. A 0 indicates the gene does not have 100% sequence identity with its RBM. The PanCat column indicates the pangenome class assigned to the gene. Start and stop positions are relative to the genome with all contigs concatenated in fasta file order. Strand indicates the strand sense (1) or antisense (-1) the gene is predicted on. Width indicates the gene length or distance between the start and stop positions.
+This script writes a tsv file for each genome with columns: Genome, Gene, REC, PanCat, Start, Stop, Strand, Width.
+The gene name should contain the genome identifier_contigNumberFromAssembly_geneNumberOnContig. The REC column is assigned a 0 or 1. 1 indicates the gene sequence has ≥ REC% identity with its corresponding RBM in the other genome and thus a candidate for recent homologous recombination. A 0 indicates the gene does not have ≥ REC% sequence identity with its RBM. The REC threshold is controlled by the -rec parameter (default 99.8) and sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests. The PanCat column indicates the pangenome class assigned to the gene. Start and stop positions are relative to the genome with all contigs concatenated in fasta file order. Strand indicates the strand sense (1) or antisense (-1) the gene is predicted on. Width indicates the gene length or distance between the start and stop positions. The COG Category column is the higher level COG category for the single letter COG assignments in the COG column. The Gene Annotation column contains the short gene name and the Annotation Description contains the description or long gene name.
 
 Input: 1) RBMs_allV.rbm 2) pancat_file.tsv 4) annotation file 3) genome pair fastas cA, cB, gA, gB
 
 cA and cB flags denote the predicted CDS in nucleotides fasta file from prodigal (using .fnn here) and gA and gB flags are for the genome fasta files (using .fna here). For input 4) annotation file, use -ano EggNog/my_annotations.emapper.annotations for EggNog Mapper results or -ano COGclassifier/classifier_result.tsv for COGclassifier results. You only need one or the other annotation file, not both.
 
-Output: 1) tsv file 2) recombinant gene position plot 3) recombinant distribution plot 4) recombinant annotations plot
+Output: 
+	1. tsv file
+	1. recombinant gene position plot
+	1. recombinant distribution plot
+	1. recombinant annotations plot
+	1. RBM sequence identity vs. genome position plot
 
 ```bash
 # for script info/option
@@ -594,6 +599,7 @@ python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -h
 # with default settings
 python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
+
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
 ![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_genomes.png)

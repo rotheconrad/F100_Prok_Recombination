@@ -24,6 +24,11 @@ if it is not highly conserved.
 This script performs some statistical tests on the distance between
 recombinant genes, and on the distributions of gene annotations.
 
+The -rec parameter (default 99.8) sets the threshold for an RBM to be
+considered recombinant or not. It affects the results of the gene annotations
+plot and chi-square hypothesis tests and it affects the recombinant positions
+plot and Poisson and Geometric distribution tests.
+
 see the github for a detail description of output files.
 https://github.com/rotheconrad/F100_Prok_Recombination
 
