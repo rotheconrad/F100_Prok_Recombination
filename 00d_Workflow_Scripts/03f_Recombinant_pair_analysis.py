@@ -238,25 +238,30 @@ def parse_annotations(ano):
             for line in file:
                 X = line.rstrip().split('\t')
                 name = X[0]
-                annotation = X[7]
-                cat = COGclass.get(annotation, 'Other')
-                annos[name] = cat
+                gene = X[5]
+                desc = X[6]
+                cog = X[7]
+                cat = COGclass.get(cog, 'Other')
+                annos[name] = [cat, cog, gene, desc]
         elif header[0] == '#':
             print('\n\tReading EggNog annotation file ...')
             for line in file:
                 if line.startswith('#'): continue
                 X = line.rstrip().split('\t')
-                name = X[0]
-                COG_cat = X[6][0] # select only first letter
+                name = X[0] # representitive predicted gene name
+                gene = X[8] # annotation short gene name
+                desc = X[7] # annotation long gene name (description)
+                cog = X[6][0] # select only first letter
                 #same behavior as COGclassifier for multiple letter assignments
-                description = X[7]
-                # check annations and assign categories
-                if any(mbl in description.lower() for mbl in mobile):
+                # EggNog doesn't have cog X - mobile gene category
+                # so we build it from keywords and the annotation description
+                # check annotions and assign categories
+                if any(mbl in desc.lower() for mbl in mobile):
                     cat = 'Mobile'
-                elif COG_cat == '-': cat = 'Hypothetical'
-                else: cat = COGclass.get(COG_cat, 'Other')
+                elif cog == '-': cat = 'Hypothetical'
+                else: cat = COGclass.get(cog, 'Other')
                 # assigne the annotation to the gene
-                annos[name] = cat
+                annos[name] = [cat, cog, gene, desc]
         else:
             print('Annotation input file format error')
 
@@ -274,7 +279,8 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
 
     D = {
         'Genome': [], 'Gene': [], 'F100': [], 'PanCat': [], 'Recombinant': [],
-        'Annotation': [], 'Start': [], 'Stop': [], 'Strand': [], 'pID': []
+        'COG Category': [], 'Start': [], 'Stop': [], 'Strand': [], 'pID': [],
+        'COG': [], 'Gene Annotation': [], 'Annotation Description': []
         }
 
     contig_positions = {'A': [], 'B': []}
@@ -296,7 +302,10 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
                 # is noted in Part 03, Step 05 of the github readme.
                 pc = pancats.get(f'{contig}_{gene}', 'Specific')
                 repg = repgenes.get(f'{contig}_{gene}', 'na')
-                ano = annos.get(repg, 'Hypothetical')
+                # retrieve annotation information
+                default = ['Hypothetical', '-', '-', 'Hypothetical']
+                ano = annos.get(repg, default)
+                cat, cog, gene, desc = ano[0], ano[1], ano[2], ano[3]
                 # assign recombinant or non-recombinant
                 if F100 == 1 and pc != 'Conserved':
                     rec = 'Recombinant'
@@ -311,11 +320,14 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
                 D['F100'].append(F100)
                 D['pID'].append(pID)
                 D['PanCat'].append(pc)
-                D['Annotation'].append(ano)
+                D['COG Category'].append(cat)
                 D['Recombinant'].append(rec)
                 D['Start'].append(start)
                 D['Stop'].append(stop)
                 D['Strand'].append(strand)
+                D['COG'].append(cog)
+                D['Gene Annotation'].append(gene)
+                D['Annotation Description'].append(desc)
 
             # increment genome_length. used to adjust gene start positions
             # and keep track of contig positions to add markers to plot
@@ -763,7 +775,7 @@ def plot_annotation_barplot(df, outpre):
             ]
 
     # set annotation category order
-    if 'Other' in df['Annotation'].unique():
+    if 'Other' in df['COG Category'].unique():
         aorder = [
                 'Other', 'Hypothetical', 'Conserved Hypothetical',
                 'Ribosomal', 'Information', 'Cellular',
@@ -778,7 +790,7 @@ def plot_annotation_barplot(df, outpre):
 
     xorder = ['Recombinant', 'Non-recombinant']
     # subset df
-    adf = df.groupby(['Recombinant', 'Annotation'])['Gene'].count().unstack()
+    adf = df.groupby(['Recombinant', 'COG Category'])['Gene'].count().unstack()
     adf = adf[aorder].T
     adf = adf[xorder]
 
