@@ -52,10 +52,6 @@ This workflow will yeild many intermediate files and several publication ready f
 1. Figure: genome group: Core vs total recombinant positions rarefaction curve
 1. DataTable: Gene RBM info, position info, annoation info
 
-See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
-
-See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to build the model with simulated genomes. Code referenced in these notes can be found in 00c_Simulated_Genomes_Model directory.
-
 ## Required dependencies
 
 - [FastANI](https://github.com/ParBLiSS/FastANI)
@@ -226,7 +222,7 @@ for f in ${genes_dir_faa}/*.faa; do python 00d_Workflow_Scripts/02a_len_filter_g
 
 ![Gene Length Distribution](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/geneLenDist.png)
 
-### Step 02: All vs all aai.rb in nucleotide mode
+### Step 02: Find reciprocal best matches (hits) - All genomes vs. All genomes
 
 This step calculates the RBMs for each genome pair that we need to compute the F100 scores. We use a basic two way BLAST search to identify matching best hits between the genes of two genomes. This script filters the RBM alignments to remove spurious short high identity sequence alignments (alignments alignment length / gene length) ≥ 0.50 (e.g. an RBM gene pair need to have at least a 50% alignment across the length of the shorter gene sequence). This script retains ties for RBMs.
 
@@ -328,6 +324,8 @@ Output:
 
 *This model comes from 330 species with at least 10 complete genomes in the NCBI RefSeq database as of April 20, 2022. Replace ${my_species_complete_model} with a  file name prefix of your choosing.*
 
+See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
+
 ```bash
 # Uncompress the Complete_Genome_Model_Data.tsv.zip file
 unzip Complete_Genome_Model_Data.tsv.zip
@@ -340,6 +338,8 @@ python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Complete_Genome_Model_D
 #### Option 02: Simulated Neutral model
 
 *This model comes from [Population-Genome-Simulator](https://github.com/rotheconrad/Population-Genome-Simulator) which simulates a population of genomes by introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. Replace ${my_species_simulated_model} with a  file name prefix of your choosing. Users can generate their own sets of simulated genomes by tweaking various parameters. Then follow Option 03 for building a custom model.*
+
+See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to build the model with simulated genomes. Code referenced in these notes can be found in 00c_Simulated_Genomes_Model directory.
 
 ```bash
 # Uncompress the Simulated_Neutral_Model_Data.tsv.zip file
