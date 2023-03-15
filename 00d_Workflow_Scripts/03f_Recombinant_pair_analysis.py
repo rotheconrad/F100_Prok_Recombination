@@ -380,11 +380,12 @@ def build_pos_line_plot(df, genomes, outpre, subs, cpos):
 
         for i, ax in enumerate(axs):
             xmin, xmax = i * glength, (i+1) * glength
-            dfS = dfG[dfG['Mid'] <= xmax]
+            dfS = dfG[(dfG['Mid'] <= xmax) & (dfG['Mid'] >= xmin)]
             x = dfS['Mid'].to_list()
             # replace values < ymin with ymin
             ids = dfS['pID'].to_numpy()
             y = np.where(ids < ymin, ymin, ids).tolist()
+
             c = [colors[i] for i in dfS['PanCat'].to_list()]
 
             ax.scatter(x, y, color=c, marker='|', linestyle='-')
@@ -394,8 +395,9 @@ def build_pos_line_plot(df, genomes, outpre, subs, cpos):
             ax.set_ylim(ymin, ymax)
             ax.set_xticks([], [])
 
+
             # add contig markers
-            tcpos = [i for i in cpos[genome][:-1] if i <= xmax]
+            tcpos = [i for i in cpos[genome][:-1] if xmin <= i <= xmax]
             for mark in tcpos:
                 ax.text(mark, ymax,"l", color='#969696',
                         fontsize=8, ha='center', va='bottom')
@@ -486,7 +488,10 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
             tc = colors[4]
             tl = round(len(specific) / total_genes * 100, 2)
             specific = specific[specific['Mismatch'] != 'x']
-            mr = round(specific['Mismatch'].sum() / specific['Width'].sum() * 100, 4)
+            if len(specific) >= 1:
+                mr = round(specific['Mismatch'].sum() / specific['Width'].sum() * 100, 4)
+            else:
+                mr = 'n/a'
         # add it to the plot
         ax.text(glength+(glength/100), lab, f'{tl}%\n{mr}%', color=tc, va='center')
 
@@ -815,7 +820,7 @@ def plot_annotation_barplot(df, outpre):
     # subset df
     adf = df.groupby(['Recombinant', 'COG Category'])['Gene'].count().unstack()
     adf = adf[aorder].T
-    adf = adf[xorder]
+    adf = adf[xorder].fillna(0)
 
     # categorical hypothesis testing with raw counts
     chip, pvals_corrected = annotation_hypothesis_test(adf)

@@ -370,7 +370,7 @@ def plot_annotation_barplot(df, outpre):
     # subset df
     adf = df.groupby(['Recombinant', 'COG Category'])['Gene'].count().unstack()
     adf = adf[aorder].T
-    adf = adf[xorder]
+    adf = adf[xorder].fillna(0)
 
     # categorical hypothesis testing with raw counts
     chip, pvals_corrected = annotation_hypothesis_test(adf)
@@ -534,7 +534,7 @@ def build_pos_line_plot(df, mgenome, outpre, cpos):
 
     for i, (ax, genome) in enumerate(zip(axs, group_genomes)):
         xmin, xmax = 0, glength
-        dfS = df[df['Match Genome'] == genome]
+        dfS = dfG[(dfG['Mid'] <= xmax) & (dfG['Mid'] >= xmin)]
         x = dfS['Mid'].to_list()
         # replace values < ymin with ymin
         ids = dfS['pID'].to_numpy()
