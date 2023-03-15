@@ -616,9 +616,13 @@ python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -h
 python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm -pc pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
 
+#### Recombinant gene position by pangenome class
+
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
 
 ![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_genomes.png)
+
+#### Distance between recombination events distribution test
 
 The distribution of recombinant gene location is also assessed and compared to a Null Model using the Poisson distribution (top left panel) as a proxy for evenly distributed recombination events across the genome or a Geometric distribution (top right panel). If the p-value is low and the k value is close to 1, the spacing of genes in that category does not fit the named distribution well. If the p-value is high, but the k value is still close 1 (and not to 0) this indicates a majority of the data falls inside the named distribution but the overal shape of the distribution is still not a great fit. See also the Q-Q plots (two lower panels) for a different perspective on distribution fit. The mean of the data is shown as a dashed line, the named model (Poisson left; Geometric right) fit to the data is shown as a red curve, and the emperical data (the number of genes between events) is plotted as a histogram in grey.
 
@@ -627,6 +631,8 @@ The distribution of recombinant gene location is also assessed and compared to a
 Here is an example of what a Q-Q plot of a good fit looks like:
 
 ![Good Q-Q plot example](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/Good_QQ_example.png)
+
+#### Recombinant vs. Non-recombinant gene annotation test
 
 This step also bins annotations by COG category and plots recombinant vs non-recombinant gene annotations. Performs Chi-square test of independence with post hoc chi-square tests if initial significance is found. Asterisks in the plot denote significant difference between a category after Benjamini/Hochberg multiple test correction. Detailed Chi-square results are printed to the screen.
 
@@ -871,6 +877,8 @@ Benjamini/Hochberg corrected p values:
 
 Complete success space cadet!! Finished without errors.
 ```
+
+#### Sequence identity of RBMs vs. genome position
 
 And finally, we have a figure with the sequence identity of RBMs vs. genome position. Each tik mark is a gene. The color represents the pangenome color Conserved (yellow), Core (pink), Accessory (green), or Specific (red) only. The colors in this figure do not indicate the recombinant classification. The y-axis sequence identities of the RBM alignments and the REC threshold (default 99.8) indicate this. The genome is divided into panels to fit the range of the genome sequence in base pairs (or nucleotides) along the x-axis. Each panel shows the genome range indicated in the lower rate. The -subs parameter allows to zoom in or out on the genome from the default of 10 panels. Only the first two panels are shown below.
 
