@@ -613,7 +613,7 @@ The tsv file contians the file columns and data:
 python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -h
 
 # with default settings
-python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm -PC pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
+python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm -pc pancat_file.tsv -ano annotation_file -cA ${genes_dir}/genomeA.fnn -cB ${genes_dir}/genomeB.fnn -gA ${genomes_dir}/genomeA.fna -gB ${genomes_dir}/genomeB.fna -o genomeA-genomeB
 ```
 
 The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
@@ -878,6 +878,49 @@ And finally, we have a figure with the sequence identity of RBMs vs. genome posi
 
 ### Step 06: Investigate recombinant positions between one to many genomes
 
-*similar to above but this time the plots are just for the 1st genome and data is added to the first genome compared to many genomes*
+This script is similar to the 03f script for genome pairs except it looks at one genome compared to many genomes.
 
+The input is a two column tsv file with paths to the genome fastas in the first column and paths to the gene fastas in the second column. See the example input file group_1_list.tsv. The first genome in the list will be compared to the remaining genomes in the list.
+
+And then it takes the same rbm, annotation, and pancate files as above.
+
+This script returns data, graphics and statistics concerning the genomic positions between genes categorized by highly conserved core genes, recombining core genes, recombing accessory genes, and non-recombining genes. A gene is said to be recombining if the RBM value equals 100 and if it is not highly conserved.
+
+This script performs some statistical tests on the distance between recombinant genes, and on the distributions of gene annotations.
+
+The -rec parameter (default 99.8) sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests.
+
+Output:
+
+	1. tsv file
+	1. recombinant gene position plot
+	1. recombinant distribution plot
+	1. recombinant annotations plot
+	1. RBM sequence identity vs. genome position plot
+
+The tsv file contians the file columns and data:
+
+	- Genome: The one genome that faced many.
+	- Gene: Sequence identifier contains the genome_identifier_contigNumberFromAssembly_geneNumberOnContig.
+	- PanCat:  column indicates the pangenome class assigned to the gene.
+	- pID: Nucleotide sequence identity of pairwise gene alignment of the RBM.
+	- REC: Assigned a 0 or 1. 1 indicates the gene sequence has ≥ REC% identity with its corresponding RBM in the other genome and thus a candidate for recent homologous recombination. A 0 indicates the gene does not. The REC threshold is controlled by the -rec parameter (default 99.8) and sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests.
+	- Recombinant: Recombinant or Non-Recombinant classification based on "REC"
+	- Start: Start of gene in genome coordinates
+	- Stop: End of gene in genome coordinates
+	- Strand: 1 for positive or sense and -1 for negative or anti-sense strand of predicted CDS.
+	- COG Category: Higher level COG category assignement based on COG.
+	- COG: Single letter COG assignment.
+	- Gene Annotation: Short gene name of the assigned gene annotation
+	- Annotation Description: Long form gene name or description of the assigned gene annotation
+	- Mismatch: Number of mismatches in the blast alignment for RBMs.
+	- Width: Gene length. Distance between stop and start.
+
+```bash
+# for script info/option
+python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -h
+
+# with default settings
+python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -i group_1_list.tsv -o group_g1 -rbm RBMs_allV.rbm -pc pancat_file.tsv -ano annotation_file
+```
 

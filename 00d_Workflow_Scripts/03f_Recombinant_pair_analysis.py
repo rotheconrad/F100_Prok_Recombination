@@ -136,12 +136,12 @@ def parse_prodigal_CDS(cA, cB, switch):
     return CDS
 
 
-def parse_aai_rbm(rbm, gAid, gBid, rec):
+def parse_rbm_file(rbm, gAid, gBid, rec):
 
     # Parses the rbm file and returns a dictionary with lists as values.
     # Dictionary with a list of gene IDs for genome A and genome B
-    # REC is genes with 100% sequence similarity are set = 1
-    # else REC is set to 0 indicates < 100% RBMs
+    # Genes ≥ rec sequence similarity are set REC = 1
+    # else REC is set to 0 indicates < rec RBMs
 
     print('\n\tReading RBM file ...')
 
@@ -168,7 +168,7 @@ def parse_aai_rbm(rbm, gAid, gBid, rec):
 
             REC = 1 if pID >= rec else 0
 
-            # the rbm file can could be the concatenated file form all genomes
+            # the rbm file should be the concatenated file from all genomes
             # or a file with gA vs gB or gB vs gA
             # This block should select only the input genomes gA or gB from
             # a concatenated rbm file, and it should accept them in either
@@ -183,7 +183,7 @@ def parse_aai_rbm(rbm, gAid, gBid, rec):
     return RBM
 
 
-def parse_pangenome_categories(PC):
+def parse_pangenome_categories(pc):
 
     # parses the pangenome category file to dictionary of {gene: pancat}
     # where pancat equals Core, Accessory, or Specific.
@@ -194,7 +194,7 @@ def parse_pangenome_categories(PC):
     pancats = {}
     repgenes = {}
 
-    with open(PC, 'r') as file:
+    with open(pc, 'r') as file:
         header = file.readline()
         for line in file:
             X = line.rstrip().split('\t')
@@ -482,7 +482,7 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
             mr = round(nc_genes['Mismatch'].sum() / nc_genes['Width'].sum() * 100, 4)
         elif pclass == 'GS':
             # subset genome specific genes
-            specific = dfY[dfY['PanCat'] == 'Specific'].copy()
+            specific = dfY[dfY['PanCat'] == 'Specific']
             tc = colors[4]
             tl = round(len(specific) / total_genes * 100, 2)
             specific = specific[specific['Mismatch'] != 'x']
@@ -550,7 +550,6 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
     # add contig markers
     mark_bars = {"gA-HC": ["v", -0.5], "gB-GS": ["^", 9.5]}
     for lab, marker in mark_bars.items():
-        genome = lab[1]
         mark_pos = cpos[genome][:-1]
         ypos = [marker[1]] * len(mark_pos)
         ax.plot(mark_pos, ypos, marker="|", linestyle="", color='#969696')
@@ -561,8 +560,6 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.invert_yaxis()
-
-    # add contig position markers
 
     # Build the legend
     legend_labels = [
@@ -738,7 +735,7 @@ def distance_plots_2(df, colors, distance_title, distance_out):
 
     tx, ty = 0.72, 0.82 # stats test text position
     pcol = 'r' # poisson model kde line plot color
-    mlw = 2 # kdeplot line width
+    mlw = 1 # kdeplot line width
     axlabsz = 12 # ax label sizes
     ts = 8 # stat test text size
     bw, ct = 3, 0 # kdeplot bw_adjus t and cut params
@@ -746,7 +743,7 @@ def distance_plots_2(df, colors, distance_title, distance_out):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 7))
 
     # plot emp distribution, poissoin distribution and stats test results
-    _ = sns.histplot(x=emp, color=colors[5], ax=ax1, stat='density')
+    _ = sns.histplot(x=emp, bins=30, color=colors[5], ax=ax1, stat='density')
     _ = ax1.axvline(mu, color=colors[5], linestyle='dashed', linewidth=mlw)
     _ = sns.kdeplot(x=psn, color=pcol, ax=ax1, cut=ct, bw_adjust=bw)
     line = f'k = {k:.4f}\np = {p:.4f}'
@@ -967,7 +964,7 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-PC', '--pangenome_categories',
+        '-pc', '--pangenome_categories',
         help='Please specify the tsv from 04d_Get_Genes_Clusters_PanCat.py!',
         metavar='',
         type=str,
@@ -1038,7 +1035,7 @@ def main():
 
     # define parameters
     rbm = args['RBM_from_AAI']
-    PC = args['pangenome_categories']
+    pc = args['pangenome_categories']
     cA = args['input_CDS_A']
     cB = args['input_CDS_B']
     gA = args['input_genome_A']
@@ -1060,9 +1057,9 @@ def main():
     # RBM is a nested defaultdict(int) that returns a 0 if a
     # a requested key is not in the dict. This was the original
     # intention as a gene not in the RBM list should get a 0.
-    RBM = parse_aai_rbm(rbm, gAid, gBid, rec)
+    RBM = parse_rbm_file(rbm, gAid, gBid, rec)
     # get the pancat info
-    pancats, repgenes = parse_pangenome_categories(PC)
+    pancats, repgenes = parse_pangenome_categories(pc)
     # get the gene annotations
     annos = parse_annotations(ano)
 
@@ -1077,8 +1074,8 @@ def main():
     _ = build_pos_line_plot(df, genomes, outpre, subs, cpos)
 
     ## SECTION 03: Annotations Hypothesis testing
-    # partition into recombinant genes vs non-recombinant REC = 99.8 or 0
-    if ano: _ = plot_annotation_barplot(df, outpre)
+    # partition into recombinant genes vs non-recombinant REC ≥ rec
+    _ = plot_annotation_barplot(df, outpre)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
     
