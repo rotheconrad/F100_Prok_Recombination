@@ -37,17 +37,20 @@ This workflow will yeild many intermediate files and several publication ready f
 1. Figure: Pangenome clustered heatmap
 1. DataTable: Gene annotations
 1. DataTable: Genes assigned to pangenome classes: Conserved, Core, Accessory, Specific
-- Genome pairs
 1. Figure: Histogram of average within gene cluster sequence distance for Core genes
-1. Figure: genome pairs: Recombinant gene class and location
-1. Figure: genome pairs: Stats test recombinant gene spacing vs. Poisson distribution
-1. Figure: genome pairs: Gene annotations, recombinant vs non-recombinant hypothesis test
-1. DataTable: genome pairs:
+- Genome pairs
+1. Figure: genome pairs: Recombinant gene position by pangenome class
+1. Figure: genome pairs: Distance between recombination events distribution test
+1. Figure: genome pairs: Recombinant vs. Non-recombinant gene annotation test
+1. Figure: genome pairs: Sequence identity of RBMs vs. genome position
+1. DataTable: Gene RBM info, position info, annoation info
 - One genome to many genomes
-1. Figure: one to many:
-1. Figure: one to many:
-1. Figure: one to many:
-1. DataTable: one to many:
+1. Figure: genome group: Recombinant gene position by pangenome class
+1. Figure: genome group: Distance between recombination events distribution test
+1. Figure: genome group: Recombinant vs. Non-recombinant gene annotation test
+1. Figure: genome group: Sequence identity of RBMs vs. genome position
+1. Figure: genome group: Core vs total recombinant positions rarefaction curve
+1. DataTable: Gene RBM info, position info, annoation info
 
 See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
 
