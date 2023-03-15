@@ -890,6 +890,41 @@ This script performs some statistical tests on the distance between recombinant 
 
 The -rec parameter (default 99.8) sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests.
 
+Input:
+
+	Input is a two column tab separated file with genome fasta paths in first column and gene fasta paths in the second column. The first genome/gene file in the list becomes the main genome the others are compared to.
+
+	genomes_dir/x_x_genome01_x.fna	genes_dir_fnn/x_x_genome01_x.fnn
+	genomes_dir/x_x_genome02_x.fna	genes_dir_fnn/x_x_genome02_x.fnn
+	genomes_dir/x_x_genome03_x.fna	genes_dir_fnn/x_x_genome03_x.fnn
+	genomes_dir/x_x_genome04_x.fna	genes_dir_fnn/x_x_genome04_x.fnn
+	genomes_dir/x_x_genome05_x.fna	genes_dir_fnn/x_x_genome05_x.fnn
+	genomes_dir/x_x_genome06_x.fna	genes_dir_fnn/x_x_genome06_x.fnn
+	genomes_dir/x_x_genome07_x.fna	genes_dir_fnn/x_x_genome07_x.fnn
+	genomes_dir/x_x_genome08_x.fna	genes_dir_fnn/x_x_genome08_x.fnn
+	genomes_dir/x_x_genome09_x.fna	genes_dir_fnn/x_x_genome09_x.fnn
+	genomes_dir/x_x_genome10_x.fna	genes_dir_fnn/x_x_genome10_x.fnn
+	genomes_dir/x_x_genome11_x.fna	genes_dir_fnn/x_x_genome11_x.fnn
+	genomes_dir/x_x_genome12_x.fna	genes_dir_fnn/x_x_genome12_x.fnn
+	genomes_dir/x_x_genome13_x.fna	genes_dir_fnn/x_x_genome13_x.fnn
+	genomes_dir/x_x_genome14_x.fna	genes_dir_fnn/x_x_genome14_x.fnn
+	genomes_dir/x_x_genome15_x.fna	genes_dir_fnn/x_x_genome15_x.fnn
+	genomes_dir/x_x_genome16_x.fna	genes_dir_fnn/x_x_genome16_x.fnn
+	genomes_dir/x_x_genome17_x.fna	genes_dir_fnn/x_x_genome17_x.fnn
+	genomes_dir/x_x_genome18_x.fna	genes_dir_fnn/x_x_genome18_x.fnn
+	genomes_dir/x_x_genome19_x.fna	genes_dir_fnn/x_x_genome19_x.fnn
+	genomes_dir/x_x_genome20_x.fna	genes_dir_fnn/x_x_genome20_x.fnn
+	genomes_dir/x_x_genome21_x.fna	genes_dir_fnn/x_x_genome21_x.fnn
+	genomes_dir/x_x_genome22_x.fna	genes_dir_fnn/x_x_genome22_x.fnn
+	genomes_dir/x_x_genome23_x.fna	genes_dir_fnn/x_x_genome23_x.fnn
+	genomes_dir/x_x_genome24_x.fna	genes_dir_fnn/x_x_genome24_x.fnn
+	genomes_dir/x_x_genome25_x.fna	genes_dir_fnn/x_x_genome25_x.fnn
+	genomes_dir/x_x_genome26_x.fna	genes_dir_fnn/x_x_genome26_x.fnn
+	genomes_dir/x_x_genome27_x.fna	genes_dir_fnn/x_x_genome27_x.fnn
+	genomes_dir/x_x_genome28_x.fna	genes_dir_fnn/x_x_genome28_x.fnn
+	genomes_dir/x_x_genome29_x.fna	genes_dir_fnn/x_x_genome29_x.fnn
+	genomes_dir/x_x_genome30_x.fna	genes_dir_fnn/x_x_genome30_x.fnn
+
 Output:
 
 	1. tsv file
@@ -924,3 +959,18 @@ python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -h
 python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -i group_1_list.tsv -o group_g1 -rbm RBMs_allV.rbm -pc pancat_file.tsv -ano annotation_file
 ```
 
+#### Recombinant gene position by pangenome class
+
+![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_posbar.png)
+
+#### Distance between recombination events distribution test
+
+![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_gene_distribution.png)
+
+#### Recombinant vs. Non-recombinant gene annotation test
+
+![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_annotations_bar.png)
+
+#### Sequence identity of RBMs vs. genome position
+
+![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_posline.png)
