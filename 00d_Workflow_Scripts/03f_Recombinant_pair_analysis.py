@@ -860,7 +860,9 @@ def plot_annotation_barplot(df, outpre):
     for i, p in enumerate(ax.patches):
         width, height = p.get_width(), p.get_height()
         x, y = p.get_xy()
-        
+        # don't print categories with 0 genes on the bar plot
+        if height == 0:
+            continue
         # add asterisk if significant of alpha 0.05
         line = f'*{height:.2f}*' if sig[i] < 0.05 else f'{height:.2f}'
         ax.text(x+width/2, 
