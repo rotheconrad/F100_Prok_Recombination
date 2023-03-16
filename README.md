@@ -938,13 +938,17 @@ Input:
 
 Output:
 
-	1. tsv file
+	1. tsv file: Gene RBM table
 	1. recombinant gene position plot
 	1. recombinant distribution plot
 	1. recombinant annotations plot
 	1. RBM sequence identity vs. genome position plot
+	1. tsv file: Binary matrix for recombinant RBM positions
+	1. recombinant rRBM curve plot
+	1. tsv file: rRBM data
+	1. recombinant RBM clustermap
 
-The tsv file contians the file columns and data:
+The Gene table tsv file contains the following columns and data:
 
 	- Genome: The one genome that faced many.
 	- Contig: Each contig from the one genome that faced many.
@@ -972,20 +976,35 @@ python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -h
 
 # with default settings
 python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -i group_1_list.tsv -o group_g1 -rbm RBMs_allV.rbm -pc pancat_file.tsv -ano annotation_file
+
+# Recombinant RBM (rRBMs) curve
+python 03h_RBM-Curve_Calculate_Model_Plot.py -b group_g1_rbm_matrix.tsv -o group_g1_rRBMcurve.pdf
+
+# gene RBM clustermap
+python 03c_Clustermap_fromBinary.py -b group_g1_rbm_matrix.tsv -o group_g1_rbmclustermap.pdf
 ```
 
 #### Recombinant gene position by pangenome class
 
-![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_posbar.png)
+![Recombinant gene position by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_posbar.png)
 
 #### Distance between recombination events distribution test
 
-![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_gene_distribution.png)
+![Distance between recombination events distribution test](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_gene_distribution.png)
 
 #### Recombinant vs. Non-recombinant gene annotation test
 
-![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_annotations_bar.png)
+![Recombinant vs. Non-recombinant gene annotation test](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_annotations_bar.png)
 
 #### Sequence identity of RBMs vs. genome position
 
-![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_posline.png)
+![Sequence identity of RBMs vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_posline.png)
+
+#### Recombinant RBM curve plot
+
+![Recombinant RBM curve plot](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_rRBMcurve.png)
+
+#### Recombinant RBM clustermap
+
+![Recombinant RBM clustermap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/group_g1_rbmclustermap.png)
+
