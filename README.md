@@ -947,7 +947,11 @@ Output:
 The tsv file contians the file columns and data:
 
 	- Genome: The one genome that faced many.
+	- Contig: Each contig from the one genome that faced many.
 	- Gene: Sequence identifier contains the genome_identifier_contigNumberFromAssembly_geneNumberOnContig.
+	- Match Genome: Genome of the RBM
+	- Match Conitg: Contig for the RBM
+	- Match Gene: Gene of the RBM
 	- PanCat:  column indicates the pangenome class assigned to the gene.
 	- pID: Nucleotide sequence identity of pairwise gene alignment of the RBM.
 	- REC: Assigned a 0 or 1. 1 indicates the gene sequence has ≥ REC% identity with its corresponding RBM in the other genome and thus a candidate for recent homologous recombination. A 0 indicates the gene does not. The REC threshold is controlled by the -rec parameter (default 99.8) and sets the threshold for an RBM to be considered recombinant or not. It affects the results of the gene annotations plot and chi-square hypothesis tests and it affects the recombinant positions plot and Poisson and Geometric distribution tests.
