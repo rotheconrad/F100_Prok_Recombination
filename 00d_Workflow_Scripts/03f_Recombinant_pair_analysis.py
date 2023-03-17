@@ -355,6 +355,7 @@ def build_pos_line_plot(df, genomes, outpre, subs, cpos):
     ''' plots gene sequence identity on y axis vs genome coords on x axis.
         cpos is a list of contig lengths to add markers '''
 
+
     df['Mid'] = df[['Start', 'Stop']].mean(axis=1)
 
     colors = {
@@ -555,7 +556,7 @@ def build_pos_bar_plots(df, genomes, pancats, outpre, cpos):
     # add contig markers
     mark_bars = {"gA-HC": ["v", -0.5], "gB-GS": ["^", 9.5]}
     for lab, marker in mark_bars.items():
-        mark_pos = cpos[genome][:-1]
+        mark_pos = cpos[lab[1]][:-1]
         ypos = [marker[1]] * len(mark_pos)
         ax.plot(mark_pos, ypos, marker="|", linestyle="", color='#969696')
 

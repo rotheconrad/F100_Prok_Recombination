@@ -981,7 +981,7 @@ python 00d_Workflow_Scripts/03g_Recombinant_group_analysis.py -i group_1_list.ts
 python 03h_RBM-Curve_Calculate_Model_Plot.py -b group_g1_rbm_matrix.tsv -o group_g1_rRBMcurve.pdf
 
 # gene RBM clustermap
-python 03c_Clustermap_fromBinary.py -b group_g1_rbm_matrix.tsv -o group_g1_rbmclustermap.pdf
+python 03i_RBM_Clustermap.py -b group_g1_rbm_matrix.tsv -o group_g1_rbmclustermap.pdf
 ```
 
 #### Recombinant gene position by pangenome class
