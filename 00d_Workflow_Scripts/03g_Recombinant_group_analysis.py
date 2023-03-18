@@ -916,16 +916,46 @@ def distance_plots_2(df, colors, distance_out):
     return True
 
 ###############################################################################
-##### SECTION 06: FIGURE 4 ###########################################
+##### SECTION 06: Build binary matrix for recombinant RBMs ####################
 ###############################################################################
+
+def build_rbm_binary_matrix(df, outpre):
+    ''' generate and write out a binary matrix for RBM rarefaction analysis
+    RBMs ≥ rec are assigned a 1 and RBMs < rec are assigned a 0
+    Columns are genomes in the input group
+    Rows are RBMs in gene order of the main (1st) genome in the input group
+    '''
+
+    print(f'\n\tBuilding binary recombinant RBM matrix ...')
+
+    # create trinary option for conserved genes assign 2
+    df.loc[df['PanCat'] == 'Conserved', 'REC'] = 2
+    # Select columns. Start position is unique for each gene because we
+    # concatenate the contigs and adjust the start relative to the concatenated
+    # genome length when we parse the genome and gene fasta files.
+    selection = ['Start', 'Match Genome', 'REC']
+    bdf = df[selection]
+    # turn our three column dataframe into a matrix (not square)
+    # rows are genes represented by start position
+    # columns are genomes represented by match genome name
+    # values are 0 or 1 based on the rec threshold (default 99.8)
+    matrix = df.pivot(index='Start', columns='Match Genome', values='REC')
+    # drop the multi-index name,
+    # drop the '-' column that arises from genome specific genes
+    # fill nan's with 0s. these are genes in the reference genome without RBMs
+    # in the query genome so they are non recombinant with the query genome.
+    matrix = matrix.rename_axis(None, axis=0).drop('-', axis=1).fillna(0)
+    # write to file.
+    matrix.to_csv(f'{outpre}_rbm_matrix.tsv', sep='\t', index=False)
+
+    return True
+
 
 ###############################################################################
 ##### SECTION 07: FIGURE 5 ###########################################
 ###############################################################################
 
-###############################################################################
-##### SECTION 08: FIGURE 6 ###########################################
-###############################################################################
+# empty space for future ideas.
 
 ###############################################################################
 ###############################################################################
@@ -1020,28 +1050,27 @@ def main():
     # this step takes all the input we just parsed and creates a dataframe
     df, cpos = combine_input_data(mgenome, mgenes, RBM, pancats, repgenes, annos)
     # write df to file
-    group_df_file = f'{outpre}_group_data.tsv'
-    df.to_csv(group_df_file, sep='\t', index=False)
+    #group_df_file = f'{outpre}_group_data.tsv'
+    #df.to_csv(group_df_file, sep='\t', index=False)
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant REC ≥ REC
-    _ = plot_annotation_barplot(df, outpre)
+    #_ = plot_annotation_barplot(df, outpre)
 
     ## SECTION 04: gene RBM identity vs. genome position
-    _ = build_pos_line_plot(df, mgenome, outpre, cpos)
+    #_ = build_pos_line_plot(df, mgenome, outpre, cpos)
 
     ## SECTION 05: recombinat gene positions by pangenome class
-    _ = build_pos_bar_plots(df, mgenome, pancats, outpre, cpos)
+    #_ = build_pos_bar_plots(df, mgenome, pancats, outpre, cpos)
 
-    ## SECTION 06: figure 4
-    # this step creates x figure and does x stats
-    # mgenome for length of genome and contigs
+    ## SECTION 06: Build binary matrix for recombinant RBMs
+    # generate and write out a binary matrix for RBM rarefaction analysis
+    # RBMs ≥ rec are assigned a 1 and RBMs < rec are assigned a 0
+    # Columns are genomes in the input group
+    # Rows are RBMs in gene order of the main (1st) genome in the input group
+    _ = build_rbm_binary_matrix(df, outpre)
 
-    ## SECTION 07: figure 5
-    # this step creates x figure and does x stats
-    # mgenome for length of genome and contigs
-
-    ## SECTION 08: figure 6
+    ## SECTION 07: empty space for future ideas.
     # this step creates x figure and does x stats
     # mgenome for length of genome and contigs
 

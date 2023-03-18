@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-''' Calculate and Plot a Pangenome Rarefaction Curve
+''' Calculate and Plot a rRBMs Rarefaction Curve
 
-Takes a tab separated binary gene presence/absence matrix with genomes
-as the columns and genes as the rows. Genome IDs should be on the 
-first line (row), and gene IDs should in the first column. All other
-values should be either a 0 for gene absent in the genome (column) or
-1 for gene is present in the genome.
+Takes a tab separated binary RBM presence/absence matrix with genomes
+as the columns and RBMs as the rows. Genome IDs should be on the 
+first line (row), and RBM IDs should in the first column. All other
+values should be either a 0 for rRBM absent in the genome (column) or
+1 for rRBM is present in the genome.
 
-Pangenome modelling based on:
+rRBMs modelling based on:
 Zhang et. al. 2018, 10.3389/fmicb.2018.00577
 Tettelin et. al. 2008, https://doi.org/10.1016/j.mib.2008.09.006
 
@@ -38,17 +38,15 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-def plot_pangenome_curve(
-                        dfout, PLM_pan, PLM_spec,
+def plot_rRBMs_curve(
+                        dfout, PLM_totl, PLM_spec,
                         omega_core, omega_new,
-                        org, prm, pc, out, ymax, ystep
+                        prm, pc, out, ymax, ystep
                         ):
-    ''' This function builds a plot of the pangenome calculations'''
+    ''' This function builds a plot of the rRBMs calculations'''
 
     print('\n\nBuilding a plot of the data ...')
 
-    # Set the organism name for plot title
-    oName = ' '.join(org)
     # Set x-axis values
     x = dfout['n'].unique()
 
@@ -60,7 +58,7 @@ def plot_pangenome_curve(
 
     # Set the colors
     H1 = '#933b41'
-    pan = '#933b41'
+    totl = '#933b41'
     core = '#0868ac'
     spec = '#b35806'
     new = '#542788'
@@ -82,30 +80,25 @@ def plot_pangenome_curve(
         )
 
     # plot title, labels, and text
-    ax1.text(
-        0.5, 1.13, oName,
-        fontstyle='italic', fontweight='heavy', fontsize=60,
-        color=H1, horizontalalignment='center',
-        transform=ax1.transAxes
-        )
     ax1.set_title(
-        'Pangenome Rarefaction & Core Genes Curve',
+        'Recombinant RBM (rRBMs) Curves',
         color=H1, fontsize=50, y=1.02
         )
     ax2.set_title(
-        'Number of New Genes per Genome / Number of Genes in the Genome',
+        'New rRBMs per genome addition',
         color=new, fontsize=32, y=1.02
         )
-    ax1.set_ylabel('Number of Gene Clusters', fontsize=28)
-    ax2.set_ylabel('New Genes Ratio', fontsize=28)
-    ax2.set_xlabel('Number of Genomes', fontsize=28)
+    ax1.set_ylabel('rRBMs count', fontsize=28)
+    ax2.set_ylabel('New RBMs (%)', fontsize=28)
+    ax2.set_xlabel('Genome count', fontsize=28)
 
     # Emperical data text
     total_genomes=len(x)+1
+
     stext = (
-        f"Pangenome Size: {dfmean.Pangenome.tolist()[-1]}  |  "
-        f"Core Genes: {dfmean.CoreGenome.tolist()[-1]}  |  "
-        f"Specific Genes: {dfmean.GenomeSpecific.tolist()[-1]}"
+        f"Total rRBMs: {dfmean.rRBMs.tolist()[-1]}  |  "
+        f"Core rRBMs: {dfmean.CorerRBMs.tolist()[-1]}  |  "
+        f"Non-recombinant RBMs: {dfmean.NonRecombinant.tolist()[-1]}"
         )
     ax1.text(
         0.5, 0.02, stext,
@@ -122,9 +115,9 @@ def plot_pangenome_curve(
         horizontalalignment='center', transform=ax1.transAxes
         )
     mtext = (
-        f"Mean Genes per Genome: {int(dfmean.GenomeLength.mean())}  |  "
-        f"Mean New Genes per Genome: {int(dfmean.NewGenes.mean())}  |  "
-        f"New Genes at n={total_genomes}: {int(dfmean.NewGenes.tolist()[-1])}"
+        f"Mean rRBMs per Genome: {int(dfmean.totalrRBMs.mean())}  |  "
+        f"New rRBMs per Genome: {int(dfmean.NewrRBMs.mean())}  |  "
+        f"New rRBMs at n={total_genomes}: {int(dfmean.NewrRBMs.tolist()[-1])}"
         )
     ax2.text(
         0.5, 0.90, mtext,
@@ -133,20 +126,20 @@ def plot_pangenome_curve(
         )
 
     # Modelled data text
-    pangamma = PLM_pan['Gamma']
+    totlgamma = PLM_totl['Gamma']
     specgamma = PLM_spec['Gamma']
 
-    if pangamma < 0: panlabel = 'Closed'
-    elif pangamma <= 1: panlabel = 'Open'
-    else: print('Error in Pangenome Model Gamma Paramerter')
+    if totlgamma < 0: totllabel = 'Closed'
+    elif totlgamma <= 1: totllabel = 'Open'
+    else: print('Error in rRBMs Model Gamma Paramerter')
     if specgamma < 0: speclabel = 'Closed'
     elif specgamma <= 1: speclabel = 'Open'
-    else: print('Error in Genome Specific Model Gamma Paramerter')
+    else: print('Error in Non-recombinant Model Gamma Paramerter')
 
     modeltext = (
-        f'Pangenome Model \u03B3 = {pangamma:.2f}, {panlabel}  |  '
-        f'Genome-Specific Model \u03B3 = {specgamma:.2f}, {speclabel}  |  '
-        f'Core Gene Model \u03A9 = {omega_core:.2f}'
+        f'Total rRBMs Model \u03B3 = {totlgamma:.2f}, {totllabel}  |  '
+        f'Non-recombinant Model \u03B3 = {specgamma:.2f}, {speclabel}  |  '
+        f'Core rRBMs Model \u03A9 = {omega_core:.2f}'
         )
 
     ax1.text(
@@ -155,54 +148,54 @@ def plot_pangenome_curve(
         horizontalalignment='center', transform=ax1.transAxes
         )
     rtext = (
-        f'Ratio at n={total_genomes}: {dfmean.NewGeneRatio.tolist()[-1]:.2f}%\n'
-        f'New Gene Ratio Model \u03A9 = {omega_new:.2f}%'
+        f'Ratio at n={total_genomes}: {dfmean.NewrRBMsRatio.tolist()[-1]:.2f}%\n'
+        f'New rRBMs Ratio Model \u03A9 = {omega_new:.2f}%'
         )
     ax2.text(
-        len(x)-2, dfmean.NewGeneRatio.mean() + 5, rtext,
+        len(x)-2, dfmean.NewrRBMsRatio.mean() + 5, rtext,
         fontsize=18, color=new, horizontalalignment='right'
         )
 
 
-    # Plot Pangenome Medians, Means and IQR
-    ax1.plot(x, dfmedian.Pangenome, color=pan, linestyle='--', lw=1)
-    ax1.plot(x, dfmean.Pangenome, color=pan, linestyle=':', lw=2)
-    ax1.fill_between(x, df025.Pangenome, df975.Pangenome, color=pan, alpha=a)
+    # Plot rRBMs Medians, Means and IQR
+    ax1.plot(x, dfmedian.rRBMs, color=totl, linestyle='--', lw=1)
+    ax1.plot(x, dfmean.rRBMs, color=totl, linestyle=':', lw=2)
+    ax1.fill_between(x, df025.rRBMs, df975.rRBMs, color=totl, alpha=a)
     ax1.plot(
-        x, dfmean.Pangenome_PLM,
-        color=pan, marker=mdl, linestyle='', markersize=md, alpha=m
+        x, dfmean.rRBMs_PLM,
+        color=totl, marker=mdl, linestyle='', markersize=md, alpha=m
         )
 
-    # Plot Genome Specific Medians, Means and IQR
-    ax1.plot(x, dfmedian.GenomeSpecific, color=spec, linestyle='--', lw=1)
-    ax1.plot(x, dfmean.GenomeSpecific, color=spec, linestyle=':', lw=2)
+    # Plot Non-recombinant Medians, Means and IQR
+    ax1.plot(x, dfmedian.NonRecombinant, color=spec, linestyle='--', lw=1)
+    ax1.plot(x, dfmean.NonRecombinant, color=spec, linestyle=':', lw=2)
     ax1.fill_between(
-                    x, df025.GenomeSpecific, df975.GenomeSpecific,
+                    x, df025.NonRecombinant, df975.NonRecombinant,
                     color=spec, alpha=a
                     )
-    ax1.plot(x, dfmean.GenomeSpecific_PLM,
+    ax1.plot(x, dfmean.NonRecombinant_PLM,
         color=spec, marker=mdl, linestyle='', markersize=md, alpha=m
         )
 
     # Plot Core Medians, Means and IQR
-    ax1.plot(x, dfmedian.CoreGenome, color=core, linestyle='--', lw=1)
-    ax1.plot(x, dfmean.CoreGenome, color=core, linestyle=':', lw=2)
-    ax1.fill_between(x, df025.CoreGenome, df975.CoreGenome, color=core, alpha=a)
-    ax1.plot(x, dfmean.CoreGenome_EDM,
+    ax1.plot(x, dfmedian.CorerRBMs, color=core, linestyle='--', lw=1)
+    ax1.plot(x, dfmean.CorerRBMs, color=core, linestyle=':', lw=2)
+    ax1.fill_between(x, df025.CorerRBMs, df975.CorerRBMs, color=core, alpha=a)
+    ax1.plot(x, dfmean.CorerRBMs_EDM,
         color=core, marker=mdl, linestyle='', markersize=md, alpha=m
         )
 
     # Build ax1 Plot Legend
-    l_pan = Line2D(
-        [0],[0], color='w', label='Pangenome',
-        markerfacecolor=pan, marker='o', markersize=18, alpha=m
+    l_totl = Line2D(
+        [0],[0], color='w', label='Total rRBMs',
+        markerfacecolor=totl, marker='o', markersize=18, alpha=m
         )
     l_core = Line2D(
-        [0],[0], color='w', label='Core Genes',
+        [0],[0], color='w', label='Core rRBMs',
         markerfacecolor=core, marker='o', markersize=18, alpha=m
         )
     l_specific = Line2D(
-        [0],[0], color='w', label='Genome-Specific Genes',
+        [0],[0], color='w', label='Non-recombinant RBMs',
         markerfacecolor=spec, marker='o', markersize=18, alpha=m
         )
     l_IQR = Line2D(
@@ -221,7 +214,7 @@ def plot_pangenome_curve(
         )
 
     legend_elements = [
-                        l_pan,
+                        l_totl,
                         l_core,
                         l_specific,
                         l_IQR,
@@ -239,27 +232,32 @@ def plot_pangenome_curve(
         frameon=False
         )
 
-    # Plot Gene Ratio Plot
-    ax2.plot(x, dfmedian.NewGeneRatio, color=new, linestyle='--', lw=1)
-    ax2.plot(x, dfmean.NewGeneRatio, color=new, linestyle=':', lw=2)
+    # Plot rRBMs Ratio Plot
+    ax2.plot(x, dfmedian.NewrRBMsRatio, color=new, linestyle='--', lw=1)
+    ax2.plot(x, dfmean.NewrRBMsRatio, color=new, linestyle=':', lw=2)
     ax2.fill_between(
-                x, df025.NewGeneRatio, df975.NewGeneRatio,
+                x, df025.NewrRBMsRatio, df975.NewrRBMsRatio,
                 color=new, alpha=a
                 )
-    ax2.plot(x, dfmean.NewGeneRatio_EDM,
+    ax2.plot(x, dfmean.NewrRBMsRatio_EDM,
         color=new, marker=mdl, linestyle='', markersize=md, alpha=m
         )
 
     # set the axis parameters / style
     ax1.yaxis.grid(which="both", color='#d9d9d9', linestyle='--', linewidth=1)
 
+    # y axis minimum
+    ymin = -200
     if ymax and ystep:
         ax1.set_yticks(range(0, ymax+1, ystep))
     elif ymax and not ystep:
-        ax1.set_ylim(0, ymax)
+        ax1.set_ylim(ymin, ymax)
     elif ystep and not ymax:
         start, end = ax1.get_ylim()
         ax1.set_yticks(np.arange(start, end, ystep))
+    else:
+        _, ymax = ax1.get_ylim()
+        ax1.set_ylim(ymin, ymax)
 
     ax1.minorticks_on()
     ax1.set_xlabel('')
@@ -283,14 +281,14 @@ def plot_pangenome_curve(
         hspace = 0.2
         )
 
-    plt.savefig(f'{out}_pangenome_curves.pdf')
+    plt.savefig(f'{out}.pdf')
     plt.close()
 
 
 def model_decay_curve(dfout, Column):
-    ''' This function models the decay curve for core, and new genes'''
+    ''' This function models the decay curve for core, and new rRBMs'''
 
-    # Model the Core gene curve using an Exponential Decay Function:
+    # Model the Core rRBMs curve using an Exponential Decay Function:
     # Fc = Kc*exp(-N/τc) + Ω
     print(f'\n\nFitting Exponential Decay function to {Column}')
     print('Using Exponential Decay Function: K*exp-(N/\u03C4) + \u03A9')
@@ -318,12 +316,12 @@ def model_decay_curve(dfout, Column):
     return dfout, omega
 
 
-def model_pangenome_curve(dfout, Column):
-    ''' This function models the panganome, core, and new gene curves'''
+def model_rRBMs_curve(dfout, Column):
+    ''' This function models the total, core, and new rRBMs curves'''
 
     # Initialize dictionary to store model results
-    params = {} # PowerLawModel for Pangenome curve
-    # Model the Pangenome curve using a Powerlaw function: Ps = κn^γ
+    params = {} # PowerLawModel for rRBMs curve
+    # Model the rRBMs curve using a Powerlaw function: Ps = κn^γ
     print('\n\nFitting PowerLaw function to {Column}')
     print('Using Power Law Function K*N^\u03B3 ...')
     PLM = PowerLawModel() # Initialize the model
@@ -346,13 +344,13 @@ def model_pangenome_curve(dfout, Column):
 
     return dfout, params
 
-def calculate_pangenome_curve(binary_matrix, prm, c, out):
-    # Read in the binary matrix with first column as gene names (index).
-    df = pd.read_csv(binary_matrix, sep='\t', index_col=0)
+def calculate_rRBMs_curve(binary_matrix, prm, c, out):
+    # Read in the binary matrix with first column as RBM names (index).
+    df = pd.read_csv(binary_matrix, sep='\t') #, index_col=0)
     # Define columns for output data frame
     colout = [
-            'Trial', 'n', 'n/N', 'Pangenome', 'CoreGenome',
-            'GenomeSpecific', 'NewGenes', 'NewGeneRatio', 'GenomeLength'
+            'Trial', 'n', 'n/N', 'rRBMs', 'CorerRBMs',
+            'NonRecombinant', 'NewrRBMs', 'NewrRBMsRatio', 'totalrRBMs'
             ]
     # Initialize output data frame
     dfout = pd.DataFrame(columns=colout)
@@ -360,8 +358,8 @@ def calculate_pangenome_curve(binary_matrix, prm, c, out):
     rowcount = 0
     # Set the total number of genomes to n
     N = df.shape[1]
-    # Calculate the total number of genes per genome
-    genes_per_genome = df.sum(axis=0)
+    # Calculate the total number of rRBMs per genome
+    rRBMs_per_genome = df.sum(axis=0)
 
     for j in range(prm):
 
@@ -379,9 +377,9 @@ def calculate_pangenome_curve(binary_matrix, prm, c, out):
         # Add first genome to dfprm
         gnm = genomes[0]
         dfprm[gnm] = dfrand[gnm]
-        # Start the pangenome count
-        pancurve = dfprm.sum(axis=1).values
-        panprev = (pancurve != 0).sum()
+        # Start the rRBM curve count
+        rRBMcurve = dfprm.sum(axis=1).values
+        rRBMprev = (rRBMcurve != 0).sum()
 
         for n in range(1,N):
             # Then for each permutation we step through the columns
@@ -393,31 +391,30 @@ def calculate_pangenome_curve(binary_matrix, prm, c, out):
             gnm = genomes[n]
             # add current genome column to dfprm to step the iteration
             dfprm[gnm] = dfrand[gnm]
-            # calculate the n/N pangenome values at this step
-            pancurve = dfprm.sum(axis=1).values / (n+1)
+            # calculate the n/N rRBMs values at this step
+            rRBMcurve = dfprm.sum(axis=1).values / (n+1)
 
-            # calculate total pangenome size
-            pan = (pancurve != 0).sum()
-            # calculate core pangenome size
-            core = (pancurve >= c).sum()
-            # calculate genome specific genes
-            gspec = (pancurve == nN).sum()
-            # Grab genome length
-            genlen = genes_per_genome[gnm]
-            # Calculate new genes per genome / the number of genes in genome
-            ngenes = pan - panprev
-            
-            nratio = ngenes / genlen * 100
-            panprev = pan
+            # calculate total rRBMs size
+            totl = (rRBMcurve != 0).sum()
+            # calculate core rRBMs size
+            core = (rRBMcurve >= c).sum()
+            # calculate Non-recombinant RBMs
+            nonrec = (rRBMcurve == 0).sum()
+            # Grab number of rRBMs in current genome
+            totalrRBMs = rRBMs_per_genome[gnm]
+            # Calculate new rRBMs per genome / the number of rRBMs in genome
+            nrRBMs = totl - rRBMprev
+            nratio = nrRBMs / totalrRBMs * 100
+            rRBMprev = totl
 
             # Define new row for dfout dataframe.
-            z = [j+1, n+1, nN, pan, core, gspec, ngenes, nratio, genlen]
+            z = [j+1, n+1, nN, totl, core, nonrec, nrRBMs, nratio, totalrRBMs]
             # Add new row to dfout dataframe
             dfout.loc[rowcount] = z
             # increment the rowcount
             rowcount += 1
 
-    dfout.to_csv(f'{out}_Pangenome_data.tsv', sep='\t')
+    dfout.to_csv(f'{out}_data.tsv', sep='\t')
 
     return dfout
 
@@ -444,24 +441,16 @@ def main():
         required=False
         )
     parser.add_argument(
-        '-n', '--organism_name',
-        help='Species Name for plot title ex: Escherichia coli',
-        #metavar='',
-        type=str,
-        nargs='+',
-        required=True
-        )
-    parser.add_argument(
         '-c', '--percent_core',
-        help='Optional: Genome fraction with gene for core (default: 0.9).',
+        help='Optional: Genome fraction with RBM for core (default: 1.0).',
         #metavar='',
         type=float,
-        default=0.9,
+        default=1.0,
         required=False
         )
     parser.add_argument(
         '-y', '--yaxis_max',
-        help='Optional: Set range of y-axis pangenome size (eg: 20000)',
+        help='Optional: Set range of y-axis rRBMs size (eg: 20000)',
         #metavar='',
         type=int,
         required=False
@@ -485,29 +474,28 @@ def main():
     # Run this scripts main function
     print('\n\nCalculating the rarefaction curve ...\n')
 
-    dfout = calculate_pangenome_curve(
+    dfout = calculate_rRBMs_curve(
                             args['binary_matrix'],
                             args['number_permutations'],
                             args['percent_core'],
                             args['output_prefix']
                             )
 
-    # Fit a Power Law Model to the Pangenome Curve
-    dfout, PLM_pan = model_pangenome_curve(dfout, 'Pangenome')
-    # Fit a Power Law Model to the Genome Specific Genome
-    dfout, PLM_spec = model_pangenome_curve(dfout, 'GenomeSpecific')
+    # Fit a Power Law Model to the rRBMs Curve
+    dfout, PLM_totl = model_rRBMs_curve(dfout, 'rRBMs')
+    # Fit a Power Law Model to the Non-recombinant RBMs
+    dfout, PLM_spec = model_rRBMs_curve(dfout, 'NonRecombinant')
     # Fit an Exponential Decay Model to the Core Genome
-    dfout, omega_core = model_decay_curve(dfout, 'CoreGenome')
-    # Fit an Exponential Decay Model to the New Genes per genome count
-    dfout, omega_new = model_decay_curve(dfout, 'NewGeneRatio')
+    dfout, omega_core = model_decay_curve(dfout, 'CorerRBMs')
+    # Fit an Exponential Decay Model to the New rRBMs per genome count
+    dfout, omega_new = model_decay_curve(dfout, 'NewrRBMsRatio')
     # Plot the results
-    plot_pangenome_curve(
+    plot_rRBMs_curve(
                         dfout,
-                        PLM_pan,
+                        PLM_totl,
                         PLM_spec,
                         omega_core,
                         omega_new,
-                        args['organism_name'],
                         args['number_permutations'],
                         args['percent_core'],
                         args['output_prefix'],

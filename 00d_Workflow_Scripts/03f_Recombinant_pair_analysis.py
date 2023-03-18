@@ -48,7 +48,7 @@ All rights reserved
 
 import argparse, math
 from collections import defaultdict
-from itertools import combinations
+from itertools import combinations, groupby
 import pandas as pd; import numpy as np
 pd.options.mode.chained_assignment = None
 import matplotlib.pyplot as plt
@@ -955,6 +955,125 @@ def post_hoc_test(adf):
     return pvals, pvals_corrected
 
 ###############################################################################
+##### SECTION 04: CALCULATE RECOMBINATION RATES ###############################
+###############################################################################
+
+def get_recombination_rate(df):
+
+    # Calculate recombination vs mutation rate
+    # [len(recombinant mismatch) / len(recombinant genes)] * len(AllGenes)
+    # [len(nonrecombinant mismatch) / len(nonrecombiant genes)] * len(recombinant Genes)
+    # select recombinant and non nonrecombinant genes
+    dfR = df[df['REC'] == 1]
+    dfN = df[df['REC'] == 0]
+    # window must have at leat 1 of each recombinant or non-rec
+    if len(dfR) == 0 or len(dfN) == 0: return 'n/a', 'n/a'
+    # cacluate mismatch / gene length
+    Rmr = dfR['Mismatch'].sum() / dfR['Width'].sum()
+    Nmr = dfN['Mismatch'].sum() / dfN['Width'].sum()
+    # calculate recombination rates
+    Rrr = Rmr * df['Width'].sum()
+    Nrr = Nmr * dfR['Width'].sum()
+
+    return Rrr, Nrr
+
+
+def recombination_rate_plots(df, outpre):
+
+    # use only RBM genes, drop genes without RBM
+    dfx = df[df['Mismatch'] != 'x'] # drop genome specific genes
+    # get full genome recombination rate
+    # Rrr = Recombining genes recombination rate
+    # Nrr = Non-recombining genes recombination rate
+    Rrr, Nrr = get_recombination_rate(dfx)
+
+    # get sliding window recombination rates
+    # reset df index set the rows are consecutive order
+    dfx = dfx.reset_index(drop=True)
+    # dict to store results from sliding window
+    data = defaultdict(list)
+    # wdinows: number of genes, to iterate
+    windows = [100, 200, 400, 600]
+    # full length of the data frame
+    dflen = len(dfx)
+    # iterate
+    for window in windows:
+        for start in range(dflen-window+2):
+            stop = start+window-1
+            dfW = dfx.loc[start:stop]
+            # Xrr = Recombining genes recombination rate
+            # Yrr = Non-recombining genes recombination rate
+            Xrr, Yrr = get_recombination_rate(dfW)
+            # window must have at leat 1 of each recombinant or non-rec
+            if Xrr == 'n/a': continue
+            data[f'{window}_Rrr'].append(Xrr)
+            data[f'{window}_Nrr'].append(Yrr)
+
+    titles = {
+            'Rrr': f'Recombinant Genes ({Rrr:.2f})',
+            'Nrr': f'Non-recombinant Genes ({Nrr:.2f})'
+            }
+
+    axnum = len(windows)
+    # text position xy, text size, axis label size
+    tx, ty, ts, ls = 0.01, 0.95, 8, 12
+
+    fig, axes = plt.subplots(axnum, 2, figsize=(10,12))
+    axs = axes.reshape(-1)
+
+    for i, (lab, y) in enumerate(data.items()):
+        axs[i].plot(range(len(y)), y)
+        window = lab.split('_')[0]
+        if i in [0,1]:
+            title = titles[lab.split('_')[1]]
+            axs[i].set_title(f'{title}')
+        axs[i].set_xlabel(f'{window} gene step')
+        axs[i].set_ylabel('')
+        line = f'Minimum = {min(y):.2f}'
+        axs[i].text(tx, ty, line, transform=axs[i].transAxes, fontsize=ts)
+
+    fig.set_tight_layout(True)
+    plt.savefig(f'{outpre}_Rec_rate_windows.pdf')
+    plt.close()
+
+    return True
+
+
+def length_of_recombination_events(df, outpre):
+
+    # Calculate length of consecutive REC gene events in the genome
+    # plot histogram of results
+    # count number of 1's before a 0
+    rec_list = df['REC'].to_list()
+    rec = []
+    norec = []
+    # groupby groups consecutive values into value, group
+    # where group contains a value of each consecutive number/character
+    for value, group in groupby(rec_list):
+        count = sum(1 for _ in group)
+        rec.append(count) if value == 1 else norec.append(count)
+
+    axlabsz = 12 # ax label sizes
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7))
+
+    # plot emp distribution, poissoin distribution and stats test results
+    _ = sns.histplot(x=rec, bins=30, color='#000000', ax=ax1, stat='frequency')
+    ax1.set_ylabel('Frequency', fontsize=axlabsz)
+    ax1.set_xlabel('Consecutive recombinant genes')
+
+    # plot emp distribution, poissoin distribution and stats test results
+    _ = sns.histplot(x=norec, bins=30, color='#000000', ax=ax2, stat='frequency')
+    ax2.set_ylabel('Frequency', fontsize=axlabsz)
+    ax2.set_xlabel('Consecutive non-recombinant genes')
+
+    fig.set_tight_layout(True)
+    plt.savefig(f'{outpre}_Adjecent_Rec_Length.pdf')
+    plt.close()
+
+    return True
+
+###############################################################################
 ###############################################################################
 
 def main():
@@ -1084,6 +1203,13 @@ def main():
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant REC ≥ rec
     _ = plot_annotation_barplot(df, outpre)
+
+    ## SECTION 04: Calculate recombination rates
+    print('\n\tCalculating recombination rates ...')
+    for genome in ['A', 'B']:
+        dfG = df[df['Genome'] == genome]
+        _ = length_of_recombination_events(dfG, f'{outpre}_{genome}')
+        _ = recombination_rate_plots(dfG, f'{outpre}_{genome}')
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
     
