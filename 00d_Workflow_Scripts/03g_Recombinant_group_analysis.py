@@ -946,7 +946,6 @@ def build_rbm_binary_matrix(df, outpre):
     dfX = dfX.sort_values(by='pID', axis=0, ascending=False)
     dfX.to_csv('nonsense2.tsv', sep='\t', index=False)
     dfX = dfX[dfX.duplicated(subset='Start-Match', keep="first") == True]
-    print(dfX)
     df = df.drop(dfX.index)
 
     # Select columns. Start position is unique for each gene because we
