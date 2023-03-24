@@ -512,8 +512,8 @@ def build_pos_line_plot(df, mgenome, outpre, cpos):
     ''' plots gene sequence identity on y axis vs genome coords on x axis.
         cpos is a list of contig lengths to add markers '''
 
-    df = df[df['Match Genome'] != '-']
-    df['Mid'] = df[['Start', 'Stop']].mean(axis=1)
+    dfG = df[df['Match Genome'] != '-']
+    dfG['Mid'] = dfG[['Start', 'Stop']].mean(axis=1)
 
     colors = {
             'Conserved': '#fee391', # yellow for highly conserved genes (HC)
@@ -529,13 +529,14 @@ def build_pos_line_plot(df, mgenome, outpre, cpos):
     # yaxis min and max
     ymin, ymax = 90, 100
     
-    group_genomes = df['Match Genome'].unique()
+    group_genomes = dfG['Match Genome'].unique()
     subs = len(group_genomes)
     
     # initialize the figure
     fig, axs = plt.subplots(subs, 1, figsize=(70, subs*2))
 
     for i, (ax, genome) in enumerate(zip(axs, group_genomes)):
+        print(f'\t\tPlotting genome {genome}')
         xmin, xmax = 0, glength
         dfS = dfG[(dfG['Mid'] <= xmax) & (dfG['Mid'] >= xmin)]
         x = dfS['Mid'].to_list()
@@ -548,7 +549,8 @@ def build_pos_line_plot(df, mgenome, outpre, cpos):
         ax.text(xmax, ymin-0.1, genome, ha='right', va='top', fontsize=8)
         ax.set_xlim(xmin-0.5, xmax+0.5)
         ax.set_ylim(ymin, ymax)
-        ax.set_xticks([], [])
+        ax.set_xticks([])
+        ax.set_xticklabels([])
 
         # add contig markers
         for mark in cpos[:-1]:
@@ -644,7 +646,10 @@ def build_pos_bar_plots(df, mgenome, pancats, outpre, cpos):
             tc = colors[4]
             tl = round(len(specific) / total_genes * 100, 2)
             specific = specific[specific['Mismatch'] != 'x']
-            mr = round(specific['Mismatch'].sum() / specific['Width'].sum() * 100, 4)
+            if len(specific) >= 1:
+                mr = round(specific['Mismatch'].sum() / specific['Width'].sum() * 100, 4)
+            else:
+                mr = 'n/a'
         # add it to the plot
         ax.text(glength+(glength/100), lab, f'{tl}%\n{mr}%', color=tc, va='center')
 
@@ -692,7 +697,8 @@ def build_pos_bar_plots(df, mgenome, pancats, outpre, cpos):
 
     # add contig markers
     mark_pos = cpos[:-1]
-    ypos = [-0.5 * len(mark_pos)]
+    ypos = [-0.5] * len(mark_pos)
+
     ax.plot(mark_pos, ypos, marker="|", linestyle="", color='#969696')
 
     # Plot aesthetics
@@ -931,6 +937,18 @@ def build_rbm_binary_matrix(df, outpre):
 
     # create trinary option for conserved genes assign 2
     df.loc[df['PanCat'] == 'Conserved', 'REC'] = 2
+
+    # Due to retaining tied RBMs, we need to select the tied RBM with the
+    # greatest pID and retain only on RBM for the heatmap.
+    df['Start-Match'] = df['Start'].astype(str) + '-' + df['Match Genome'].astype(str)
+    dfX = df[df.duplicated(subset='Start-Match', keep=False) == True]
+    dfX = dfX[['Start', 'pID', 'Match Gene', 'Gene', 'REC', 'Start-Match']]
+    dfX = dfX.sort_values(by='pID', axis=0, ascending=False)
+    dfX.to_csv('nonsense2.tsv', sep='\t', index=False)
+    dfX = dfX[dfX.duplicated(subset='Start-Match', keep="first") == True]
+    print(dfX)
+    df = df.drop(dfX.index)
+
     # Select columns. Start position is unique for each gene because we
     # concatenate the contigs and adjust the start relative to the concatenated
     # genome length when we parse the genome and gene fasta files.
@@ -940,7 +958,7 @@ def build_rbm_binary_matrix(df, outpre):
     # rows are genes represented by start position
     # columns are genomes represented by match genome name
     # values are 0 or 1 based on the rec threshold (default 99.8)
-    matrix = df.pivot(index='Start', columns='Match Genome', values='REC')
+    matrix = bdf.pivot(index='Start', columns='Match Genome', values='REC')
     # drop the multi-index name,
     # drop the '-' column that arises from genome specific genes
     # fill nan's with 0s. these are genes in the reference genome without RBMs
@@ -1210,7 +1228,7 @@ def main():
     # this step takes all the input we just parsed and creates a dataframe
     df, cpos = combine_input_data(mgenome, mgenes, RBM, pancats, repgenes, annos)
     # write df to file
-    #group_df_file = f'{outpre}_group_data.tsv'
+    group_df_file = f'{outpre}_group_data.tsv'
     df.to_csv(group_df_file, sep='\t', index=False)
 
     ## SECTION 03: Annotations Hypothesis testing
