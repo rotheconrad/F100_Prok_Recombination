@@ -528,9 +528,6 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
     glength = sum(mgenome.values())
     # set yaxis max
     ymax = 100
-    # set variable yaxis min
-    rbm_ani = dfG[dfG['pID'] != 0]['pID'].mean()
-    ymin = 95 if rbm_ani >= 97.5 else 90
     
     group_genomes = dfG['Match Genome'].unique()
     subs = len(group_genomes)
@@ -542,7 +539,10 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
         print(f'\t\tPlotting genome {genome}')
         xmin, xmax = 0, glength
         dfS = dfG[dfG['Match Genome'] == genome]
-        #dfS = dfG[(dfG['Mid'] <= xmax) & (dfG['Mid'] >= xmin)]
+        # calculate non zero mean. ANI of RBMs
+        rbm_ani = dfS[dfS['pID'] != 0]['pID'].mean()
+        # set variable yaxis min
+        ymin = 95 if rbm_ani >= 97.5 else 90
         x = dfS['Mid'].to_list()
         # replace values < ymin with ymin
         ids = dfS['pID'].to_numpy()
@@ -550,13 +550,14 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
         c = [colors[i] for i in dfS['PanCat'].to_list()]
 
         ax.scatter(x, y, color=c, marker='|', linestyle='-')
-        ax.text(xmin, ymin-0.9, genome, ha='left', va='top', fontsize=8)
+        ax.text(xmin, ymin-1.2, genome, ha='left', va='top', fontsize=8)
         ax.set_xlim(xmin-0.5, xmax+0.5)
-        ax.set_ylim(ymin, ymax)
+        #ax.set_ylim(ymin, ymax)
         #ax.set_xticks([])
         #ax.set_xticklabels([])
 
         # add dashed lines for recombinant threshold and ANI
+
         ax.hlines(y=rec, xmin=xmin, xmax=xmax, lw=1, colors='k', ls=':')
         ax.hlines(y=rbm_ani, xmin=xmin, xmax=xmax, lw=1, colors='k', ls='--')
 
@@ -598,6 +599,7 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
         )
 
     fig.set_tight_layout(True)
+    fig.subplots_adjust(hspace=0)
     plt.savefig(f'{outpre}_posline.pdf')
     plt.close()
 
@@ -1279,25 +1281,25 @@ def main():
     # this step takes all the input we just parsed and creates a dataframe
     df, cpos = combine_input_data(mgenome, mgenes, RBM, pancats, repgenes, annos)
     # write df to file
-    #group_df_file = f'{outpre}_group_data.tsv'
-    #df.to_csv(group_df_file, sep='\t', index=False)
+    group_df_file = f'{outpre}_group_data.tsv'
+    df.to_csv(group_df_file, sep='\t', index=False)
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant REC ≥ REC
-    #_ = plot_annotation_barplot(df, outpre)
+    _ = plot_annotation_barplot(df, outpre)
 
     ## SECTION 04: gene RBM identity vs. genome position
-    #_ = build_pos_line_plot(df, mgenome, outpre, cpos, rec)
+    _ = build_pos_line_plot(df, mgenome, outpre, cpos, rec)
 
     ## SECTION 05: recombinat gene positions by pangenome class
-    #_ = build_pos_bar_plots(df, mgenome, pancats, outpre, cpos)
+    _ = build_pos_bar_plots(df, mgenome, pancats, outpre, cpos)
 
     ## SECTION 06: Build binary matrix for recombinant RBMs
     # generate and write out a binary matrix for RBM rarefaction analysis
     # RBMs ≥ rec are assigned a 1 and RBMs < rec are assigned a 0
     # Columns are genomes in the input group
     # Rows are RBMs in gene order of the main (1st) genome in the input group
-    #_ = build_rbm_binary_matrix(df, outpre)
+    _ = build_rbm_binary_matrix(df, outpre)
 
     ## SECTION 07: Calculate recombination rates
     print('\n\tCalculating recombination rates ...')
