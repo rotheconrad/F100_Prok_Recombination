@@ -48,7 +48,7 @@ All rights reserved
 
 import argparse, math
 from collections import defaultdict
-from itertools import combinations, groupby
+from itertools import groupby
 import pandas as pd; import numpy as np
 pd.options.mode.chained_assignment = None
 import matplotlib.pyplot as plt
@@ -351,7 +351,7 @@ def combine_input_data(RBM, CDS, genomes, pancats, repgenes, annos):
     return df, contig_positions
 
 
-def build_pos_line_plot(df, genomes, outpre, subs, cpos):
+def build_pos_line_plot(df, genomes, outpre, subs, cpos, rec):
     ''' plots gene sequence identity on y axis vs genome coords on x axis.
         cpos is a list of contig lengths to add markers '''
 
@@ -359,10 +359,10 @@ def build_pos_line_plot(df, genomes, outpre, subs, cpos):
     df['Mid'] = df[['Start', 'Stop']].mean(axis=1)
 
     colors = {
-            'Conserved': '#fee391', # yellow for highly conserved genes (HC)
-            'Core': '#dd3497', # pink recombining core (RC) 
-            'Accessory': '#41ab5d', # green recombining accessory (RA)
-            'Specific': '#f03b20', # red genome specific genes (GS)
+            'Conserved': '#e41a1c', # red high conserved core gene
+            'Core': '#377eb8', # blue core gene 
+            'Accessory': '#4daf4a', # green accessory gene
+            'Specific': '#984ea3', # purple genome specific gene
             }
 
     for genome in genomes.keys():
@@ -371,11 +371,15 @@ def build_pos_line_plot(df, genomes, outpre, subs, cpos):
 
         # set current genome length / 4, rounded up to whole integer
         glength = math.ceil(sum(genomes[genome].values()) / subs)
-        # yaxis min and max
-        ymin, ymax = 90, 100
+
         # select current genome
         dfG = df[df['Genome'] == genome]
-        
+
+        # set yaxis max
+        ymax = 100
+        # set variable yaxis min
+        rbm_ani = dfG[dfG['pID'] != 0]['pID'].mean()
+        ymin = 95 if rbm_ani >= 97.5 else 90
         # initialize the figure with 4 axes
         fig, axs = plt.subplots(subs, 1, figsize=(7, subs*3))
 
@@ -391,17 +395,51 @@ def build_pos_line_plot(df, genomes, outpre, subs, cpos):
 
             ax.scatter(x, y, color=c, marker='|', linestyle='-')
             coords = f'Genome range: {xmin} - {xmax}'
-            ax.text(xmax, ymin-0.1, coords, ha='right', va='top', fontsize=8)
+            ax.text(xmin, ymin-0.9, coords, ha='left', va='top', fontsize=8)
             ax.set_xlim(xmin-0.5, xmax+0.5)
-            ax.set_ylim(ymin, ymax)
-            ax.set_xticks([], [])
+            #ax.set_xticks([])
+            #ax.set_xticklabels([])
 
-
+            # add dashed lines for recombinant threshold and ANI
+            ax.hlines(y=rec, xmin=xmin, xmax=xmax, lw=1, colors='k', ls=':')
+            ax.hlines(y=rbm_ani, xmin=xmin, xmax=xmax, lw=1, colors='k', ls='--')
             # add contig markers
             tcpos = [i for i in cpos[genome][:-1] if xmin <= i <= xmax]
             for mark in tcpos:
                 ax.text(mark, ymax,"l", color='#969696',
                         fontsize=8, ha='center', va='bottom')
+
+        # build the legend
+        legend_labels = ['Conserved', 'Core', 'Accessory', 'Specific']
+        legend_elements = []
+
+        for x in legend_labels:
+            n = Line2D(
+                [0], [0], color='w', label=x, marker='s',
+                markersize=15, markerfacecolor=colors[x]
+                )
+            legend_elements.append(n)
+
+        n = Line2D(
+            [0], [0], color='k', label='Recombinant', marker=None, linestyle=':'
+            )
+        legend_elements.append(n)
+
+        n = Line2D(
+            [0], [0], color='k', label='RBM ANI', marker=None, linestyle='--'
+            )
+        legend_elements.append(n)
+
+        axs[0].legend(
+            handles=legend_elements,
+            fontsize=12,
+            fancybox=True,
+            framealpha=0.0,
+            frameon=False,
+            loc='lower center',
+            bbox_to_anchor=(0, 0.98, 1, 0.2),
+            ncol=3
+            )
 
         fig.set_tight_layout(True)
         plt.savefig(f'{outpre}_{genome}_posline_out.pdf')
@@ -958,40 +996,74 @@ def post_hoc_test(adf):
 ##### SECTION 04: CALCULATE RECOMBINATION RATES ###############################
 ###############################################################################
 
-def get_recombination_rate(df):
+def get_recombination_rate(df, window, outfile):
 
     # Calculate recombination vs mutation rate
     # [len(recombinant mismatch) / len(recombinant genes)] * len(AllGenes)
     # [len(nonrecombinant mismatch) / len(nonrecombiant genes)] * len(recombinant Genes)
     # select recombinant and non nonrecombinant genes
-    dfR = df[df['REC'] == 1]
-    dfN = df[df['REC'] == 0]
+    dfR = df[df['REC'] == 1] # rows of recombinant genes pid ≥ rec (default 99.8)
+    dfN = df[df['REC'] == 0] # rows of nonrec genes pid < rec (default 99.8)
     # window must have at leat 1 of each recombinant or non-rec
-    if len(dfR) == 0 or len(dfN) == 0: return 'n/a', 'n/a'
-    # cacluate mismatch / gene length
-    Rmr = dfR['Mismatch'].sum() / dfR['Width'].sum()
-    Nmr = dfN['Mismatch'].sum() / dfN['Width'].sum()
-    # calculate recombination rates
-    Rrr = Rmr * df['Width'].sum()
-    Nrr = Nmr * dfR['Width'].sum()
+    if len(dfR) == 0 or len(dfN) == 0: return 0, 0, 0
+    # get sums, define variable
+    rec_mismatch = dfR['Mismatch'].sum()
+    rec_length = dfR['Width'].sum()
+    norec_mismatch = dfN['Mismatch'].sum()
+    norec_length = dfN['Width'].sum()
+    total_length = df['Width'].sum()
+    # skip windows with zero mismatches
+    if rec_mismatch == 0 or norec_mismatch == 0: return 0, 0, 0
+    # cacluate mutation rates as (mismatches / gene length)
+    Rmr = rec_mismatch / rec_length
+    Nmr = norec_mismatch / norec_length
+    # calculate recent mutations and recently removed mutations
+    Rrr = Rmr * total_length # total recent mutations
+    Nrr = Nmr * rec_length # recently removed mutations
+    # get the ratio
+    mratio = Nrr / Rrr if Rrr > 0 else 0
 
-    return Rrr, Nrr
+    lineout = (
+                f'{window}\t{rec_mismatch}\t{rec_length}\t{norec_mismatch}\t'
+                f'{norec_length}\t{total_length}\t{Rmr}\t{Nmr}\t'
+                f'{Rrr}\t{Nrr}\t{mratio}\n'
+                )
+    outfile.write(lineout)
+
+    return Rrr, Nrr, mratio
 
 
 def recombination_rate_plots(df, outpre):
 
     # use only RBM genes, drop genes without RBM
     dfx = df[df['Mismatch'] != 'x'] # drop genome specific genes
+    # open output file for rec rate table
+    recout = open(f'{outpre}_rec_rate_table.tsv', 'w')
+    header = (
+                'Window\tRecombinant Mismatches\tRecombinant Gene Length\t'
+                'Non-recombinant Mismatches\tNon-recombinant Gene Length\t'
+                'Total Gene Length\tRecent Mutation Rate\t'
+                'Old Mutation Rate\tTotal Recent Mutations\t'
+                'Recently Removed Mutations\tMutations Ratio\n'
+                )
+    recout.write(header)
     # get full genome recombination rate
     # Rrr = Recombining genes recombination rate
     # Nrr = Non-recombining genes recombination rate
-    Rrr, Nrr = get_recombination_rate(dfx)
+    Rrr, Nrr, mratio = get_recombination_rate(dfx, 'Full genome', recout)
+
+    # store titles for the plots
+    titles = {
+            'Rrr': f'Rrr windows | total Rrr = {Rrr:.2f}',
+            'Nrr': f'Nrr windows | total Nrr = {Nrr:.2f} | Nrr/Rrr = {mratio:.2f}'
+            }
 
     # get sliding window recombination rates
     # reset df index set the rows are consecutive order
     dfx = dfx.reset_index(drop=True)
     # dict to store results from sliding window
     data = defaultdict(list)
+    data2 = defaultdict(list)
     # wdinows: number of genes, to iterate
     windows = [100, 200, 400, 600]
     # full length of the data frame
@@ -1003,17 +1075,17 @@ def recombination_rate_plots(df, outpre):
             dfW = dfx.loc[start:stop]
             # Xrr = Recombining genes recombination rate
             # Yrr = Non-recombining genes recombination rate
-            Xrr, Yrr = get_recombination_rate(dfW)
+            Xrr, Yrr, mratio = get_recombination_rate(dfW, window, recout)
             # window must have at leat 1 of each recombinant or non-rec
-            if Xrr == 'n/a': continue
+            #if Xrr == 'n/a': continue
             data[f'{window}_Rrr'].append(Xrr)
             data[f'{window}_Nrr'].append(Yrr)
+            data2[f'{window}_mratio'].append(mratio)
 
-    titles = {
-            'Rrr': f'Recombinant Genes ({Rrr:.2f})',
-            'Nrr': f'Non-recombinant Genes ({Nrr:.2f})'
-            }
-
+    # close recout data table
+    recout.close()
+    
+    # Begin building the plots
     axnum = len(windows)
     # text position xy, text size, axis label size
     tx, ty, ts, ls = 0.01, 0.95, 8, 12
@@ -1027,9 +1099,23 @@ def recombination_rate_plots(df, outpre):
         if i in [0,1]:
             title = titles[lab.split('_')[1]]
             axs[i].set_title(f'{title}')
+
         axs[i].set_xlabel(f'{window} gene step')
         axs[i].set_ylabel('')
-        line = f'Minimum = {min(y):.2f}'
+        
+        # get index position of minimum
+        minimum = min(y)
+        min_index = y.index(minimum)
+        # retrieve corresponding Nrr or Rrr and mratio
+        who = lab.split('_')[1]
+        whoelse = 'Nrr' if who == 'Rrr' else 'Rrr'
+        opp = data[f'{window}_{whoelse}'][min_index]
+        mrate = data2[f'{window}_mratio'][min_index]
+        line = (
+            f'Min {who}: {minimum:.2f} | '
+            f'{whoelse} at min: {opp:.2f} | '
+            f'Ratio at min: {mrate:.2f}'
+            )
         axs[i].text(tx, ty, line, transform=axs[i].transAxes, fontsize=ts)
 
     fig.set_tight_layout(True)
@@ -1198,7 +1284,7 @@ def main():
     _ = build_pos_bar_plots(df, genomes, pancats, outpre, cpos)
     ## SECTION 02b RUNS FROM INSIDE build_some_plots function
     # Build line plot
-    _ = build_pos_line_plot(df, genomes, outpre, subs, cpos)
+    _ = build_pos_line_plot(df, genomes, outpre, subs, cpos, rec)
 
     ## SECTION 03: Annotations Hypothesis testing
     # partition into recombinant genes vs non-recombinant REC ≥ rec
