@@ -538,7 +538,8 @@ def build_pos_line_plot(df, mgenome, outpre, cpos):
     for i, (ax, genome) in enumerate(zip(axs, group_genomes)):
         print(f'\t\tPlotting genome {genome}')
         xmin, xmax = 0, glength
-        dfS = dfG[(dfG['Mid'] <= xmax) & (dfG['Mid'] >= xmin)]
+        dfS = dfG[dfG['Match Genome'] == genome]
+        #dfS = dfG[(dfG['Mid'] <= xmax) & (dfG['Mid'] >= xmin)]
         x = dfS['Mid'].to_list()
         # replace values < ymin with ymin
         ids = dfS['pID'].to_numpy()
