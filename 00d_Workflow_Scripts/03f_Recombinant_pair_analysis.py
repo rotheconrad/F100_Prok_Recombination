@@ -996,13 +996,12 @@ def post_hoc_test(adf):
 ##### SECTION 04: CALCULATE RECOMBINATION RATES ###############################
 ###############################################################################
 
-def get_recombination_rate(df, window, outfile):
+def get_recombination_rate(df, window, outfile, rbm_ani):
 
     # Calculate recombination vs mutation rate
-    # Rmr = Recombining genes recombination rate
-    # Pmr = Non-recombining genes recombination rate
-    # Rm = [len(recombinant mismatch) / len(recombinant genes)] * len(AllGenes)
-    # Rp = [len(nonrecombinant mismatch) / len(nonrecombiant genes)] * len(recombinant Genes)
+    
+
+
     # select recombinant and non nonrecombinant genes
     dfR = df[df['REC'] == 1] # rows of recombinant genes pid ≥ rec (default 99.8)
     dfN = df[df['REC'] == 0] # rows of nonrec genes pid < rec (default 99.8)
@@ -1017,22 +1016,40 @@ def get_recombination_rate(df, window, outfile):
     # skip windows with zero mismatches
     if rec_mismatch == 0 or norec_mismatch == 0: return 0, 0, 0
     # cacluate mutation rates as (mismatches / gene length)
+    divergence_time = 0.2
+    Rp_time = (100 - rbm_ani - divergence_time) / 100
+    Rm_time = divergence_time / 100
     Rmr = rec_mismatch / rec_length # recent mutation rate
     Pmr = norec_mismatch / norec_length # past mutation rate
     # calculate recent mutations and recently removed mutations
-    Rm = Rmr * total_length # total recent mutations
-    Rp = Pmr * rec_length # recently removed mutations
+    Rm = Rmr * total_length / Rm_time # total recent mutations
+    Rp = Pmr * rec_length / Rp_time # recently removed mutations
     # get the ratio
-    mratio = Rp / Rm if Rm > 0 else 0
+    slide1 = Rp / Rm if Rm > 0 else 0
+
+    # slide2
+    pm2_rate = (100 - rbm_ani) / 100
+    pm2 = pm2_rate * rec_length
+    rm2_rate = divergence_time / 100
+    rm2 = rm2_rate * total_length
+    slide2 = pm2 / rm2 if rm2 > 0 else 0
+
+    # slide 3
+    dfR['drate'] = (divergence_time - (100 - dfR['pID'])) / 100
+    pm3 =  dfR['drate'].mean() * rec_length
+    tm3 = (divergence_time / 100) * total_length
+    am3 = tm3 - pm3
+    slide3 = pm3 / am3
 
     lineout = (
                 f'{window}\t{rec_mismatch}\t{rec_length}\t{norec_mismatch}\t'
-                f'{norec_length}\t{total_length}\t{Rmr}\t{Pmr}\t'
-                f'{Rm}\t{Rp}\t{mratio}\n'
+                f'{norec_length}\t{total_length}\t{Rmr}\t{Pmr}\t{Rm}\t{Rp}\t'
+                f'{pm2_rate}\t{pm2}\t{rm2_rate}\t{rm2}\t{pm3}\t{tm3}\t{am3}\t'
+                f'{slide1}\t{slide2}\t{slide3}\n'
                 )
     outfile.write(lineout)
 
-    return Rm, Rp, mratio
+    return slide1, slide2, slide3
 
 
 def recombination_rate_plots(df, outpre):
@@ -1045,18 +1062,20 @@ def recombination_rate_plots(df, outpre):
                 'Window\tRecombinant Mismatches\tRecombinant Gene Length\t'
                 'Non-recombinant Mismatches\tNon-recombinant Gene Length\t'
                 'Total Gene Length\tRmr * Gl\tPmr * Rl\t'
-                'Rm\tRp\tRp/Rm\n'
+                'Rm\tRp\tPm2 rate\tPm2\tRm2 rate\tRm2\tPm3\tTm3\tAm3\t'
+                'slide1\tslide2\tslide3\n'
                 )
     recout.write(header)
     # get full genome recombination rate
     # Rmr = Number of recent mutations across genomic length
     # Pmr = Number of recent mutations purged by recombination
-    Rm, Rp, mratio = get_recombination_rate(dfx, 'Full genome', recout)
+    rbm_ani = dfx[dfx['pID'] != 0]['pID'].mean()
+    slide1, slide2, slide3 = get_recombination_rate(dfx, 'Full genome', recout, rbm_ani)
     # store the title for the plot
     titles = {
-            'Rp': f'Recently purged mutations (Rp): {Rp:.2f}',
-            'Mr': f'Rp / Rm {mratio:.2f}',
-            'Rm': f'Recent mutations (Rm): {Rm:.2f}'
+            'slide1': f'Slide 1: {slide1:.2f}',
+            'slide2': f'Slide 2: {slide2:.2f}',
+            'slide3': f'Slide 3: {slide3:.2f}'
             }
 
     # get sliding window recombination rates
@@ -1073,11 +1092,12 @@ def recombination_rate_plots(df, outpre):
         for start in range(dflen-window+2):
             stop = start+window-1
             dfW = dfx.loc[start:stop]
+            rbm_ani = dfW[dfW['pID'] != 0]['pID'].mean()
             # get the recent recombinations vs mutations
-            Rm, Rp, mratio = get_recombination_rate(dfW, window, recout)
-            data[f'{window}_Rp'].append(Rp)
-            data[f'{window}_Mr'].append(mratio)
-            data[f'{window}_Rm'].append(Rm)
+            slide1, slide2, slide3 = get_recombination_rate(dfW, window, recout, rbm_ani)
+            data[f'{window}_slide1'].append(slide1)
+            data[f'{window}_slide2'].append(slide2)
+            data[f'{window}_slide3'].append(slide3)
 
     # close recout data table
     recout.close()
@@ -1097,44 +1117,13 @@ def recombination_rate_plots(df, outpre):
         if i in [0,1,2]:
             title = titles[lab.split('_')[1]]
             axs[i].set_title(f'{title}')
-        if i in [1, 4, 7, 10, 13, 16, 19, 22]:
-            axs[i].hlines(y=1, xmin=min(x), xmax=max(x), lw=1, colors='k', ls=':')
-            axs[i].set_yscale('symlog')
+
+        axs[i].hlines(y=1, xmin=min(x), xmax=max(x), lw=1, colors='k', ls=':')
+        axs[i].set_yscale('symlog')
 
         axs[i].set_xlabel(f'{window} gene step')
         axs[i].set_ylabel('')
         
-        # get index position of minimum
-        minimum = min(y)
-        min_index = y.index(minimum)
-        # retrieve corresponding Nrr or Rrr and mratio
-        who = lab.split('_')[1]
-        if who == 'Rp':
-            Mr = data[f'{window}_Mr'][min_index]
-            Rm = data[f'{window}_Rm'][min_index]
-            line = (
-                f'Min Rp: {minimum:.2f} | '
-                f'Rm at min: {Rm:.2f} | '
-                f'Rp/Rm at min: {Mr:.2f}'
-                )
-        elif who == 'Mr':
-            Rp = data[f'{window}_Rp'][min_index]
-            Rm = data[f'{window}_Rm'][min_index]
-            line = (
-                f'Min Rp/Rm: {minimum:.2f} | '
-                f'Rp at min: {Rp:.2f} | '
-                f'Rm at min: {Rm:.2f}'
-                )
-        elif who == 'Rm':
-            Rp = data[f'{window}_Rp'][min_index]
-            Mr = data[f'{window}_Mr'][min_index]
-            line = (
-                f'Min Rm: {minimum:.2f} | '
-                f'Rp at min: {Rp:.2f} | '
-                f'Rp/Rm at min: {Mr:.2f}'
-                )
-
-        axs[i].text(tx, ty, line, transform=axs[i].transAxes, fontsize=ts)
 
     fig.set_tight_layout(True)
     plt.savefig(f'{outpre}_Rec_rate_windows.pdf')

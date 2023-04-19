@@ -84,6 +84,8 @@ def parse_input_list(infile):
     mgenome, mgenes, group = {}, defaultdict((lambda: defaultdict())), {}
     # intialize gene file list
     group_files = []
+    # genome order of input list
+    gorder = []
 
     with open(infile, 'r') as file:
         # get the first line input files for the main genome and genes
@@ -117,6 +119,10 @@ def parse_input_list(infile):
         for line in file:
             gene_file = line.rstrip().split('\t')[1]
             group_files.append(gene_file)
+            with open(gene_file, 'r') as file:
+                X = file.readline().split(' # ')
+                genome = X[0].split('_')[0][1:]
+                gorder.append(genome)
 
     # Get the gene names from the group files. thats all we need here.
     for gene_file in group_files:
@@ -127,7 +133,7 @@ def parse_input_list(infile):
                 geneID = X[0][1:]
                 group[geneID] = ''
 
-    return mgenome, mgenes, group
+    return mgenome, mgenes, group, gorder
 
 
 def parse_rbm_file(rbm, rec, mgenes, group):
@@ -508,7 +514,7 @@ def post_hoc_test(adf):
 ##### SECTION 04: GENE RBM IDENTITY VS GENOME POSITION ########################
 ###############################################################################
 
-def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
+def build_pos_line_plot(df, mgenome, outpre, cpos, rec, gorder):
     ''' plots gene sequence identity on y axis vs genome coords on x axis.
         cpos is a list of contig lengths to add markers '''
 
@@ -529,9 +535,9 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
     # set yaxis max
     ymax = 100
     
-    group_genomes = dfG['Match Genome'].unique()
+    group_genomes = gorder #dfG['Match Genome'].unique()
     subs = len(group_genomes)
-    
+
     # initialize the figure
     fig, axs = plt.subplots(subs, 1, figsize=(70, subs*2))
 
@@ -549,10 +555,16 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec):
         y = np.where(ids < ymin, ymin, ids).tolist()
         c = [colors[i] for i in dfS['PanCat'].to_list()]
 
+        # plot the data
         ax.scatter(x, y, color=c, marker='|', linestyle='-')
-        ax.text(xmin, ymin-1.2, genome, ha='left', va='top', fontsize=8)
+
+        # add genome name to plot
+        gname = f'genome: {genome}'
+        ax.text(xmin, ymin-1.2, gname, ha='left', va='top', fontsize=8)
+
+        # set axis limits
         ax.set_xlim(xmin-0.5, xmax+0.5)
-        #ax.set_ylim(ymin, ymax)
+        ax.set_ylim(ymin, ymax)
         #ax.set_xticks([])
         #ax.set_xticklabels([])
 
@@ -981,12 +993,11 @@ def build_rbm_binary_matrix(df, outpre):
     df.loc[df['PanCat'] == 'Conserved', 'REC'] = 2
 
     # Due to retaining tied RBMs, we need to select the tied RBM with the
-    # greatest pID and retain only on RBM for the heatmap.
+    # greatest pID and retain only one RBM for the heatmap.
     df['Start-Match'] = df['Start'].astype(str) + '-' + df['Match Genome'].astype(str)
     dfX = df[df.duplicated(subset='Start-Match', keep=False) == True]
     dfX = dfX[['Start', 'pID', 'Match Gene', 'Gene', 'REC', 'Start-Match']]
     dfX = dfX.sort_values(by='pID', axis=0, ascending=False)
-    dfX.to_csv('nonsense2.tsv', sep='\t', index=False)
     dfX = dfX[dfX.duplicated(subset='Start-Match', keep="first") == True]
     df = df.drop(dfX.index)
 
@@ -1014,76 +1025,90 @@ def build_rbm_binary_matrix(df, outpre):
 ##### SECTION 07: CALCULATE RECOMBINATION RATES ###############################
 ###############################################################################
 
-def get_recombination_rate(df, window, outfile):
+def get_recombination_rate(df, window, outfile, rbm_ani):
 
     # Calculate recombination vs mutation rate
-    # Rmr = Recombining genes recombination rate
-    # Pmr = Non-recombining genes recombination rate
-    # Rm = [len(recombinant mismatch) / len(recombinant genes)] * len(AllGenes)
-    # Rp = [len(nonrecombinant mismatch) / len(nonrecombiant genes)] * len(recombinant Genes)
-    # select recombinant and non nonrecombinant genes
+
     # get sums, define variable
     rec_mismatch = df['Rec_Mismatch'].sum()
     rec_length = df[df['Rec_Mismatch'] > 0]['Width'].sum()
     norec_mismatch = df['NoRec_Mismatch'].sum()
     norec_length = df[df['NoRec_Mismatch'] > 0]['Width'].sum()
     total_length = df['Width'].sum()
-    # window must have at leat 1 of each recombinant or non-rec
-    # skip windows with zero mismatches or zero rec or no rec
+    # skip windows with zero mismatches
     if rec_mismatch == 0 or norec_mismatch == 0: return 0, 0, 0
     # cacluate mutation rates as (mismatches / gene length)
+    divergence_time = 0.2
+    Rp_time = (100 - rbm_ani - divergence_time) / 100
+    Rm_time = divergence_time / 100
     Rmr = rec_mismatch / rec_length # recent mutation rate
     Pmr = norec_mismatch / norec_length # past mutation rate
     # calculate recent mutations and recently removed mutations
-    Rm = Rmr * total_length # total recent mutations
-    Rp = Pmr * rec_length # recently removed mutations
+    Rm = Rmr * total_length / Rm_time # total recent mutations
+    Rp = Pmr * rec_length / Rp_time # recently removed mutations
     # get the ratio
-    mratio = Rp / Rm if Rm > 0 else 0
+    slide1 = Rp / Rm if Rm > 0 else 0
+
+    # slide2
+    pm2_rate = (100 - rbm_ani) / 100
+    pm2 = pm2_rate * rec_length
+    rm2_rate = divergence_time / 100
+    rm2 = rm2_rate * total_length
+    slide2 = pm2 / rm2 if rm2 > 0 else 0
+
+    # slide 3
+    df['drate'] = (divergence_time - (df['NoRec_Mismatch'] + df['Rec_Mismatch'] / df['Width'] ))
+    pm3 =  df['drate'].mean() * rec_length
+    tm3 = (divergence_time / 100) * total_length
+    am3 = tm3 - pm3
+    slide3 = pm3 / am3
 
     lineout = (
                 f'{window}\t{rec_mismatch}\t{rec_length}\t{norec_mismatch}\t'
-                f'{norec_length}\t{total_length}\t{Rmr}\t{Pmr}\t'
-                f'{Rm}\t{Rp}\t{mratio}\n'
+                f'{norec_length}\t{total_length}\t{Rmr}\t{Pmr}\t{Rm}\t{Rp}\t'
+                f'{pm2_rate}\t{pm2}\t{rm2_rate}\t{rm2}\t{pm3}\t{tm3}\t{am3}\t'
+                f'{slide1}\t{slide2}\t{slide3}\n'
                 )
     outfile.write(lineout)
 
-    return Rm, Rp, mratio
+    return slide1, slide2, slide3
 
 
 def recombination_rate_plots(df, outpre):
 
     # use only RBM genes, drop genes without RBM
     dfx = df[df['Mismatch'] != 'x'] # drop genome specific genes
+    rbm_ani = dfx[dfx['pID'] != 0]['pID'].mean()
     # Convert one line per gene
-    dfx = dfx[['REC', 'Start', 'Mismatch', 'Width']]
-    dfx = dfx.groupby(['Start', 'REC', 'Width'], as_index=False)['Mismatch'].sum()
-    df0 = dfx[dfx['REC'] == 0].set_index('Start')
+    dfy = dfx[['REC', 'Start', 'Mismatch', 'Width']]
+    dfy = dfy.groupby(['Start', 'REC', 'Width'], as_index=False)['Mismatch'].sum()
+    df0 = dfy[dfy['REC'] == 0].set_index('Start')
     df0 = df0.rename(columns={'Mismatch':'NoRec_Mismatch'})
     df0 = df0.drop('REC', axis=1)
-    df1 = dfx[dfx['REC'] == 1].set_index('Start')
+    df1 = dfy[dfy['REC'] == 1].set_index('Start')
     df1 = df1.rename(columns={'Mismatch':'Rec_Mismatch'})
     df1 = df1.drop('REC', axis=1)
     dfZ = df0.join(df1, lsuffix='_0', rsuffix='_1', how='outer').reset_index()
     dfZ['Width'] = dfZ[['Width_0', 'Width_1']].max(axis=1)
-
     # open output file for rec rate table
     recout = open(f'{outpre}_rec_rate_table.tsv', 'w')
     header = (
                 'Window\tRecombinant Mismatches\tRecombinant Gene Length\t'
                 'Non-recombinant Mismatches\tNon-recombinant Gene Length\t'
                 'Total Gene Length\tRmr * Gl\tPmr * Rl\t'
-                'Rm\tRp\tRp/Rm\n'
+                'Rm\tRp\tPm2 rate\tPm2\tRm2 rate\tRm2\tPm3\tTm3\tAm3\t'
+                'slide1\tslide2\tslide3\n'
                 )
     recout.write(header)
     # get full genome recombination rate
     # Rmr = Number of recent mutations across genomic length
     # Pmr = Number of recent mutations purged by recombination
-    Rm, Rp, mratio = get_recombination_rate(dfZ, 'Full genome', recout)
+    slide1, slide2, slide3 = get_recombination_rate(dfZ, 'Full genome', recout, rbm_ani)
     # store the title for the plot
     titles = {
-            'Rp': f'Recently purged mutations (Rp): {Rp:.2f}',
-            'Mr': f'Rp / Rm {mratio:.2f}',
-            'Rm': f'Recent mutations (Rm): {Rm:.2f}'
+            'slide1': f'Slide 1: {slide1:.2f}',
+            'slide2': f'Slide 2: {slide2:.2f}',
+            'slide3': f'Slide 3: {slide3:.2f}'
             }
 
     # get sliding window recombination rates
@@ -1098,10 +1123,12 @@ def recombination_rate_plots(df, outpre):
         for start in range(dflen-window+2):
             stop = start+window-1
             dfW = dfZ.loc[start:stop]
-            Rm, Rp, mratio = get_recombination_rate(dfW, window, recout)
-            data[f'{window}_Rp'].append(Rp)
-            data[f'{window}_Mr'].append(mratio)
-            data[f'{window}_Rm'].append(Rm)
+            dfM = dfx[(dfx['Start'] >= start) & (dfx['Stop'] <= stop)]
+            rbm_ani = dfM[dfM['pID'] != 0]['pID'].mean()
+            slide1, slide2, slide3 = get_recombination_rate(dfW, window, recout, rbm_ani)
+            data[f'{window}_slide1'].append(slide1)
+            data[f'{window}_slide2'].append(slide2)
+            data[f'{window}_slide3'].append(slide3)
 
     # close recout data table
     recout.close()
@@ -1121,45 +1148,13 @@ def recombination_rate_plots(df, outpre):
         if i in [0,1,2]:
             title = titles[lab.split('_')[1]]
             axs[i].set_title(f'{title}')
-        if i in [1, 4, 7, 10, 13, 16, 19, 22]:
-            axs[i].hlines(y=1, xmin=min(x), xmax=max(x), lw=1, colors='k', ls=':')
-            axs[i].set_yscale('symlog')
+
+        axs[i].hlines(y=1, xmin=min(x), xmax=max(x), lw=1, colors='k', ls=':')
+        axs[i].set_yscale('symlog')
 
         axs[i].set_xlabel(f'{window} gene step')
         axs[i].set_ylabel('')
 
-        # get index position of minimum
-        minimum = min(y)
-        min_index = y.index(minimum)
-        # retrieve corresponding Nrr or Rrr and mratio
-        who = lab.split('_')[1]
-        if who == 'Rp':
-            Mr = data[f'{window}_Mr'][min_index]
-            Rm = data[f'{window}_Rm'][min_index]
-            line = (
-                f'Min Rp: {minimum:.2f} | '
-                f'Rm at min: {Rm:.2f} | '
-                f'Rp/Rm at min: {Mr:.2f}'
-                )
-        elif who == 'Mr':
-            Rp = data[f'{window}_Rp'][min_index]
-            Rm = data[f'{window}_Rm'][min_index]
-            line = (
-                f'Min Rp/Rm: {minimum:.2f} | '
-                f'Rp at min: {Rp:.2f} | '
-                f'Rm at min: {Rm:.2f}'
-                )
-        elif who == 'Rm':
-            Rp = data[f'{window}_Rp'][min_index]
-            Mr = data[f'{window}_Mr'][min_index]
-            line = (
-                f'Min Rm: {minimum:.2f} | '
-                f'Rp at min: {Rp:.2f} | '
-                f'Rp/Rm at min: {Mr:.2f}'
-                )
-        axs[i].text(tx, ty, line, transform=axs[i].transAxes, fontsize=ts)
-
-    fig.suptitle(title)
     fig.set_tight_layout(True)
     plt.savefig(f'{outpre}_Rec_rate_windows.pdf')
     plt.close()
@@ -1260,14 +1255,6 @@ def main():
         default=99.8,
         required=False
         )
-    parser.add_argument(
-        '-subs', '--lineplot_subdivisions',
-        help='(OPTIONAL)Specify subdivisions for lineplot (default = 10).',
-        metavar='',
-        type=int,
-        default=10,
-        required=False
-        )
     args=vars(parser.parse_args())
 
     # Do what you came here to do:
@@ -1279,7 +1266,6 @@ def main():
     pc = args['pangenome_categories']
     outpre = args['output_file_prefix']
     ano = args['annotation_file']
-    subs = args['lineplot_subdivisions']
     rec = args['recombination_cutoff']
 
     ## SECTION 01: Parse input data
@@ -1288,13 +1274,13 @@ def main():
     # mgenes is the main geneome dict of {gene name: geneinfo}
     # geneinfo is a list of [start, stop, strand]
     # group is a dict of gene names from the other genomes in the group
-    mgenome, mgenes, group = parse_input_list(infile)
+    mgenome, mgenes, group, gorder = parse_input_list(infile)
     # parse RBM file
     RBM = parse_rbm_file(rbm, rec, mgenes, group)
     # parse pancat file
     pancats, repgenes = parse_pangenome_file(pc)
     # parse annotation file
-    if ano: annos = parse_annotation_file(ano)
+    annos = parse_annotation_file(ano)
 
     ## SECTION 02: Create data frame
     # this step takes all the input we just parsed and creates a dataframe
@@ -1308,7 +1294,7 @@ def main():
     _ = plot_annotation_barplot(df, outpre)
 
     ## SECTION 04: gene RBM identity vs. genome position
-    _ = build_pos_line_plot(df, mgenome, outpre, cpos, rec)
+    _ = build_pos_line_plot(df, mgenome, outpre, cpos, rec, gorder)
 
     ## SECTION 05: recombinat gene positions by pangenome class
     _ = build_pos_bar_plots(df, mgenome, pancats, outpre, cpos)
@@ -1323,7 +1309,7 @@ def main():
     ## SECTION 07: Calculate recombination rates
     print('\n\tCalculating recombination rates ...')
     _ = length_of_recombination_events(df, outpre)
-    _ = recombination_rate_plots(df, outpre)
+    #_ = recombination_rate_plots(df, outpre)
 
     ## SECTION 08: empty space for future ideas.
     # this step creates x figure and does x stats
