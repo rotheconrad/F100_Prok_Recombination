@@ -1307,7 +1307,7 @@ def main():
     _ = build_rbm_binary_matrix(df, outpre)
 
     ## SECTION 07: Calculate recombination rates
-    print('\n\tCalculating recombination rates ...')
+    print('\n\tCalculating recombination lengths ...')
     _ = length_of_recombination_events(df, outpre)
     #_ = recombination_rate_plots(df, outpre)
 
