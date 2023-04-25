@@ -509,7 +509,7 @@ cat ${genes_dir_faa}/*.faa > all_genes_CDS.faa
 #### Retrieve amino acid sequence for representative genes
 
 ```bash
-python 00d_Workflow_Scripts/03d_get_AA_reps_fasta.py -i my_rep_seqs.fnn -a all_genes_CDS.faa -o my_rep_seqs.faa
+python 00d_Workflow_Scripts/03d_get_AA_reps_fasta.py -r my_rep_seqs.fnn -a all_genes_CDS.faa -o my_rep_seqs.faa
 ```
 
 #### Annotate genes with EggNog Mapper
