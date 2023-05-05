@@ -159,6 +159,14 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-plot', '--plot_gene_length_distribution',
+        help='(OPTIONAL) Set true to plot histogram of gene lengths (default: False)',
+        metavar='',
+        type=str,
+        required=False,
+        default=False
+        )
+    parser.add_argument(
         '-aa', '--amino_acid_input',
         help='(OPTIONAL) For amino acid input, divide legnth filter by 3 (default: False)',
         metavar='',
@@ -202,6 +210,7 @@ def main():
 
     # define input params
     infile = args['input_file']
+    plot = args['plot_gene_length_distribution']
     aa = args['amino_acid_input']
     min_qnt = args['quantile_gene_length']
     max_qnt = 1 - min_qnt
@@ -214,10 +223,16 @@ def main():
 
     # plot the gene length distribution
     # calculates and returns quantile lengths
-    lmin, lmax = plot_dist(data, infile, min_qnt, max_qnt, aa)
+    if plot:
+        lmin, lmax = plot_dist(data, infile, min_qnt, max_qnt, aa)
 
     # if uq is true use min and max quantile length for the filter
-    if uq:
+    if uq and plot:
+        min_len, max_len = lmin, lmax
+    elif uq and not plot:
+        input_array = list(data.values())
+        qarray = sorted(input_array)
+        lmin, lmax = np.quantile(qarray, min_qnt), np.quantile(qarray, max_qnt)
         min_len, max_len = lmin, lmax
     # if aa is true divide min max length by 3.
     if aa:
