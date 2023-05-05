@@ -226,44 +226,47 @@ def main():
     g2 = args['gene_fasta_two']
     out = args['output_file']
 
+    n1 = g1.split('/')[-1].split('.')[0]
+    n2 = g2.split('/')[-1].split('.')[0]
+    rtmp = f'{n1}-{n2}'
     # create temp directory
     #Path("rtmp").mkdir(parents=True, exist_ok=True)
-    _ = subprocess.run('mkdir rtmp', shell=True)
+    _ = subprocess.run(f'mkdir {rtmp}', shell=True)
 
     # first blast
     print(f'\nBuidling blast database for {g1} ...')
-    db1_str = f'makeblastdb -in {g1} -dbtype nucl -out rtmp/db1'
+    db1_str = f'makeblastdb -in {g1} -dbtype nucl -out {rtmp}/db1'
     db1 = subprocess.run(db1_str, shell=True)
     print(f'\nRunning blast with {g2} as query against {g1} ...')
     b1_str = (
-        f"blastn -max_target_seqs 10 -db rtmp/db1 -query {g2} -out rtmp/b1.blast "
+        f"blastn -max_target_seqs 10 -db {rtmp}/db1 -query {g2} -out {rtmp}/b1.blast "
         f"-subject_besthit -outfmt '6 qseqid sseqid pident length mismatch "
         f"gapopen qstart qend sstart send evalue bitscore qlen slen'"
         )
     blast1 = subprocess.run(b1_str, shell=True)
     print(f'\nParsing 1st blast result to dictionary ...')
-    b1 = parse_tab_blast('rtmp/b1.blast')
+    b1 = parse_tab_blast(f'{rtmp}/b1.blast')
 
     # second blast
     print(f'\nBuidling blast database for {g2} ...')
-    db2_str = f'makeblastdb -in {g2} -dbtype nucl -out rtmp/db2'
+    db2_str = f'makeblastdb -in {g2} -dbtype nucl -out {rtmp}/db2'
     db2 = subprocess.run(db2_str, shell=True)
     print(f'\nRunning blast with {g1} as query against {g2} ...')
     b2_str = (
-        f"blastn -max_target_seqs 10 -db rtmp/db2 -query {g1} -out rtmp/b2.blast "
+        f"blastn -max_target_seqs 10 -db {rtmp}/db2 -query {g1} -out {rtmp}/b2.blast "
         f"-subject_besthit -outfmt '6 qseqid sseqid pident length mismatch "
         f"gapopen qstart qend sstart send evalue bitscore qlen slen'"
         )
     blast2 = subprocess.run(b2_str, shell=True)
     print(f'\nParsing 2nd blast result to dictionary ...')
-    b2 = parse_tab_blast('rtmp/b2.blast')
+    b2 = parse_tab_blast(f'{rtmp}/b2.blast')
 
     # read in the fasta sequences
     print(f'\nComputing reciprocal best matches ...')
     _ = do_the_RBM_thing(b1, b2, out)
 
     # remove the tmp directory
-    _ = subprocess.run('rm -r rtmp/', shell=True)
+    _ = subprocess.run(f'rm -r {rtmp}/', shell=True)
 
     
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
