@@ -484,18 +484,18 @@ def main():
         )
     parser.add_argument(
         '-p', '--point_size',
-        help='OPTIONAL: Size of the plotted points (Default=2.0)',
+        help='OPTIONAL: Size of the plotted points (Default=5.0)',
         metavar='',
         type=float,
-        default=2.0,
+        default=5.0,
         required=False
         )
     parser.add_argument(
         '-a', '--point_alpha',
-        help='OPTIONAL: Alpha value of the plotted points (Default=0.10)',
+        help='OPTIONAL: Alpha value of the plotted points (Default=0.25)',
         metavar='',
         type=float,
-        default=0.10,
+        default=0.25,
         required=False
         )
     parser.add_argument(
