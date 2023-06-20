@@ -983,13 +983,14 @@ def distance_plots_2(df, colors, distance_out):
 def build_rbm_binary_matrix(df, outpre):
     ''' generate and write out a binary matrix for RBM rarefaction analysis
     RBMs ≥ rec are assigned a 1 and RBMs < rec are assigned a 0
+    Conserved genes are assigned a 2.
     Columns are genomes in the input group
     Rows are RBMs in gene order of the main (1st) genome in the input group
     '''
 
     print(f'\n\tBuilding binary recombinant RBM matrix ...')
 
-    # create trinary option for conserved genes assign 2
+    # create ternary option for conserved genes assign 2
     df.loc[df['PanCat'] == 'Conserved', 'REC'] = 2
 
     # Due to retaining tied RBMs, we need to select the tied RBM with the
