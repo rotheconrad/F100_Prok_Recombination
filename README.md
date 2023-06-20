@@ -1047,7 +1047,9 @@ The third file is a two column, comma-separated list of clade,color.
 
 Color guide: https://colorbrewer2.org/#type=qualitative&scheme=Set1&n=9
 
-* conserved sites are masked (not included)
+*conserved sites are masked (not included)*
+
+*If you don't have multiple clades, label all genomes the same clade and color.*
 
 ```bash
 python 03j_RBM-Clade_Rarefaction.py -r group_g1_rbm_matrix.tsv -l clade_list.txt -c color_list.txt -o group_g1_rbm_rarefaction
