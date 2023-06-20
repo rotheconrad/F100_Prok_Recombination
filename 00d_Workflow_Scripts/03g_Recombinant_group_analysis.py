@@ -8,13 +8,13 @@ column and paths to the gene fastas in the second column. See the example input
 file group_1_list.tsv. The first genome in the list will be compared to the
 remaining genomes in the list.
 
-And then it takes the same rbm, annotation, and pancate files as above.
+And then it takes the same rbm, annotation, and pancat files as above.
 
 This script returns data, graphics and statistics concerning the genomic
 positions between genes categorized by highly conserved core genes,
 recombining core genes, recombing accessory genes, and non-recombining
-genes. A gene is said to be recombining if the RBM value equals 100 and
-if it is not highly conserved.
+genes. A gene is said to be recombining if the RBM value is ≥ the -rec param
+(default 99.8) and if it is not highly conserved.
 
 This script performs some statistical tests on the distance between
 recombinant genes, and on the distributions of gene annotations.
