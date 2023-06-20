@@ -1030,20 +1030,20 @@ genome IDs from line 1 of the rmb matrix file and the userAssignedClade
 can be anything the user assigns. Each genome in the rbm matrix should
 have a clade assignment. Example:
 
-genome1,clade1
-genome2,clade1
-genome3,clade2
-genome4,clade3
-genome5,clade1
-genome6,clade3
-genome7,clade3
-genome8,clade2
+	genome1,clade1
+	genome2,clade1
+	genome3,clade2
+	genome4,clade3
+	genome5,clade1
+	genome6,clade3
+	genome7,clade3
+	genome8,clade2
 
 The third file is a two column, comma-separated list of clade,color.
 
-clade1,#e41a1c
-clade2,#377eb8
-clade3,#4daf4a
+	clade1,#e41a1c
+	clade2,#377eb8
+	clade3,#4daf4a
 
 Color guide: https://colorbrewer2.org/#type=qualitative&scheme=Set1&n=9
 
