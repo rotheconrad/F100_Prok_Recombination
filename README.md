@@ -33,6 +33,7 @@ This workflow will yeild many intermediate files and several publication ready f
 1. DataTable: Gene clusters from MMSeqs2 clustered and aligned
 1. Fasta: Representative sequence fasta for each gene cluster
 1. DataTable: Presence/Absence binary matrix of genomes and gene cluster
+1. DataTable: tsv gene list for Coinfinder input
 1. Figure: Pangenome curve model
 1. Figure: Pangenome clustered heatmap
 1. DataTable: Gene annotations
@@ -51,6 +52,8 @@ This workflow will yeild many intermediate files and several publication ready f
 1. Figure: genome group: Sequence identity of RBMs vs. genome position
 1. Figure: genome group: Core vs total recombinant positions rarefaction curve
 1. DataTable: Gene RBM info, position info, annoation info
+1. DataTable: RBM Matrix of gene/genome recombinant sites
+1. Figure: Rarefaction curve of recombinant sites per genome
 
 ## Required dependencies
 
@@ -463,6 +466,12 @@ python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_al
 ```
 
 *side quest: create two plots just for fun because we can once we have the binary matrix file. The code for these side quest figures was developed for a [previous publication](https://doi.org/10.1038/s41396-021-01149-9).*
+
+#### (OPTIONAL): create Coinfinder input file
+
+```bash
+python 00d_Workflow_Scripts/03a_coinfinder_format.py -i pangenome_matrix.tsv -o my_coinfinder_input.tsv
+```
 
 #### (OPTIONAL): create pangenome model
 
