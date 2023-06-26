@@ -134,7 +134,10 @@ def compute_rarefaction(df, colors, sort_order):
             glist.append(g)
             x = dfT[glist].sum(axis=1).tolist()
             rbm_count = len([i for i in x if i != 0])
-            new_sites = round((rbm_count - site_count)/total_genes * 100, 2)
+            # percent new sites
+            #new_sites = round((rbm_count - site_count)/total_genes * 100, 2)
+            # or count of new sites
+            new_sites = (rbm_count - site_count)
             site_count = rbm_count
             recombining_fraction = round(rbm_count/total_genes * 100, 2)
             data['Genome Count'].append(genome_count)
@@ -163,7 +166,8 @@ def build_rarefaction_plot(df, out_pre):
     ax1.set_title('', fontsize=fz)
     ax2.set_title('', fontsize=fz)
     ax1.set_ylabel('Recombining Fraction (%)', fontsize=fz)
-    ax2.set_ylabel('New Sites (%)', fontsize=fz)
+    #ax2.set_ylabel('New Sites (%)', fontsize=fz) # percent new sites
+    ax2.set_ylabel('New Sites', fontsize=fz) # or count of new sites
     ax2.set_xlabel('', fontsize=fz)
     ax2.set_xlabel('Genomes', fontsize=fz)
 
@@ -176,7 +180,7 @@ def build_rarefaction_plot(df, out_pre):
         y2 = dfx['New Sites'].tolist()
 
         ax1.plot(x, y1, color=color, linestyle='-', linewidth=5)
-        ax2.bar(x, y2, color=color, width=0.8)
+        ax2.bar(x[1:], y2[1:], color=color, width=0.8)
 
         lg = Line2D(
         [0],[0], color='w', label=label,
