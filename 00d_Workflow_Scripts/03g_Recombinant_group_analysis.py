@@ -559,7 +559,7 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec, gorder):
         ax.scatter(x, y, color=c, marker='|', linestyle='-')
 
         # add genome name to plot
-        gname = f'genome: {genome} | ANI: {rbm_ani}'
+        gname = f'genome: {genome} | ANI: {rbm_ani:.2f}'
         ax.text(xmin, ymin-1.2, gname, ha='left', va='top', fontsize=8)
 
         # set axis limits
