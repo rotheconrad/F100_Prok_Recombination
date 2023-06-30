@@ -56,16 +56,16 @@ from matplotlib.lines import Line2D
 def parse_clade_list(clade_list):
     ''' Builds and returns a dict of {genomeID, clade} from csv file '''
     
-    labels = {}
+    clades = {}
 
     with open(clade_list, 'r') as file:
         for line in file:
             X = line.rstrip().split(',')
             genomeID = X[0]
             clade = X[1]
-            labels[genomeID] = clade
+            clades[genomeID] = clade
 
-    return labels
+    return clades
 
 
 def parse_color_list(color_list):
@@ -83,14 +83,14 @@ def parse_color_list(color_list):
     return colors
 
 
-def parse_rbm_matrix(rbm_matrix, labels):
+def parse_rbm_matrix(rbm_matrix, clades):
     ''' Creates a pandas dataframe from input matrix and labels clades.
         Removes conserved genes (labeled with 2) '''
 
     # read in the matrix as a pandas data frame
     df = pd.read_csv(rbm_matrix, sep='\t', header=0)
     # collect clade labels and gene number
-    clades = [labels[i] for i in df.columns]
+    clades = [clades[i] for i in df.columns]
     genes = [f'Gene_{i+1:03}' for i in range(len(df))]
     # add gene number as index
     df['Genes'] = genes
@@ -104,27 +104,22 @@ def parse_rbm_matrix(rbm_matrix, labels):
     return df
 
 
-def compute_rarefaction(df, colors, sort_order):
+def compute_rarefaction(df, dfT, clade_perm, colors, sort_order):
     ''' iterates the pandas dataframe and stores rarefaction data '''
 
     data = {
             'Genome Count': [], 'Recombining Fraction': [], 'Color': [],
-            'New Sites': [], 'Label': []
+            'New Sites': [], 'Clade': []
             }
-
-    dfT = df.drop(columns=['Clade']).T # transformed dataframe
-    labels = df.Clade.unique()
-    sizes = [len(df[df['Clade'] == lab]) for lab in labels]
-    order = np.argsort(sizes)
+    
     genome_count = 0
     site_count = 0
     glist = []
     total_genes = len(dfT)
 
-    for i in order[::-1]:
-        label = labels[i]
-        color = colors[label]
-        dfx = df[df['Clade'] == label].copy()
+    for clade in clade_perm:
+        color = colors[clade]
+        dfx = df[df['Clade'] == clade].copy()
         dfx['Sum'] = dfx.sum(axis=1, numeric_only=True)
         dfx = dfx.sort_values('Sum',  ascending=sort_order)
         dfx = dfx.drop(columns=['Clade', 'Sum']).T
@@ -132,7 +127,7 @@ def compute_rarefaction(df, colors, sort_order):
         for g in xgenomes:
             genome_count += 1
             glist.append(g)
-            x = dfT[glist].sum(axis=1).tolist()
+            x = dfT[glist].sum(axis=1, numeric_only=True).tolist()
             rbm_count = len([i for i in x if i != 0])
             # percent new sites
             #new_sites = round((rbm_count - site_count)/total_genes * 100, 2)
@@ -144,11 +139,11 @@ def compute_rarefaction(df, colors, sort_order):
             data['Recombining Fraction'].append(recombining_fraction)
             data['Color'].append(color)
             data['New Sites'].append(new_sites)
-            data['Label'].append(label)
+            data['Clade'].append(clade)
 
-    df = pd.DataFrame(data)
+    df2 = pd.DataFrame(data)
 
-    return df
+    return df2
 
 
 def build_rarefaction_plot(df, out_pre):
@@ -173,17 +168,17 @@ def build_rarefaction_plot(df, out_pre):
 
     legend_elements = []
 
-    for label, color in zip(df['Label'].unique(), df['Color'].unique()):
-        dfx = df[df['Label'] == label]
+    for clade, color in zip(df['Clade'].unique(), df['Color'].unique()):
+        dfx = df[df['Clade'] == clade]
         x = dfx['Genome Count'].tolist()
         y1 = dfx['Recombining Fraction'].tolist()
         y2 = dfx['New Sites'].tolist()
 
         ax1.plot(x, y1, color=color, linestyle='-', linewidth=5)
-        ax2.bar(x[1:], y2[1:], color=color, width=0.8)
+        ax2.bar(x, y2, color=color, width=0.8)
 
         lg = Line2D(
-        [0],[0], color='w', label=label,
+        [0],[0], color='w', label=clade,
         markerfacecolor=color, marker='s', markersize=fz
         )
         legend_elements.append(lg)
@@ -197,6 +192,10 @@ def build_rarefaction_plot(df, out_pre):
         framealpha=0.0,
         frameon=False
         )
+
+    # set ax1 y axis
+    ax1.set_ylim(ymin=0, ymax=100)
+    ax1.set_yticks(range(0, 101, 10))
 
     for ax in [ax1, ax2]:
         # set the axis parameters / style
@@ -218,7 +217,7 @@ def build_rarefaction_plot(df, out_pre):
         right = 0.98,
         bottom = 0.07,
         top = 0.98,
-        hspace = 0.02
+        hspace = 0.05
         )
 
     plt.savefig(f'{out_pre}_plot.pdf')
@@ -283,13 +282,23 @@ def main():
     sort_order = args['sort_order']
 
     # parse the input files
-    labels = parse_clade_list(clade_list)
+    clades = parse_clade_list(clade_list)
     colors = parse_color_list(color_list)
-    df = parse_rbm_matrix(rbm_matrix, labels)
+    df = parse_rbm_matrix(rbm_matrix, clades)
 
-    # build the plot
-    df = compute_rarefaction(df, colors, sort_order)
-    _ = build_rarefaction_plot(df, out_pre)
+    # build the plots
+    # get the clade list
+    clades = df.Clade.unique().tolist()
+    # get the number of genomes in each clade
+    sizes = [len(df[df['Clade'] == clade]) for clade in clades]
+    # get the clade order based on clade size
+    order = np.argsort(sizes)
+    # need a transformed version of the df as well
+    dfT = df.drop(columns=['Clade']).T # transformed dataframe
+    for i in order[::-1]:
+        clade_perm = clades[i:] + clades[:i]
+        df2 = compute_rarefaction(df, dfT, clade_perm, colors, sort_order)
+        _ = build_rarefaction_plot(df2, f'{out_pre}_{i+1:02}')
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
 
