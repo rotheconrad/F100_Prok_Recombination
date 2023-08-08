@@ -630,7 +630,9 @@ python 00d_Workflow_Scripts/03f_Recombinant_pair_analysis.py -rbm RBMs_allV.rbm 
 
 #### Recombinant gene position by pangenome class
 
-The first figure labeled as \_genomes.pdf shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
+The first figure labeled as "\_genomes.pdf" shows the location of recombinant genes on the two genomes labeled by pangenome class (Conserved, Core, Accessory, or non-recombinant). In this instance, non-recombinant indicates less than 100% sequence similarity between two genes and thus a recent recombination event involving the gene pair in question is unlikely.
+
+The percentages on the right for each gene class are 1) the percent of genes in that class out of the total genes (top number). They should add to 100%. And 2) number of mismatched base pairs / total base pairs * 100 where mismatched base pairs are calculated from the RBM gene alignments and total base pairs is the length of genes.
 
 ![Recombinant gene positions in genome by pangenome class](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_genomes.png)
 
