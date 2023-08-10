@@ -13,6 +13,25 @@ This script requires the following packages:
     * matplotlib
     * seaborn
 
+This script can plot meta data with the clustermap if provided.
+Requires two files:
+    1) A tab separated metadata file with a row for each genome in the
+    ANI file with the exact genome name and columns for each meta value.
+    File should include a header.
+            example:
+                Genome\tSite\tNiche\tPhylogroup
+                Genome1\tA\tSheep\tB1
+                Genome2\tB\tCow\tE
+
+    2) A comma separated file of unique meta values,color
+            example:
+                Site1,#ffffb3
+                Site2,#377eb8
+                Species1,#ff7f00
+                Species2,#f781bf
+                Temp1,#4daf4a
+                Temp2,#3f1gy5
+
 -------------------------------------------
 Author :: Roth Conrad
 Email :: rotheconrad@gatech.edu
@@ -70,20 +89,69 @@ def parse_F100_file(infile):
     return df
 
 
-def plot_clustred_heatmap(df, outfile):
+def parse_colors(metacolors):
 
-    # build the plot
-    g = sns.clustermap(
-                    df, figsize=(16,9),
-                    xticklabels=True,
-                    yticklabels=True
+    ''' reads meta colors file into a dict of {meta value: color} '''
+
+    cdict = {}
+
+    with open(metacolors, 'r') as file:
+        for line in file:
+            X = line.rstrip().split(',')
+            mval = X[0]
+            color = X[1]
+            cdict[mval] = color
+
+    return cdict
+
+
+def plot_clustred_heatmap(df, outfile, metadf, cdict):
+
+    # build the plot with metadata
+    if not metadf.empty:
+        # Build legend
+        for meta in metadf.columns:
+            labels = metadf[meta].unique()
+
+            fig, ax = plt.subplots(figsize=(10,10))
+            ax.xaxis.set_visible(False)
+            ax.yaxis.set_visible(False)
+
+            for label in labels:
+                ax.bar(
+                    0, 0, color=cdict[label], label=label, linewidth=0
                     )
 
-    # adjust layout, save, and close
-    #plt.gca().invert_yaxis()
-    #fig.set_tight_layout(True)
+            ax.legend(
+                title=meta, title_fontsize='xx-large', loc="center",
+                frameon=False, markerscale=5, fontsize='xx-large'
+                )
+            outpre = '.'.join(outfile.split('.')[:-1])
+            plt.savefig(f'{outpre}_Legend_{meta}.pdf', dpi=300)
+            plt.close()
+
+        # Build the clustermap
+        metadf = metadf.replace(cdict) # swap colors in for values
+        g = sns.clustermap(
+                        df, figsize=(16,9),
+                        xticklabels=True,
+                        yticklabels=True,
+                        col_colors=metadf
+                        )
+
+
+    # build the plot without metadata
+    else:
+        g = sns.clustermap(
+                        df, figsize=(16,9),
+                        xticklabels=True,
+                        yticklabels=True,
+                        )
+
     g.savefig(outfile)
     plt.close()
+
+    return True
 
 
 def main():
@@ -101,6 +169,20 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-m', '--meta_data_file',
+        help='Please specify a meta data file!',
+        metavar=':',
+        type=str,
+        required=False
+        )
+    parser.add_argument(
+        '-c', '--meta_colors_file',
+        help='Please specify a meta colors file!',
+        metavar=':',
+        type=str,
+        required=False
+        )
+    parser.add_argument(
         '-o', '--output_file',
         help='Please specify the output file name!',
         metavar=':',
@@ -114,13 +196,32 @@ def main():
     
     # define parameters
     infile = args['input_file']
+    metadata = args['meta_data_file']
+    metacolors = args['meta_colors_file']
     outfile = args['output_file']
 
     # read in the *.pim file from EMBL-EBI simple phylogeny
     df = parse_F100_file(infile)
 
-    # create the plot
-    _ = plot_clustred_heatmap(df, outfile)
+    if metadata and metacolors:
+        cdict = parse_colors(metacolors)
+        metadf = pd.read_csv(metadata, sep='\t', index_col=0, header=0)
+        metadf = metadf.reindex(df.index).dropna()
+        # select only rows in metadf
+        df = df[df.index.isin(metadf.index)]
+        # select only columns in metadf
+        df = df[metadf.index.tolist()]
+        _ = plot_clustred_heatmap(df, outfile, metadf, cdict)
+
+    elif metadata:
+        print('\n\nBoth meta data and meta colors are required to use them!')
+
+    elif metacolors:
+        print('\n\nBoth meta data and meta colors are required to use them!')
+
+    else:
+        # create the plot without meta data colors
+        _ = plot_clustred_heatmap(df, outfile, None, None)
 
     print('\n\nComplete success space cadet! Hold on to your boots.\n\n')
 

@@ -514,12 +514,33 @@ def post_hoc_test(adf):
 ##### SECTION 04: GENE RBM IDENTITY VS GENOME POSITION ########################
 ###############################################################################
 
+def ani_sort(dfG, gorder):
+    ''' sorts the genomes by ANI. Gets the ANI from RBMs '''
+
+    data = {'Match Genome': [], 'ANI': []}
+
+    for genome in gorder:
+        dfA = dfG[dfG['Match Genome'] == genome]
+        rbm_ani = dfA[dfA['pID'] != 0]['pID'].mean()
+        data['Match Genome'].append(genome)
+        data['ANI'].append(rbm_ani)
+
+    dfANI = pd.DataFrame(data)
+    dfANI = dfANI.sort_values('ANI', ascending=False)
+    gorder = dfANI['Match Genome'].tolist()
+
+    return gorder
+
+
 def build_pos_line_plot(df, mgenome, outpre, cpos, rec, gorder):
     ''' plots gene sequence identity on y axis vs genome coords on x axis.
         cpos is a list of contig lengths to add markers '''
 
     dfG = df[df['Match Genome'] != '-']
     dfG['Mid'] = dfG[['Start', 'Stop']].mean(axis=1)
+
+    # Sort by ANI
+    gorder = ani_sort(dfG, gorder)
 
     colors = {
             'Conserved': '#e41a1c', # red high conserved core gene
@@ -559,7 +580,7 @@ def build_pos_line_plot(df, mgenome, outpre, cpos, rec, gorder):
         ax.scatter(x, y, color=c, marker='|', linestyle='-')
 
         # add genome name to plot
-        gname = f'genome: {genome} | ANI: {rbm_ani:.2f}'
+        gname = f'genome: {genome} | ANI: {rbm_ani:.4f}'
         ax.text(xmin, ymin-1.2, gname, ha='left', va='top', fontsize=8)
 
         # set axis limits
@@ -1016,7 +1037,15 @@ def build_rbm_binary_matrix(df, outpre):
     # drop the '-' column that arises from genome specific genes
     # fill nan's with 0s. these are genes in the reference genome without RBMs
     # in the query genome so they are non recombinant with the query genome.
-    matrix = matrix.rename_axis(None, axis=0).drop('-', axis=1).fillna(0)
+    # this causes an error if there are not any genome specific genes.
+    # future update, add logic to check. For now use try: except:
+    try:
+        matrix = matrix.rename_axis(None, axis=0).drop('-', axis=1).fillna(0)
+    except:
+        print(
+            "\n\n\t\tLine 1043 Note: No genome specific genes ('-') identified"
+            ".\nThis is not an error. Only a note. Everything is good.\n\n"
+            )
     # write to file.
     matrix.to_csv(f'{outpre}_rbm_matrix.tsv', sep='\t', index=False)
 
@@ -1195,6 +1224,14 @@ def length_of_recombination_events(df, outpre):
     plt.savefig(f'{outpre}_Adjecent_Rec_Length.pdf')
     plt.close()
 
+    # write data to output file to compare between species or groups
+    outfile = f'{outpre}_Adjecent_Rec_Length.tsv'
+    with open(outfile, 'w') as out:
+        recout = [str(i) for i in rec]
+        out.write('Consecutive Recombinant,' + ','.join(recout) + '\n')
+        nreco = [str(i) for i in norec]
+        out.write('NonConsecutive Non-recombinant,' + ','.join(nreco) + '\n')
+
     return True
 
 ###############################################################################
@@ -1310,6 +1347,7 @@ def main():
     ## SECTION 07: Calculate recombination rates
     print('\n\tCalculating recombination lengths ...')
     _ = length_of_recombination_events(df, outpre)
+    # did not finish this function for the group genomes
     #_ = recombination_rate_plots(df, outpre)
 
     ## SECTION 08: empty space for future ideas.

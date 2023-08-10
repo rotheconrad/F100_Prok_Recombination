@@ -2,6 +2,36 @@
 
 ''' Plot clustermap from binary matrix with header row and index column
 
+This tool takes the _rbm_matrix.tsv output from the script
+03g_Recombinant_group_analysis.py and returns a clustered
+heatmap in .pdf format.
+
+This script requires the following packages:
+
+    * argparse
+    * pandas
+    * matplotlib
+    * seaborn
+
+This script can plot meta data with the clustermap if provided.
+Requires two files:
+    1) A tab separated metadata file with a row for each genome in the
+    ANI file with the exact genome name and columns for each meta value.
+    File should include a header.
+            example:
+                Genome\tSite\tNiche\tPhylogroup
+                Genome1\tA\tSheep\tB1
+                Genome2\tB\tCow\tE
+
+    2) A comma separated file of unique meta values,color
+            example:
+                Site1,#ffffb3
+                Site2,#377eb8
+                Species1,#ff7f00
+                Species2,#f781bf
+                Temp1,#4daf4a
+                Temp2,#3f1gy5
+
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -23,16 +53,26 @@ import seaborn as sns
 
 sys.setrecursionlimit(50000)
 
-def plot_clustermap(
-                binary_matrix, outfile, core_threshold, w, h, x, excore, exspec
-                ):
-    ''' Takes a binary matrix input file in tsv format that includes
-        a header row and index column and builds a clustermap plot '''
 
-    # set the outfile name
-    #outfile = binary_matrix.split('.')[0] + 'clustermap.pdf'
-    # Read in the tsv binary matrix to a pandas dataframe with head and index
-    df = pd.read_csv(binary_matrix, sep='\t', header=0)
+def parse_colors(metacolors):
+
+    ''' reads meta colors file into a dict of {meta value: color} '''
+
+    cdict = {}
+
+    with open(metacolors, 'r') as file:
+        for line in file:
+            X = line.rstrip().split(',')
+            mval = X[0]
+            color = X[1]
+            cdict[mval] = color
+
+    return cdict
+
+
+def plot_clustermap(
+            df, outfile, core_threshold, w, h, x, excore, exspec, metadf, cdict
+            ):
 
     # set total or length of genomes (entries) in the set
     n = len(df.columns)
@@ -60,13 +100,49 @@ def plot_clustermap(
     if exspec:
         df = df[df.sum(axis=1) > 1]
 
-    g = sns.clustermap(
-                    df, figsize=(w,h),
-                    metric="euclidean", method="ward",
-                    cmap=colors, vmin=0, vmax=2, 
-                    cbar_kws={"ticks":[0,1,2]},
-                    row_cluster=False
+    # build the plot with metadata
+    if not metadf.empty:
+        # Build legend
+        for meta in metadf.columns:
+            labels = metadf[meta].unique()
+
+            fig, ax = plt.subplots(figsize=(10,10))
+            ax.xaxis.set_visible(False)
+            ax.yaxis.set_visible(False)
+
+            for label in labels:
+                ax.bar(
+                    0, 0, color=cdict[label], label=label, linewidth=0
                     )
+
+            ax.legend(
+                title=meta, title_fontsize='xx-large', loc="center",
+                frameon=False, markerscale=5, fontsize='xx-large'
+                )
+            outpre = '.'.join(outfile.split('.')[:-1])
+            plt.savefig(f'{outpre}_Legend_{meta}.pdf', dpi=300)
+            plt.close()
+
+        # Build the clustermap
+        metadf = metadf.replace(cdict) # swap colors in for values
+        g = sns.clustermap(
+                        df, figsize=(w,h),
+                        metric="euclidean", method="ward",
+                        cmap=colors, vmin=0, vmax=2, 
+                        cbar_kws={"ticks":[0,1,2]},
+                        row_cluster=False,
+                        col_colors=metadf
+                        )
+
+    # build the plot without metadata
+    else:
+        g = sns.clustermap(
+                        df, figsize=(w,h),
+                        metric="euclidean", method="ward",
+                        cmap=colors, vmin=0, vmax=2, 
+                        cbar_kws={"ticks":[0,1,2]},
+                        row_cluster=False
+                        )
     # Retrieve ax object to access axes features
     ax = g.ax_heatmap
     ax.legend(labels=['Non-recombinant', 'Recombinant', 'Conserved'])
@@ -110,6 +186,20 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-m', '--meta_data_file',
+        help='Please specify a meta data file!',
+        metavar=':',
+        type=str,
+        required=False
+        )
+    parser.add_argument(
+        '-c', '--meta_colors_file',
+        help='Please specify a meta colors file!',
+        metavar=':',
+        type=str,
+        required=False
+        )
+    parser.add_argument(
         '-o', '--output_file',
         help='What do you want to name the output file? (use .pdf)',
         #metavar='',
@@ -117,7 +207,7 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-c', '--set_core_threshold',
+        '-sct', '--set_core_threshold',
         help='(Optional) Set the cutoff for core gene class (Default = 1.0).',
         metavar='',
         type=float,
@@ -149,13 +239,13 @@ def main():
         default=18
         )
     parser.add_argument(
-        '-ec', '--exclude_core_genes',
+        '-ecg', '--exclude_core_genes',
         help='(Optional) Cluster and plot without the core genes.',
         action='store_true',
         required=False,
         )
     parser.add_argument(
-        '-es', '--exclude_genome_specific_genes',
+        '-esg', '--exclude_genome_specific_genes',
         help='(Optional) Cluster and plot without the genome-specific genes.',
         action='store_true',
         required=False,
@@ -168,16 +258,44 @@ def main():
         'https://seaborn.pydata.org/generated/seaborn.clustermap.html'
         )
 
-    _ = plot_clustermap(
-                    args['binary_matrix_tsv_file'],
-                    args['output_file'],
-                    args['set_core_threshold'],
-                    args['set_figure_width'],
-                    args['set_figure_height'],
-                    args['xaxis_text_size'],
-                    args['exclude_core_genes'],
-                    args['exclude_genome_specific_genes']
-                    )
+    # define input params
+    binary_matrix = args['binary_matrix_tsv_file']
+    metadata = args['meta_data_file']
+    metacolors = args['meta_colors_file']
+    outfile = args['output_file']
+    core_threshold = args['set_core_threshold']
+    w = args['set_figure_width']
+    h = args['set_figure_height']
+    x = args['xaxis_text_size']
+    excore = args['exclude_core_genes']
+    exspec = args['exclude_genome_specific_genes']
+
+    # read in the binary matrix as pandas df
+    df = pd.read_csv(binary_matrix, sep='\t', header=0)
+
+    if metadata and metacolors:
+        cdict = parse_colors(metacolors)
+        metadf = pd.read_csv(metadata, sep='\t', index_col=0, header=0)
+        metadf = metadf.reindex(df.T.index).dropna()
+        # select only columns in metadf
+        df = df[metadf.index.tolist()]
+        _ = plot_clustermap(
+            df, outfile, core_threshold, w, h, x, excore, exspec, metadf, cdict
+                )
+
+    elif metadata:
+        print('\n\nBoth meta data and meta colors are required to use them!')
+
+    elif metacolors:
+        print('\n\nBoth meta data and meta colors are required to use them!')
+
+    else:
+        # create the plot without meta data colors
+            _ = plot_clustermap(
+            df, outfile, core_threshold, w, h, x, excore, exspec, None, None
+                )
+
+    print('\n\nComplete success space cadet! Hold on to your boots.\n\n')
 
 if __name__ == "__main__":
     main()
