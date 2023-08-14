@@ -61,7 +61,7 @@ def parse_ANI_file(infile):
 
     # read the file, compute distance 100 - ANI, store data in dist dict
     with open(infile, 'r') as file:
-        header = file.readline()
+        # header = file.readline() # ANI output should not have a header
         for line in file:
             X = line.rstrip().split('\t')
             g1 = X[0].split('/')[-1].split('.')[0]
