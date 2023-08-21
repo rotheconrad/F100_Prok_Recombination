@@ -292,8 +292,9 @@ def main():
     else:
         # create the plot without meta data colors
             _ = plot_clustermap(
-            df, outfile, core_threshold, w, h, x, excore, exspec, None, None
-                )
+                        df, outfile, core_threshold, w, h, x, excore, exspec,
+                        pd.DataFrame(), pd.DataFrame()
+                        )
 
     print('\n\nComplete success space cadet! Hold on to your boots.\n\n')
 

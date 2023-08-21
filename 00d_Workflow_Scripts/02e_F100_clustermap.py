@@ -221,7 +221,7 @@ def main():
 
     else:
         # create the plot without meta data colors
-        _ = plot_clustred_heatmap(df, outfile, None, None)
+        _ = plot_clustred_heatmap(df, outfile, pd.DataFrame(), pd.DataFrame())
 
     print('\n\nComplete success space cadet! Hold on to your boots.\n\n')
 
