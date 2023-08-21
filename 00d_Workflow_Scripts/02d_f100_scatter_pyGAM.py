@@ -345,6 +345,13 @@ def f100_scatter_plot(
                             alpha=0.5, zorder=zorder
                             )
 
+    # set the axis parameters / style
+    hstep = xstep/10
+    gg.ax_joint.set_xticks(np.arange(xmin, xmax+hstep, xstep))
+    gg.ax_joint.set_xlim(left=xmin-hstep, right=xmax+hstep)
+
+    gg.ax_joint.set_ylim(top=0.1)
+
     # set grid style
     gg.ax_joint.yaxis.grid(
         which="major", color='#d9d9d9', linestyle='--', linewidth=1
