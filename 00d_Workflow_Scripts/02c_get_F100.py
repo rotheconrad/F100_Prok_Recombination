@@ -140,8 +140,8 @@ def process_concatenated_rbm(infile, outpre):
         for line in ifile:
             # split up each line
             X = line.rstrip().split('\t')
-            g1 = X[0].split('_')[0] # grab genome 1 name
-            g2 = X[1].split('_')[0] # grab genome 2 name
+            g1 = '_'.join(X[0].split('_')[:-2]) # grab genome 1 name
+            g2 = '_'.join(X[1].split('_')[:-2]) # grab genome 2 name
             pid = float(X[2]) # grab sequence similarity
             # if g1 = g2 skip these lines
             if g1 == g2: continue
