@@ -93,7 +93,7 @@ def parse_mmseqs_cluster_tsv(infile):
         for line in file:
             X = line.rstrip().split('\t')
             cluster = X[0]
-            genome = X[1].split('_')[0]
+            genome = '_'.join(X[1].split('_')[:-2])
             # store data in dict of dict
             byCluster[cluster][genome] += 1
             byGenome[genome][cluster] += 1
