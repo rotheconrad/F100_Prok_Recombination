@@ -102,7 +102,7 @@ def parse_input_list(infile):
                 X = name.split(' # ')
                 # gene ID, '>' removed from fasta defline.
                 geneID = X[0][1:]
-                contigID = '_'.join(geneID.split('_')[:2])
+                contigID = '_'.join(geneID.split('_')[:-1])
                 # gene info
                 start = int(X[1]) # gene start
                 stop = int(X[2]) # gene stop
@@ -121,7 +121,7 @@ def parse_input_list(infile):
             group_files.append(gene_file)
             with open(gene_file, 'r') as file:
                 X = file.readline().split(' # ')
-                genome = X[0].split('_')[0][1:]
+                genome = '_'.join(X[0].split('_')[:-2])[1:]
                 gorder.append(genome)
 
     # Get the gene names from the group files. thats all we need here.
@@ -151,9 +151,9 @@ def parse_rbm_file(rbm, rec, mgenes, group):
         for line in file:
             X = line.rstrip().split('\t')
             geneA = X[0]
-            contigA = '_'.join(geneA.split('_')[:2])
+            contigA = '_'.join(geneA.split('_')[:-1])
             geneB = X[1]
-            contigB = '_'.join(geneB.split('_')[:2])
+            contigB = '_'.join(geneB.split('_')[:-1])
             pID = float(X[2])
             mismatch = int(X[4])
 
@@ -281,7 +281,7 @@ def combine_input_data(mgenome, mgenes, RBM, pancats, repgenes, annos):
     # running genome length
     genome_length = 0
     for contig, contig_length in mgenome.items():
-        genome = contig.split('_')[0]
+        genome = '_'.join(contig.split('_')[:-1])
         contig_genes = mgenes[contig]
         for gene, geneInfo in contig_genes.items():
             # set gene info, pancat, repgene, and annotation
@@ -300,8 +300,8 @@ def combine_input_data(mgenome, mgenes, RBM, pancats, repgenes, annos):
             rbm_matches = RBM.get(gene, [['-', 0, 0, 'x']])
             for rbmInfo in rbm_matches:
                 match_gene = rbmInfo[0]
-                match_contig = '_'.join(match_gene.split('_')[:2])
-                match_genome = match_gene.split('_')[0]
+                match_contig = '_'.join(match_gene.split('_')[:-1])
+                match_genome = '_'.join(match_gene.split('_')[:-2])
                 REC = rbmInfo[1]
                 pID = rbmInfo[2]
                 mismatch = rbmInfo[3]
