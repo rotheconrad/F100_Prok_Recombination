@@ -1265,8 +1265,8 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-rbm', '--RBM_from_AAI',
-        help='Please specify the RBM file from AAI.rb!',
+        '-rbm', '--RBM_allvall_file',
+        help='Please specify the all vs all RBM file!',
         metavar='',
         type=str,
         required=True
@@ -1300,7 +1300,7 @@ def main():
 
     # define parameters
     infile = args['input_list']
-    rbm = args['RBM_from_AAI']
+    rbm = args['RBM_allvall_file']
     pc = args['pangenome_categories']
     outpre = args['output_file_prefix']
     ano = args['annotation_file']
