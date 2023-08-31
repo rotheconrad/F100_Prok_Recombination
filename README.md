@@ -567,7 +567,7 @@ Input: pangenome_matrix.tsv, all_genes_CDS_aligned.tsv
 Output: 1 tsv file, 1 pdf file
 
 ```bash
-python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -c all_genes_CDS_aligned.tsv -o pancat_file.tsv
+python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -m all_genes_CDS_aligned.tsv -r RBMs_allV.rbm -o pancat_file.tsv
 ```
 
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
