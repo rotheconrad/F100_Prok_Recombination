@@ -1044,7 +1044,7 @@ def build_rbm_binary_matrix(df, outpre):
     except:
         print(
             "\n\n\t\tLine 1043 Note: No genome specific genes ('-') identified"
-            ".\nThis is not an error. Only a note. Everything is good.\n\n"
+            ".\n\t\tThis is not an error. Only a note. Everything is good.\n\n"
             )
     # write to file.
     matrix.to_csv(f'{outpre}_rbm_matrix.tsv', sep='\t', index=False)
