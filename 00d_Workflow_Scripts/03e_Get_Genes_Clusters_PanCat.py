@@ -129,39 +129,38 @@ def parse_cluster_data(mmsq, pan_category, rbm_dict):
             cluster = X[0]
             gene = X[1]
             genome = '_'.join(gene.split('_')[:-1])
-            pcat = pan_category[cluster] # [pancat, n/N]
+            pcat = pan_category[cluster][0] # [pancat, n/N]
 
             # look for highly conserved genes
             # dist = 1 - sequence alignmend id from RBM file
-            # mmseqs seemed to be reported low alignment scores.
+            # mmseqs seemed to be reporting low alignment scores.
             # for instance a multiple sequence alignment would show a gene
             # cluster is all 100% similar but the mmseq alignment would 0.6633.
             # The RBM from blast would say 100%. So we use the RBM score.
             # store only one gene per genome for each cluster.
             # * gene with the smallest distance to cluster rep.
-            if pcat[0] == 'Core':
 
-                if cluster == gene:
-                    dist = 0
-                else:
-                    match = '-'.join(sorted([cluster, gene]))
-                    dist = rbm_dict.get(match, -1)
-                    # if the RBM is not found between a gene in the cluster
-                    # and the cluster representative (cluster vs gene), then
-                    # the most likely scenario is that the genome the gene 
-                    # belongs to has a duplicate, and the duplicate is the 
-                    # better match. We keep only the distance from RBMs and
-                    # we discard any cluster-gene match that does not have
-                    # an RBM.
+            if cluster == gene:
+                dist = 0
+            else:
+                match = '-'.join(sorted([cluster, gene]))
+                dist = rbm_dict.get(match, -1)
+                # if the RBM is not found between a gene in the cluster
+                # and the cluster representative (cluster vs gene), then
+                # the most likely scenario is that the genome the gene 
+                # belongs to has a duplicate, and the duplicate is the 
+                # better match. We keep only the distance from RBMs and
+                # we discard any cluster-gene match that does not have
+                # an RBM.
 
-                if dist == -1:
-                    continue
-                elif genome in cluster_data[cluster]:
-                    test_dist = cluster_data[cluster][genome][1]
-                    if dist < test_dist:
-                        cluster_data[cluster][genome] = [gene,dist]
-                else:
-                    cluster_data[cluster][genome] = [gene, dist]
+            if dist == -1:
+                continue
+            elif genome in cluster_data[cluster]:
+                test_dist = cluster_data[cluster][genome][1]
+                if dist < test_dist:
+                    cluster_data[cluster][genome] = [gene,dist]
+            else:
+                cluster_data[cluster][genome] = [gene, dist]
 
             # store gene data to for outfile
             data[gene] = [gene, cluster, pcat[0], pcat[1], dist]
@@ -207,7 +206,6 @@ def plot_dist(input_array, qt, out):
     zarray = [i for i in input_array if i != 0]
     qarray = sorted(zarray)
     qtv = np.quantile(qarray, qt)
-    print(qtv)
 
     fig, ax = plt.subplots(figsize=(7, 5))
 
