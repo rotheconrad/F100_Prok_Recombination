@@ -129,7 +129,7 @@ def parse_cluster_data(mmsq, pan_category, rbm_dict):
             cluster = X[0]
             gene = X[1]
             genome = '_'.join(gene.split('_')[:-1])
-            pcat = pan_category[cluster][0] # [pancat, n/N]
+            pcat = pan_category[cluster] # [pancat, n/N]
 
             # look for highly conserved genes
             # dist = 1 - sequence alignmend id from RBM file
