@@ -67,6 +67,7 @@ def parse_rbm_file(rbms):
     print('\n\tReading RBM file ...')
     
     # initialize dictionary to store rbm data
+    # {gene-names: pID} * pID is 100 - sequence identity
     rbm_dict = {}
 
     with open(rbms, 'r') as file:
@@ -121,10 +122,14 @@ def parse_cluster_data(mmsq, pan_category, rbm_dict):
     # each gene in the cluster as a dict
     cluster_data = defaultdict(lambda: defaultdict())
     data = {}
+    total_genes = 0
+    mmseq_norbm = 0
+    dup_count = 0
 
     # read the cluster and alignment data
     with open(mmsq, 'r') as f:
         for l in f:
+            total_genes += 1
             X = l.rstrip().split('\t')
             cluster = X[0]
             gene = X[1]
@@ -154,40 +159,55 @@ def parse_cluster_data(mmsq, pan_category, rbm_dict):
                 # an RBM.
 
             if dist == -1:
+                mmseq_norbm += 1
                 continue
+
+            # here, if a genome has more than one gene in a cluster, we are
+            # using the gene with the smaller dist score.
             elif genome in cluster_data[cluster]:
                 test_dist = cluster_data[cluster][genome][1]
                 if dist < test_dist:
-                    cluster_data[cluster][genome] = [gene,dist]
+                    dup_count += 1
+                    cluster_data[cluster][genome] = [gene, dist]
             else:
                 cluster_data[cluster][genome] = [gene, dist]
 
             # store gene data to for outfile
             data[gene] = [gene, cluster, pcat[0], pcat[1], dist]
 
+    print(f'\t\tTotal genes in mmseqs cluster file: {total_genes}')
+    print(f'\t\tGenes in mmseqs clusters without RBM match: {mmseq_norbm}')
+    print(f'\t\tPercent of total genes: {mmseq_norbm/total_genes*100:.2f}%')
+    print('\t\tLower is better. If over 10% I might look into it further.')
+    print(f'\t\tDuplicate genes from same genome in cluster: {dup_count}')
+    print(f'\t\tPercent of total genes: {dup_count/total_genes*100:.2f}%')
+    print('\t\tLower is better. We do not expect frequent duplicates.')
+
     return cluster_data, data
 
 
-def get_avg_dists(cluster_data):
+def get_avg_dists(cluster_data, pan_category):
 
     print('\n\tComputing average within cluster sequence distances ...')
 
     cluster_dist = {'Cluster': [], 'Avg_dist': []}
     cluster_genes = defaultdict(list)
 
-    # create cluster distance distributions.
+    # create cluster distance distributions for core genes only.
     # each core cluster has one gene from each genome at this point.
-    # core genes are 90% - 100% of the genomes.
+    # core genes are 60% - 100% of the genomes.
     # average distance of genes in cluster = sum(dist) / len(dist)
     for cluster, genomes in cluster_data.items():
         distances = []
-        for genome, values in genomes.items():
-            gene = values[0]
-            dist = values[1]
-            distances.append(dist)
-            cluster_genes[cluster].append(gene)
-        cluster_dist['Cluster'].append(cluster)
-        cluster_dist['Avg_dist'].append(sum(distances)/len(distances))
+        pcat = pan_category[cluster]
+        if pcat[0] == 'Core':
+            for genome, values in genomes.items():
+                gene = values[0]
+                dist = values[1]
+                distances.append(dist)
+                cluster_genes[cluster].append(gene)
+            cluster_dist['Cluster'].append(cluster)
+            cluster_dist['Avg_dist'].append(sum(distances)/len(distances))
 
     return cluster_dist, cluster_genes
 
@@ -249,14 +269,14 @@ def build_the_list(bmat, mmsq, rbms, qt, outf):
     # read in the cluster file and get distances for each cluster
     cluster_data, data = parse_cluster_data(mmsq, pan_category, rbm_dict)
     # get average distance for each cluster and cluster, gene names
-    cluster_dist, cluster_genes = get_avg_dists(cluster_data)
+    cluster_dist, cluster_genes = get_avg_dists(cluster_data, pan_category)
     # define highly conserved genes lower qt quantile of sequence differences.
     qtv = plot_dist(cluster_dist['Avg_dist'], qt, outf)
     tmp_data = zip(cluster_dist['Cluster'], cluster_dist['Avg_dist'])
     for clust, dist in tmp_data:
         if dist <= qtv:
             for gene in cluster_genes[clust]:
-                data[gene][2] = 'Conserved' 
+                data[gene][2] = 'Conserved'
     # write out the data
     with open(outf, 'w') as o:
         o.write('Gene_Name\tCluster_Name\tPangenome_Category\tn/N\tDistance\n')
