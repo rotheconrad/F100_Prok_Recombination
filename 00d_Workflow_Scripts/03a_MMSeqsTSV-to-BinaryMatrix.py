@@ -37,10 +37,10 @@ def generate_binary_matrix(byCluster, byGenome):
     '''
     This function takes two dictionaries with cluster data stored
     by cluster representative name and by genome name.
-    It iterates throught the set of cluster representative names
+    It iterates through the set of cluster representative names
     for each genome entry and checks to see if the genome is present
     or absent in that gene cluster. It encodes a binary datatable with
-    genes clusters as rows and genomes as columns. Zero indicates a 
+    gene clusters as rows and genomes as columns. Zero indicates a 
     gene cluster is absent from a genome.
     '''
 
@@ -75,7 +75,7 @@ def parse_mmseqs_cluster_tsv(infile):
     column 1 is the cluster representative sequence.
     This sequence is repeated for every sequence in the cluster.
     Column 2 are sequences in the cluster.
-    The general idea with this function is to create 2 dicionaries.
+    The general idea with this function is to create 2 dictionaries.
     One dictionary stores data by the cluster represenative name as in
     {cluster: genome}. Which genomes are in each cluster.
     The other dicitonary stores data by the genome name.
@@ -123,15 +123,7 @@ def main():
         type=str,
         required=True
         )
-    ''' change my mind about renaming cluster names. no key needed now.
-    parser.add_argument(
-        '-k', '--GeneCluster_RepGeneName_key',
-        help='Please specify output name for the cluster key!',
-        metavar=':',
-        type=str,
-        required=True
-        )
-    '''
+
     args=vars(parser.parse_args())
 
     # define the input parameters
@@ -147,14 +139,6 @@ def main():
     # write the binary matrix to a tsv file
     binary_matrix.to_csv(outfile, sep='\t', index=True, header=True)
     
-    '''
-    # I changed my mind about renaming the cluster names and I no longer
-    # need the key
-    # write the key to a csv file
-    with open(keyout, 'w') as file:
-        for cluster, name in key.items():
-            file.write(f'{cluster}, {name}\n')
-    '''
 
     print('\n\nComplete success space cadet! Finished without errors.\n\n')
 
