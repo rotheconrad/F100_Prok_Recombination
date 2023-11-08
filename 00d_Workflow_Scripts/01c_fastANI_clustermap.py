@@ -200,7 +200,7 @@ def main():
     metacolors = args['meta_colors_file']
     outfile = args['output_file']
 
-    # read in the *.pim file from EMBL-EBI simple phylogeny
+    # read in all vs. all fastANI file.
     df = parse_ANI_file(infile)
     
     if metadata and metacolors:
