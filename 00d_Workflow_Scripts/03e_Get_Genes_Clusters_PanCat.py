@@ -34,6 +34,10 @@ the distribution. Lower quantile is computed on remaining distribution.
         ... sequence distance distribution after 0 dist genes are removed.
         ... default = 0.1; recommend values 0 - 0.5.
 
+    * xmax - Use this to reduce the max x-axis value plotted to zoom into
+        ... the histogram and get a closer look. Typically not necessary
+        ... within species, but useful for closely related 90-95% ANI.
+
 This script returns the following files:
 
     * outputfilename.tsv
@@ -212,7 +216,7 @@ def get_avg_dists(cluster_data, pan_category):
     return cluster_dist, cluster_genes
 
 
-def plot_dist(input_array, qt, out):
+def plot_dist(input_array, qt, xmax, out):
 
     print('\n\tPlotting average within cluster sequence distances ...')
 
@@ -229,6 +233,9 @@ def plot_dist(input_array, qt, out):
 
     fig, ax = plt.subplots(figsize=(7, 5))
 
+    if xmax:
+        input_array = [i for i in input_array if i <= xmax]
+        
     ax.hist(input_array, bins=75, edgecolor='k', color='#08519c', alpha=0.6,)
     ax.axvline(qtv, color='#ae017e', linestyle='dashed', linewidth=1)
     ax.set_xlabel('Average sequence distance of cluster (%)', fontsize=14)
@@ -259,7 +266,7 @@ def plot_dist(input_array, qt, out):
     return qtv
 
 
-def build_the_list(bmat, mmsq, rbms, qt, outf):
+def build_the_list(bmat, mmsq, rbms, qt, xmax, outf):
     ''' Reads in the files, builds the list, and writes to out '''
 
     # read in the binary matrix file and find Pan Cat for each cluster
@@ -271,7 +278,7 @@ def build_the_list(bmat, mmsq, rbms, qt, outf):
     # get average distance for each cluster and cluster, gene names
     cluster_dist, cluster_genes = get_avg_dists(cluster_data, pan_category)
     # define highly conserved genes lower qt quantile of sequence differences.
-    qtv = plot_dist(cluster_dist['Avg_dist'], qt, outf)
+    qtv = plot_dist(cluster_dist['Avg_dist'], qt, xmax, outf)
     tmp_data = zip(cluster_dist['Cluster'], cluster_dist['Avg_dist'])
     for clust, dist in tmp_data:
         if dist <= qtv:
@@ -325,6 +332,14 @@ def main():
         required=False
         )
     parser.add_argument(
+        '-xmax', '--max_xaxis_value',
+        help='(OPTIONAL) Specify the max x-axis value (default = None).',
+        metavar='',
+        type=float,
+        default=None,
+        required=False
+        )
+    parser.add_argument(
         '-o', '--output_file',
         help='Please specify the name to us for the output .tsv file',
         metavar='',
@@ -341,9 +356,10 @@ def main():
     mmsq = args['mmseqs_cluster_file']
     rbms = args['RBM_allvall_file']
     qt = args['quantile_cutoff']
+    xmax = args['max_xaxis_value']
     outf = args['output_file']
 
-    _ = build_the_list(bmat, mmsq, rbms, qt, outf)
+    _ = build_the_list(bmat, mmsq, rbms, qt, xmax, outf)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
 

@@ -745,6 +745,9 @@ def build_pos_bar_plots(df, mgenome, pancats, outpre, cpos):
     F10 = df['REC'].to_numpy() # REC status
     Str = df['Strand'].to_numpy() # Strand
 
+    # deduplicate points - don't plot over positions already plotted
+    dd = {'RC': {}, 'HC': {}, 'RA': {}, 'GS': {}, 'NR': {}}
+
     for G, P, S, W, F, Z in zip(genes, pcat, Sta, Wid, F10, Str):
 
         # get pancat abbreviation
@@ -767,8 +770,15 @@ def build_pos_bar_plots(df, mgenome, pancats, outpre, cpos):
         else:
             print('!!Panick!! something wrong lines 253-259 ish!')
 
-        ylab = pc
-        ax.barh(ylab, W, left=S, color=c, height=0.75, alpha=0.3)
+        # don't plot over a position thats already been plotted.
+        if S in dd[pc]:
+            continue
+        # plot position if it has not been plotted.
+        else:
+            ylab = pc
+            ax.barh(ylab, W, left=S, color=c, height=0.75, alpha=0.3)
+            # store positions that have already been plotted.
+            dd[pc][S] = ''
 
     # add contig markers
     mark_pos = cpos[:-1]
