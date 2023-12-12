@@ -55,7 +55,7 @@ import seaborn as sns; sns.set(style="white", color_codes=True)
 import datashader as ds
 from datashader.mpl_ext import dsshow
 #from scipy.stats import pearsonr as corr
-from pygam import LinearGAM, s
+from pygam import LinearGAM, s, l
 
 
 """
@@ -227,13 +227,58 @@ def f100_scatter_plot(
 
     # Build and fit the GAM model using gridsearch to tune param
     lam = np.logspace(-5, 5, 10)
-    spline = s(0, n_splines=5, constraints='convex')
-    gam = LinearGAM(spline).gridsearch(X, y, lam=lam)
-    # constraints ['convex', 'concave', 'monotonic_inc', 'monotonic_dec']
-    #gam.gridsearch(X, y, lam=lam)
+    # A
+    splineA = s(0, n_splines=4, constraints='convex')
+    gamA = LinearGAM(splineA).gridsearch(X, y, lam=lam)
+    r2A = gamA.statistics_['pseudo_r2']['explained_deviance']
+    # B
+    splineB = s(0, n_splines=4, constraints='concave')
+    gamB = LinearGAM(splineB).gridsearch(X, y, lam=lam)
+    r2B = gamB.statistics_['pseudo_r2']['explained_deviance']
+    # C
+    splineC = s(0, n_splines=4, constraints='monotonic_inc')
+    gamC = LinearGAM(splineC).gridsearch(X, y, lam=lam)
+    r2C = gamC.statistics_['pseudo_r2']['explained_deviance']
 
-    print('\n', 'lam: ', gam.lam, '\n')
-    #gam.summary()
+    # AA
+    splineAA = s(0, n_splines=6, constraints='convex')
+    gamAA = LinearGAM(splineAA).gridsearch(X, y, lam=lam)
+    r2AA = gamAA.statistics_['pseudo_r2']['explained_deviance']
+    # BB
+    splineBB = s(0, n_splines=6, constraints='concave')
+    gamBB = LinearGAM(splineBB).gridsearch(X, y, lam=lam)
+    r2BB = gamBB.statistics_['pseudo_r2']['explained_deviance']
+    # CC
+    splineCC = s(0, n_splines=6, constraints='monotonic_inc')
+    gamCC = LinearGAM(splineCC).gridsearch(X, y, lam=lam)
+    r2CC = gamCC.statistics_['pseudo_r2']['explained_deviance']
+
+    # AA
+    splineAAA = s(0, n_splines=8, constraints='convex')
+    gamAAA = LinearGAM(splineAAA).gridsearch(X, y, lam=lam)
+    r2AAA = gamAAA.statistics_['pseudo_r2']['explained_deviance']
+    # BB
+    splineBBB = s(0, n_splines=8, constraints='concave')
+    gamBBB = LinearGAM(splineBB).gridsearch(X, y, lam=lam)
+    r2BBB = gamBBB.statistics_['pseudo_r2']['explained_deviance']
+    # CC
+    splineCCC = s(0, n_splines=8, constraints='monotonic_inc')
+    gamCCC = LinearGAM(splineCCC).gridsearch(X, y, lam=lam)
+    r2CCC = gamCCC.statistics_['pseudo_r2']['explained_deviance']
+
+    # D
+    gamD = LinearGAM(l(0)).gridsearch(X, y)
+    r2D = gamD.statistics_['pseudo_r2']['explained_deviance']
+
+    # choose the best
+    gams = [gamA, gamB, gamC, gamAA, gamBB, gamCC, gamAAA, gamBBB, gamCCC, gamD]
+    r2s = [r2A, r2B, r2C, r2AA, r2BB, r2CC, r2AAA, r2BBB, r2CCC, r2D]
+
+    r2 = max(r2s)
+    i = r2s.index(r2)
+    gam = gams[i]
+    ##########################################
+    
     XX = gam.generate_X_grid(term=0, n=500)
 
     gg.ax_joint.plot(
@@ -446,10 +491,10 @@ def main():
         )
     parser.add_argument(
         '-ymax', '--yaxis_maximum',
-        help='OPTIONAL: Maximum value to plot on y-axis. (Default=0.0)',
+        help='OPTIONAL: Maximum value to plot on y-axis. (Default=0.1)',
         metavar='',
         type=float,
-        default=0.0,
+        default=0.1,
         required=False
         )
     parser.add_argument(
