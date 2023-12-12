@@ -438,10 +438,10 @@ def main():
         )
     parser.add_argument(
         '-ymin', '--yaxis_minimum',
-        help='OPTIONAL: Minimum value to plot on y-axis. (Default=-7.0)',
+        help='OPTIONAL: Minimum value to plot on y-axis. (Default=-8.0)',
         metavar='',
         type=float,
-        default=-7.0,
+        default=-8.0,
         required=False
         )
     parser.add_argument(
