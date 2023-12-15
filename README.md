@@ -30,7 +30,7 @@ This workflow will yeild many intermediate files and several publication ready f
 1. Figure: F100 distance hierarchical clustered heatmap
 
 #### Part 03:
-1. DataTable: Gene clusters from MMSeqs2 clustered and aligned
+1. DataTable: Gene clusters from MMSeqs2
 1. Fasta: Representative sequence fasta for each gene cluster
 1. DataTable: Presence/Absence binary matrix of genomes and gene cluster
 1. DataTable: tsv gene list for Coinfinder input
