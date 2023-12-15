@@ -236,14 +236,13 @@ Input: CDS fasta files of nucleotide sequences
 Output: Tabular blast table with filtered RBMs (RBMs_alV.rbm)
 
 ```bash
-# make new directory for aai.rb reciprocal best match results we'll refer to this as ${rbm_dir}
+# make new directory for reciprocal best match results we'll refer to this as ${rbm_dir}
 mkdir ${rbm_dir}
 
 # generate all vs all gene file name combinations list
 f=(${genes_dir_fnn}/*)
 for ((i = 0; i < ${#f[@]}; i++)); do for ((j = i + 1; j < ${#f[@]}; j++)); do echo ${f[i]} ${f[j]}; done; done > genes_filenames_allV.txt
 
-# run aai.rb in nucleotide mode
 # loop over genes_filenames_allV.txt file and run each genome pair combination
 # x and y are the full file paths to genome 1 and genome 2 from genes_filenames_allV.txt. m and n are used to create the new filenames and should be adjusted to fit your particular naming scheme if needed.
 while read p;
@@ -263,7 +262,7 @@ cat ${rbm_dir}/* > RBMs_allV.rbm
 rm -r ${rbm_dir}/
 ```
 
-*The all vs all genome pair computation with aai.rb can take a while. There are many ways to parallalize this step if you are working on a cluster and we recommend following the best practices for your particular cluster. One quick method, you can use the bash split command to break up the genes_filenames_allV.txt file into many smaller files, say like 50 lines per file and then run several instances of the while read loop as separate jobs.*
+*The all vs all genome pair RBM computations can take a while. There are many ways to parallalize this step if you are working on a cluster and we recommend following the best practices for your particular cluster. One quick method, you can use the bash split command to break up the genes_filenames_allV.txt file into many smaller files, say like 50 lines per file and then run several instances of the while read loop as separate jobs.*
 
 ```bash
 split -l 50 -a -d genes_filenames_allV.txt genes_filenames_allV_
@@ -272,7 +271,7 @@ for f in genes_filenames_allV_*; do (run pbs or sbatch script with the while rea
 
 ### Step 03: Compute F100s
 
-This step calculates the F100 for each genome pair using the outputs from aai.rb in the previous step. It can write out histograms of the RBM sequence identity distribution.
+This step calculates the F100 for each genome pair using the outputs from 02b_get_RBMs.py in the previous step. It can write out histograms of the RBM sequence identity distribution.
 
 *replace ${my_species} with the output prefix of your choice. This will create an important file ${my_species}_F100.tsv needed for the next steps.*
 
@@ -429,24 +428,16 @@ mmseqs createdb all_genes_CDS.fnn ${mmseqs_dir}/${my_db}
 mmseqs cluster ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered tempfiles --min-seq-id 0.90 --cov-mode 1 -c 0.5 --cluster-mode 2 --cluster-reassign
 ```
 
-#### Add sequence identity and alignment information to clustering result
-
-*Super high -e prevents sequences getting dropped from clusters. If you notice you are missing sequencing downstream try increasing -e even higher. See [MMseqs2 GitHub Issue](https://github.com/soedinglab/MMseqs2/issues/598)*
-
-```bash
-mmseqs align ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered ${mmseqs_dir}/DBaligned -e 1.0E60
-```
-
 #### Write mmseqs database to TSV format
 
 ```bash
-mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBaligned all_genes_CDS_aligned.tsv
+mmseqs createtsv ${mmseqs_dir}/${my_db} ${mmseqs_dir}/${my_db} ${mmseqs_dir}/DBclustered all_genes_CDS_mmseqs_clusters.tsv
 ```
 
 #### Write out cluster representative fasta file
 
 ```bash
-mmseqs createsubdb ${mmseqs_dir}/DBaligned ${mmseqs_dir}/${my_db} ${mmseqs_dir}/my_rep_seqs
+mmseqs createsubdb ${mmseqs_dir}/DBclustered ${mmseqs_dir}/${my_db} ${mmseqs_dir}/my_rep_seqs
 mmseqs convert2fasta ${mmseqs_dir}/my_rep_seqs my_rep_seqs.fnn
 ```
 
@@ -462,7 +453,7 @@ rm -r tempfiles
 Each genome is a column. Each gene cluster is row. 1 if the genome has a gene in the cluster else 0. This is used to identify core genes or accessory genes. Conserved genes are the core gene clusters with the least average sequence difference. You can proceed to STEP 05 after you have the binary matrix file. 
 
 ```bash
-python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_aligned.tsv -o pangenome_matrix.tsv
+python 00d_Workflow_Scripts/03a_MMSeqsTSV-to-BinaryMatrix.py -i all_genes_CDS_mmseqs_clusters.tsv -o pangenome_matrix.tsv
 ```
 
 *side quest: create two plots just for fun because we can once we have the binary matrix file. The code for these side quest figures was developed for a [previous publication](https://doi.org/10.1038/s41396-021-01149-9).*
@@ -562,12 +553,12 @@ In this step we assign pangenome gene categories to our gene clusters. This step
 
 The histogram shows the distribution of average within cluster sequence distance. Sequence distance is calculated for each gene as 1 - sequence identity [0:1] compared to the cluster representative sequence. The vertical dashed red line shows the 0.10 quantile.
 
-Input: pangenome_matrix.tsv, all_genes_CDS_aligned.tsv
+Input: pangenome_matrix.tsv, all_genes_CDS_mmseqs_clusters.tsv
 
 Output: 1 tsv file, 1 pdf file
 
 ```bash
-python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -m all_genes_CDS_aligned.tsv -r RBMs_allV.rbm -o pancat_file.tsv
+python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix.tsv -m all_genes_CDS_mmseqs_clusters.tsv -r RBMs_allV.rbm -o pancat_file.tsv
 ```
 
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
