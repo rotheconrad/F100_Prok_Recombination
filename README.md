@@ -322,11 +322,13 @@ Output:
       1) ${my_species}\_complete_model_sig-pairs.tsv
       2) ${my_species}\_complete_model_GAMplot.pdf
 
-#### Option 01: Complete genomes model
+#### Option 01: Complete genomes model (Subsampled model also available)
 
 *This model comes from 330 species with at least 10 complete genomes in the NCBI RefSeq database as of April 20, 2022. Replace ${my_species_complete_model} with a  file name prefix of your choosing.*
 
 See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
+
+The subsampled model filters the complete genome set for species with n genome pairs above 95% ANI with n ≥ 1000 and it randomly downsamples species with ≥ 5000 genome pairs above 95% ANI to n = 5000.
 
 ```bash
 # Uncompress the Complete_Genome_Model_Data.tsv.zip file
