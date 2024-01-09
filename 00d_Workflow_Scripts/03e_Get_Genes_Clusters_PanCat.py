@@ -29,6 +29,9 @@ The Core gene clusters with least sequence distance are labeled "Conserved"
 Gene clusters with distance = 0 are labeled as conserved and removed from
 the distribution. Lower quantile is computed on remaining distribution.
 
+    * c - Fraction of genomes required to have a gene for that gene to be 
+        ... classified as a core gene.
+
     * qt - Lower quantile to define additional "Conserved" gene clusters.
         ... this quantile is computed from the within cluster average
         ... sequence distance distribution after 0 dist genes are removed.
@@ -89,7 +92,7 @@ def parse_rbm_file(rbms):
     return rbm_dict
 
 
-def get_category(bmat):
+def get_category(bmat, core_thresh):
     ''' Read bmat file and calculate the category of each cluster '''
 
     print('\n\tReading binary matrix file ...')
@@ -101,7 +104,7 @@ def get_category(bmat):
         genomes = header # genome names are the header
         n = len(genomes) # This is the number of genomes ie(100)
         # Define gene category cutoffs
-        core, specific = 0.90, 1/n
+        core, specific = core_thresh, 1/n # default core = 0.90
         # each cluster is a line in the bmat file
         # compute gene category for each cluster
         for l in f:
@@ -266,11 +269,11 @@ def plot_dist(input_array, qt, xmax, out):
     return qtv
 
 
-def build_the_list(bmat, mmsq, rbms, qt, xmax, outf):
+def build_the_list(bmat, mmsq, rbms, core_thresh, qt, xmax, outf):
     ''' Reads in the files, builds the list, and writes to out '''
 
     # read in the binary matrix file and find Pan Cat for each cluster
-    pan_category = get_category(bmat)
+    pan_category = get_category(bmat, core_thresh)
     # read in the all vs all rbm data
     rbm_dict = parse_rbm_file(rbms)
     # read in the cluster file and get distances for each cluster
@@ -324,6 +327,14 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-c', '--core_gene_threshold',
+        help='(OPTIONAL) Core fraction of genomes with gene (default = 0.90)',
+        metavar='',
+        type=float,
+        required=False,
+        default=0.90
+        )
+    parser.add_argument(
         '-qt', '--quantile_cutoff',
         help='(OPTIONAL) Specify the quantile cutoff (default = 0.1).',
         metavar='',
@@ -355,11 +366,12 @@ def main():
     bmat = args['binary_matrix_file']
     mmsq = args['mmseqs_cluster_file']
     rbms = args['RBM_allvall_file']
+    core_thresh = args['core_gene_threshold']
     qt = args['quantile_cutoff']
     xmax = args['max_xaxis_value']
     outf = args['output_file']
 
-    _ = build_the_list(bmat, mmsq, rbms, qt, xmax, outf)
+    _ = build_the_list(bmat, mmsq, rbms, core_thresh, qt, xmax, outf)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
 
