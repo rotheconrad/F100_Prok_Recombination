@@ -193,6 +193,16 @@ python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -i fastANI_allV.ani -o fas
 
 As you can see in the figures above, there is a small cluster of genomes between 3-5% different than the other genomes. In other words we have two fairly distinct clusters. This indicates we may want to split them into two separate analyses. For now, we will leave them together.
 
+# A Note on preparing clade, phylogroup, genomovar assignments.
+
+The shared fraction vs. ANI plot can be used to look for values between genome clusters such as around 99.2-99.8% ANI for the genomovar gap or below for phylogroup or clade values. Tools such as MiGA Clades or dREP can be used to sort genomes into clades and genomovars, or the ANI Distance Clustered Heatmap Genomovar version can be used to make manual assignments.
+
+Additional, many well studied species already phylogroup or sequencing typing tools such clermontyping etc. that can be used to assign genomes to groups.
+
+Prepare a metadata file with the genome name in column 1 and additional metadata values in the remaining columns. Any category may be used such as location, sample, niche, sequence type, phylogroup, clade, and genomovar.
+
+The Heatmap figure with metadata is useful to determine genomes and genome groups of interest to investigate in more detail in step 3.
+
 # PART 02: Recombinant genomes analysis
 
 In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. We use sequence similarity from reciprocal best blast matches (RBMs) of the genes between two genomes to calculate the frequency of 100% identical genes in the genome (F100). F100 is the number of RBMs with 100% sequence similarity divided by the total RBMs between two genomes. Using the F100 as a signal for recent recombination events, we fit a generalized additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes without recombination, or 3. a custom genome set provided by the user) to show the expected F100 per ANI of a genome pair. We also identify clusters of frequently recombining genome pairs by creating a hierarchical clustered heatmap from F100 scores as a distance metric matrix and use the HDBSCAN algorithm to partition this into clusters of highly recombining genomes.
