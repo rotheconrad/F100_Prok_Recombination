@@ -330,7 +330,7 @@ def f100_scatter_plot(
         lam3 = np.logspace(-5, 5, 10)
         spline3 = s(0, n_splines=5, constraints='convex')
         gam3 = LinearGAM(spline3).gridsearch(X3, y3, lam=lam3)
-        XX3 = gam.generate_X_grid(term=0, n=500)
+        XX3 = gam3.generate_X_grid(term=0, n=500)
         gg.ax_joint.plot(
                     XX3,
                     gam3.predict(XX3),
