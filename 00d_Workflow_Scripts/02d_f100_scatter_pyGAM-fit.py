@@ -95,7 +95,7 @@ class TickRedrawer(matplotlib.artist.Artist):
         self.stale = False
 
 
-def read_f100_file(f100_file, labelled):
+def read_f100_file(f100_file, lbld):
     """Read the file and grabs the data"""
     # initialize dict for data {genome1-genome2: [data]}
     name_dict = {}
@@ -114,7 +114,7 @@ def read_f100_file(f100_file, labelled):
             F100 = float(X[3])
             # grouping meta data for plotting and stats
             clade1, clade2 = 0, 0
-            if labelled:
+            if lbld:
                 clade1 = int(X[6])
                 clade2 = int(X[7])
                 """
@@ -138,11 +138,11 @@ def read_f100_file(f100_file, labelled):
     return name_dict
 
 
-def gather_data(f100_file, labelled, xmin, xmax):
+def gather_data(f100_file, lbld, xmin, xmax):
     """Reads the file and organized the data in a dict"""
 
     print("\nReading data.")
-    name_dict = read_f100_file(f100_file, labelled)
+    name_dict = read_f100_file(f100_file, lbld)
     data_dict = {'gpair': [], 'xs': [], 'ys': [], 'clade1': [], 'clade2': []}
 
     # write data to arrays
@@ -165,7 +165,7 @@ def gather_data(f100_file, labelled, xmin, xmax):
     return df
 
 def f100_scatter_plot(
-        df, z, df2, labelled, title, outfile, xmin, xmax, ymin, ymax, xstep, p, a
+        df, df2, lbld, df3, title, outfile, xmin, xmax, ymin, ymax, xstep, p, a
         ):
     """Takes the data and builds the plot"""
 
@@ -206,32 +206,18 @@ def f100_scatter_plot(
             stat='probability'
             )
     # main panel scatter plot
-    if z == "True":
-        print('\nComputing plot densities.')
-        dsartist = dsshow(
-                        df,
-                        ds.Point("xs", "ys"),
-                        ds.count(),
-                        norm="log",
-                        aspect="auto",
-                        ax=gg.ax_joint,
-                        width_scale=3.,
-                        height_scale=3.
-                        )
-        dsartist.zorder = 2.5
-
-    else:
-        print('\nPlotting data.')
-        rast = True if len(df["xs"]) >= 5000 else False
-        gg.ax_joint.plot(
-                df["xs"],
-                df["ys"],
-                marker,
-                ms=p,
-                alpha=a,
-                color=color,
-                rasterized=rast,
-                )
+    print('\nComputing plot densities.')
+    dsartist = dsshow(
+                    df,
+                    ds.Point("xs", "ys"),
+                    ds.count(),
+                    norm="log",
+                    aspect="auto",
+                    ax=gg.ax_joint,
+                    width_scale=3.,
+                    height_scale=3.
+                    )
+    dsartist.zorder = 2.5
 
     # Trendline with pyGAM
     print('\nCalculating trendline with pyGAM.')
@@ -333,8 +319,42 @@ def f100_scatter_plot(
         fontsize=12, x=-0.02
         )
 
+    # plot 2nd GAM model if df3
+    if df3 is not None:
+        # Trendline with pyGAM
+        print('\nCalculating trendline with pyGAM.')
+        X3 = df3["xs"].to_numpy()
+        X3 = X3[:, np.newaxis]
+        y3 = df3["ys"].to_list()
+        # Build and fit the GAM model using gridsearch to tune param
+        lam3 = np.logspace(-5, 5, 10)
+        spline3 = s(0, n_splines=5, constraints='convex')
+        gam3 = LinearGAM(spline3).gridsearch(X3, y3, lam=lam3)
+        XX3 = gam.generate_X_grid(term=0, n=500)
+        gg.ax_joint.plot(
+                    XX3,
+                    gam3.predict(XX3),
+                    color='#252525',
+                    linestyle='-.',
+                    linewidth=1.0,
+                    zorder=2.8,
+                    alpha=0.5
+                    )
+        gg.ax_joint.plot(
+                    XX3,
+                    gam3.prediction_intervals(XX3, width=0.95),
+                    color='#252525',
+                    linestyle='-.',
+                    linewidth=1.0,
+                    zorder=2.8,
+                    alpha=0.5
+                    )
+
     # plot second file overlay
     if df2 is not None:
+
+        # rasterize if many points
+        rast = True if len(df2["xs"]) >= 5000 else False
 
         # define the marker set        
         marker_set = {
@@ -379,7 +399,7 @@ def f100_scatter_plot(
                             f'{oy}\t{ci[0]}\t{ci[1]}\n'
                             )
 
-                if labelled:
+                if lbld:
                     c, marker, zorder = get_label(c1, c2, marker_set)
                     clades[c1] = ''
                 else:
@@ -389,10 +409,10 @@ def f100_scatter_plot(
                 gg.ax_joint.scatter(
                             ox, oy, facecolors='none', edgecolors=c,
                             linewidth=0.5, marker=marker, s=10,
-                            alpha=0.5, zorder=zorder
+                            alpha=0.5, zorder=zorder, rasterized=rast
                             )
             else:
-                if labelled:
+                if lbld:
                     c, marker, zorder = get_label(c1, c2, marker_set)
                     clades[c1] = ''
                 else:
@@ -402,7 +422,7 @@ def f100_scatter_plot(
                 gg.ax_joint.scatter(
                             ox, oy, facecolors='none', edgecolors=c,
                             linewidth=0.5, marker=marker, s=10,
-                            alpha=0.5, zorder=zorder
+                            alpha=0.5, zorder=zorder, rasterized=rast
                             )
 
     # set the axis parameters / style
@@ -459,29 +479,21 @@ def main():
     parser.add_argument(
         '-i', '--input_file',
         help='Please specify the input file!',
-        #metavar='',
+        metavar='.',
         type=str,
         required=True
         )
     parser.add_argument(
-        '-z', '--add_density_layer',
-        help='OPTIONAL: Input -z True to add density layer (Default=True).',
-        #metavar='',
-        type=str,
-        default="True",
-        required=False
-        )
-    parser.add_argument(
         '-o', '--output_file_prefix',
         help='Please specify the output file prefix!',
-        #metavar='',
+        metavar='.',
         type=str,
         required=True
         )
     parser.add_argument(
         '-t', '--plot_title',
         help='OPTIONAL: Please specify the plot title (defalut: F100 vs ANI)!',
-        #metavar='',
+        metavar='.',
         type=str,
         nargs='+',
         default=['F100', 'vs', 'ANI'],
@@ -490,7 +502,7 @@ def main():
     parser.add_argument(
         '-xmin', '--xaxis_minimum',
         help='OPTIONAL: Minimum value to plot on x-axis. (Default=95.0)',
-        #metavar='',
+        metavar='.',
         type=float,
         default=95.0,
         required=False
@@ -498,15 +510,23 @@ def main():
     parser.add_argument(
         '-xmax', '--xaxis_maximum',
         help='OPTIONAL: Maximum value to plot on x-axis. (Default=100.0)',
-        #metavar='',
+        metavar='.',
         type=float,
         default=100.0,
         required=False
         )
     parser.add_argument(
+        '-s', '--xaxis_step_size',
+        help='OPTIONAL: X-axis ticks step increment. (Default=1.0)',
+        metavar='.',
+        type=float,
+        default=1.0,
+        required=False
+        )
+    parser.add_argument(
         '-ymin', '--yaxis_minimum',
         help='OPTIONAL: Minimum value to plot on y-axis. (Default=-7.0)',
-        #metavar='',
+        metavar='.',
         type=float,
         default=-7.0,
         required=False
@@ -514,7 +534,7 @@ def main():
     parser.add_argument(
         '-ymax', '--yaxis_maximum',
         help='OPTIONAL: Maximum value to plot on y-axis. (Default=0.1)',
-        #metavar='',
+        metavar='.',
         type=float,
         default=0.1,
         required=False
@@ -522,7 +542,7 @@ def main():
     parser.add_argument(
         '-i2', '--input_file2',
         help='OPTIONAL: Second file data to plot on top of first file data.',
-        #metavar='',
+        metavar='.',
         type=str,
         required=False,
         default=None
@@ -530,23 +550,23 @@ def main():
     parser.add_argument(
         '-l', '--input_file2_labelled',
         help='OPTIONAL: Second input file has clade labels (default: False).',
-        #metavar='',
+        metavar='.',
         type=str,
         required=False,
         default=None
         )
     parser.add_argument(
-        '-s', '--xaxis_step_size',
-        help='OPTIONAL: X-axis ticks step increment. (Default=1.0)',
-        #metavar='',
-        type=float,
-        default=1.0,
-        required=False
+        '-i3', '--input_file3',
+        help='OPTIONAL: Add second model GAM line to plot (ie neutral model).',
+        metavar='.',
+        type=str,
+        required=False,
+        default=None
         )
     parser.add_argument(
         '-p', '--point_size',
         help='OPTIONAL: Size for i2 plotted points (Default=4.0)',
-        #metavar='',
+        metavar='.',
         type=float,
         default=4.0,
         required=False
@@ -554,7 +574,7 @@ def main():
     parser.add_argument(
         '-a', '--point_alpha',
         help='OPTIONAL: Alpha value for i2 plotted points (Default=0.10)',
-        #metavar='',
+        metavar='.',
         type=float,
         default=0.10,
         required=False
@@ -566,9 +586,9 @@ def main():
 
     # define parameters
     infile = args['input_file']
-    z = args['add_density_layer']
     infile2 = args['input_file2']
-    labelled = args['input_file2_labelled']
+    lbld = args['input_file2_labelled']
+    infile3 = args['input_file3']
     outfile = args['output_file_prefix']
     title = ' '.join(args['plot_title'])
     xmin = args['xaxis_minimum']
@@ -580,17 +600,22 @@ def main():
     a = args['point_alpha']
 
 
-    # read in the data
+    # read in first file data
     df = gather_data(infile, False, xmin, xmax)
-    # read in second data
+    # read in second file data
     if infile2:
-        df2 = gather_data(infile2, labelled, xmin, xmax)
+        df2 = gather_data(infile2, lbld, xmin, xmax)
     else:
         df2 = None
+    # read in third file data
+    if infile3:
+        df3 = gather_data(infile3, False, xmin, xmax)
+    else:
+        df3 = None
 
     # build the plot
     _ = f100_scatter_plot(
-        df, z, df2, labelled, title, outfile, xmin, xmax, ymin, ymax, xstep, p, a
+        df, df2, lbld, df3, title, outfile, xmin, xmax, ymin, ymax, xstep, p, a
         )
                                
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
