@@ -1,14 +1,75 @@
  #!/usr/bin/env python
 
-'''Boxplots from All vs. All RBM data
+'''Violin plots from All vs. All RBM data
 
 Creates boxplots of identical vs non-identical genes between groups.
-Excludes self matches.
-Skips genomes not in metadata file.
 
 # compare genomovars in the same phylogroup.
 # compare same phylogroup outside of genomovar
 # compare same species outside of phylogroup
+
+Each datapoint is 1 reference genome against all other genomes in each category
+Each reference genome is represented in each category except genomes that
+singleton genomovars are excluded from 1 and 2.
+
+If you imagine a one vs many genomes rarefaction plot, each y-axis value in the
+violin plot is the value at the end of the rarefaction plot, and the x-axis is
+the specific groups of genome used for each rarefaction plot.
+ 
+For 1 and 2, first I collect the pairwise data for each reference genome to all
+other genomes in its own phylogroup. Then I split these pairwise data for each
+reference genome into the same genomovar or different genomovar (but not all
+different genomovars in the species, only different genomovars in the same
+phylogroup because the first step).
+ 
+1-sgv) each reference genome is compared one to many genomes with genomes in
+        its own genomovar (I think this one is clear)
+ 
+2-dgv) each reference genome is compared one to many genomes with genomes in
+        the other genomovars of its own phylogroup, but only one genomovar at
+        a time. This excludes genomes from its own genomovar. (e.g. each 
+        reference genome in genomovar A is compared to all genomes in 
+        genomovar B, then genomovar C, then genomovar D for all genomovars in 
+        the phylogroup with more than 1 genome).
+ 
+* 1 and 2 exclude singleton genomovars.
+ 
+###
+ 
+For 3 and 4, first I collect the pairwise data for each reference genome to all
+other genomes that are NOT in the same genomovar. Then I split these pairwise 
+data for each reference genome into the same phylogroup or different phylogroup
+ 
+3-spg) each reference genome is compared one to many genomes with genomes in
+        its own phylogroup. This excludes genomes in the same genomovar but it 
+        includes the genomes from singleton genomovars. Whereas 2 shows each 
+        genomovar separately and excludes singletons, 3 compares each reference
+        genome to all genomovars and singletons in the same phylogroup added up
+        at once.
+ 
+4-dpg) each reference genome is compared one to many genomes with genomes 
+        outside of its own phylogroup, but only one phylogroup at a time. This
+        includes the genomes from singleton genomovars.
+ 
+###
+ 
+For 5 and 6, first I collect the pairwise data for each reference genome to all
+other genomes that are NOT in the same phylogroup. Then I split these pairwise
+data for each reference genome into the same species or different species.
+ 
+5-ssp) each reference genome is compared one to many genomes with genomes
+        outside of its own phylogroup, but to genomes of all other phylogroups
+        at the same time. This includes the genomes from singleton genomovars.
+        Whereas 4 shows each phylogroup separately, 5 compares each reference
+        genome to genomes from all phylogroups in the species added up at once.
+ 
+6-dsp) each reference genome is compared one to many genomes with genomes
+        outside of the species – all genomes outside the species at the same
+        time.
+
+
+* Excludes self matches.
+* Skips genomes not in metadata file.
 
 All vs. All RBM only includes RBM genes of a genome and not all genes.
 Gene list file has all genes for each genome and is used get the total
@@ -179,6 +240,15 @@ def sort_gpairs(data1, md):
         if pg1 != pg2:
             spd[f'{g1}::{sppair}'].append(copy(gnlst))
 
+        # gvd contains binary gene lists for all genome pairs in the same
+        # phylogroup that are in a a genomovar with more than 1 genome.
+
+        # pgd contains scores for all genomes that are not in the same
+        # genomovar
+
+        # spd contains scores for all genomes that are not in the same
+        # phylogroup
+
     return gvd, pgd, spd
 
 
@@ -247,6 +317,15 @@ def score_genomes_by_category(gvd, pgd, spd, gpmin, outpre):
     spdout.write(header)
     spd = score_gpairs(spd, spdout) # species
     spdout.close()
+
+    # gvd contains scores for all genome in the same phylogroup that are
+    # in a a genomovar with more than 1 genome.
+
+    # pgd contains scores for all genomes that are not in the same
+    # genomovar
+
+    # spd contains scores for all genomes that are not in the same
+    # phylogroup
 
     # create 6 category dict with lists
     # each value in these lists is the fraction of identical genes
