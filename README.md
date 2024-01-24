@@ -17,7 +17,7 @@ The steps are left separately so the user can more easily follow the workflow, a
 	1. [Step 02: Inspect genome similarity](#step-02-inspect-genome-similarity)
 	1. [Step 03: Assign clades, phylogroups, and genomovars](#step-03-assign-clades-phylogroups-and-genomovars)
 
-1. [Part 02: Pairwise Genome Analysis](#part-02-pairwise-genome-analysis)
+1. [Part 02: Genome Analysis](#part-02-pairwise-genome-analysis)
 	1. [Step 01: Predict genes with Prodigal](#step-01-predict-genes-with-Prodigal)
 	1. [Step 02: Compute Reciprocal Best Match Genes](#step-02-compute-reciprocal-best-match-genes)
 	1. [Step 03: Compute F<sub>100</sub> scores](#step-03-compute-f100-scores)
@@ -190,7 +190,7 @@ Prepare a metadata file with the genome name in column 1 and additional metadata
 
 The Heatmap figure with metadata is useful to determine genomes and genome groups of interest to investigate in more detail in step 3.
 
-# PART 02: Pairwise Genome Analysis
+# PART 02: Genome Analysis
 
 In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. We use sequence similarity from reciprocal best blast matches (RBMs) of the genes between two genomes to calculate the frequency of 100% identical genes in the genome (F100). F100 is the number of RBMs with 100% sequence similarity divided by the total RBMs between two genomes. Using the F100 as a signal for recent recombination events, we fit a generalized additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes without recombination, or 3. a custom genome set provided by the user) to show the expected F100 per ANI of a genome pair. We also identify clusters of frequently recombining genome pairs by creating a hierarchical clustered heatmap from F100 scores as a distance metric matrix and use the HDBSCAN algorithm to partition this into clusters of highly recombining genomes.
 
