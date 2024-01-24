@@ -1,4 +1,4 @@
-# F100 as a signal for prokaryote recombination
+# Investigating the role of homologous recombination in driving sequence-discrete units at the species and intra-species levels.
 
 ![F100 Recent Recombination Model with Complete level Genomes from NCBI RefSeq for 330 Species](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/01_Complete_Genomes_Model.png)
 
@@ -9,6 +9,18 @@ This workflow uses 100% sequence similarity between reciprocal best matched gene
 A collection of genomes in fasta format is all that is required as input to begin. This workflow was designed focused on genome collections from the same species (≥95% ANI) but it will work at broader or finer genome similarity groupings as long as some 100% RBMs exist between the genomes.
 
 The steps are left separately so the user can more easily follow the workflow, and so individual steps can be more efficiently parallelized depending on the users system.
+
+# Table of Contents
+
+1. [Part 01: Genome Preparation](#part-01-genome-preparation)
+	1. [Step 01: Rename fasta deflines](#step-01-rename-fasta-deflines)
+	1. [Step 02: Inspect genome similarity](#step-02-inspect-genome-similarity)
+	1. [Step 03: Assign clades, phylogroups, and genomovars](#step-03-assign-clades-phylogroups-and-genomovars)
+1. [Part 02: Pairwise Genome Analysis](#part-02-pairwise-genome-analysis)
+1. [Part 03: Gene Analysis](#part-03-gene-analysis)
+1. [Software Dependencies](#software-dependencies)
+
+## Data table and Figure Outputs
 
 This workflow will yeild many intermediate files and several publication ready figures.
 
@@ -55,52 +67,9 @@ This workflow will yeild many intermediate files and several publication ready f
 1. DataTable: RBM Matrix of gene/genome recombinant sites
 1. Figure: Rarefaction curve of recombinant sites per genome
 
-## Required dependencies
 
-- [FastANI](https://github.com/ParBLiSS/FastANI)
-- [Prodigal](https://github.com/hyattpd/Prodigal)
-- [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
-- [MMseqs2](https://github.com/soedinglab/MMseqs2)
-- [EggNog Mapper](https://github.com/eggnogdb/eggnog-mapper) (optional for functional annotation hypothesis testing)
-- [COGclassifier](https://github.com/moshi4/COGclassifier/) (optional alternative to EggNog Mapper)
-- [Python](https://www.python.org/) version 3.6+ (for all custom code in this workflow)
 
-#### References
-
-1. Jain C, Rodriguez-R LM, Phillippy AM, Konstantinidis KT, Aluru S. High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. Nature communications. 2018 Nov 30;9(1):1-8.
-1. Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC bioinformatics. 2010 Dec;11(1):1-1.
-1. Camacho C, Coulouris G, Avagyan V, Ma N, Papadopoulos J, Bealer K, Madden TL. BLAST+: architecture and applications. BMC bioinformatics. 2009 Dec;10(1):1-9.
-1. Steinegger M, Söding J. MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets. Nature biotechnology. 2017 Nov;35(11):1026-8.
-1. Sanner MF. Python: a programming language for software integration and development. J Mol Graph Model. 1999 Feb 1;17(1):57-61.
-
-## Required packages for Python
-
-- [pandas](https://pandas.pydata.org/) 
-- [numpy](https://numpy.org/)
-- [scipy](https://scipy.org/)
-- [statsmodels](https://www.statsmodels.org)
-- [matplotlib](https://matplotlib.org/)
-- [seaborn](https://seaborn.pydata.org/)
-- [lmfit](https://lmfit.github.io/lmfit-py/)
-- [datashader](https://datashader.org/)
-- [pygam](https://pygam.readthedocs.io/)
-
-*Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed easily with [Conda](https://docs.conda.io/en/latest/miniconda.html). Just search "conda install name"*
-
-#### References
-
-1. Van Rossum G, Drake FL. Python 3 Reference Manual. Scotts Valley, CA: CreateSpace; 2009.
-1. McKinney W, others. Data structures for statistical computing in python. In: Proceedings of the 9th Python in Science Conference. 2010. p. 51–6.
-1. Harris CR, Millman KJ, van der Walt SJ, Gommers R, Virtanen P, Cournapeau D, et al. Array programming with NumPy. Nature. 2020;585:357–62.
-1. Virtanen P, Gommers R, Oliphant TE, Haberland M, Reddy T, Cournapeau D, et al. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature Methods. 2020;17:261–72.
-1. Seabold S, Perktold J. Statsmodels: Econometric and statistical modeling with python. InProceedings of the 9th Python in Science Conference 2010 Jun 28 (Vol. 57, No. 61, pp. 10-25080).
-1. Hunter JD. Matplotlib: A 2D graphics environment. Computing in science & engineering. 2007;9(3):90–5.
-1. Waskom ML. Seaborn: statistical data visualization. Journal of Open Source Software. 2021 Apr 6;6(60):3021.
-1. Newville M, Stensitzki T, Allen DB, Rawlik M, Ingargiola A, Nelson A. LMFIT: Non-linear least-square minimization and curve-fitting for Python. Astrophysics Source Code Library. 2016 Jun:ascl-1606.
-1. James A. Bednar, Jim Crist, Joseph Cottam, and Peter Wang (2016). "Datashader: Revealing the Structure of Genuinely Big Data", 15th Python in Science Conference (SciPy 2016).
-1. Servén D., Brummitt C. (2018). pyGAM: Generalized Additive Models in Python. Zenodo. DOI: 10.5281/zenodo.1208723
-
-# PART 01: Prepare your genomes
+# PART 01: Genome Preparation
 
 This workflow is intended for a collection of genomes belonging to the same species. Start with your genome files in fasta format in their own directory. We will refer to this directory as ${genomes_dir}.
 
@@ -193,7 +162,9 @@ python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -i fastANI_allV.ani -o fas
 
 As you can see in the figures above, there is a small cluster of genomes between 3-5% different than the other genomes. In other words we have two fairly distinct clusters. This indicates we may want to split them into two separate analyses. For now, we will leave them together.
 
-# A Note on preparing clade, phylogroup, genomovar assignments.
+### Step 03: Assign clades, phylogroups, and genomovars
+
+A Note on preparing clade, phylogroup, genomovar assignments.
 
 The shared fraction vs. ANI plot can be used to look for values between genome clusters such as around 99.2-99.8% ANI for the genomovar gap or below for phylogroup or clade values. Tools such as MiGA Clades or dREP can be used to sort genomes into clades and genomovars, or the ANI Distance Clustered Heatmap Genomovar version can be used to make manual assignments.
 
@@ -203,7 +174,7 @@ Prepare a metadata file with the genome name in column 1 and additional metadata
 
 The Heatmap figure with metadata is useful to determine genomes and genome groups of interest to investigate in more detail in step 3.
 
-# PART 02: Recombinant genomes analysis
+# PART 02: Pairwise Genome Analysis
 
 In this section we identify which genome pairs from your species have the most or least amount of recent horizontal gene transfer. We use sequence similarity from reciprocal best blast matches (RBMs) of the genes between two genomes to calculate the frequency of 100% identical genes in the genome (F100). F100 is the number of RBMs with 100% sequence similarity divided by the total RBMs between two genomes. Using the F100 as a signal for recent recombination events, we fit a generalized additive model (GAM) to a set of data (1. Complete genomes from NCBI, 2. Simulated neutral evoltuion genomes without recombination, or 3. a custom genome set provided by the user) to show the expected F100 per ANI of a genome pair. We also identify clusters of frequently recombining genome pairs by creating a hierarchical clustered heatmap from F100 scores as a distance metric matrix and use the HDBSCAN algorithm to partition this into clusters of highly recombining genomes.
 
@@ -391,7 +362,7 @@ python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o
 
 ![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
 
-# PART 03: Recombinant Genes Analysis
+# PART 03: Gene Analysis
 
 STEP 02 generates output containing F100 data for all genome pairs. In this step we investigate recombinant gene positions and annotions from specific genome pairs of interest, and we investigate recombinant gene positions and annotations for 1 genome to many genomes.
 
@@ -1070,3 +1041,51 @@ python 03j_RBM-Clade_Rarefaction.py -r group_g1_rbm_matrix.tsv -l clade_list.txt
 ```
 
 ![Recombinant RBM clustermap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/rbm_rarefaction_test_plot.png)
+
+
+# Software Dependencies
+
+## External dependencies
+
+- [FastANI](https://github.com/ParBLiSS/FastANI)
+- [Prodigal](https://github.com/hyattpd/Prodigal)
+- [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
+- [MMseqs2](https://github.com/soedinglab/MMseqs2)
+- [EggNog Mapper](https://github.com/eggnogdb/eggnog-mapper) (optional for functional annotation hypothesis testing)
+- [COGclassifier](https://github.com/moshi4/COGclassifier/) (optional alternative to EggNog Mapper)
+- [Python](https://www.python.org/) version 3.6+ (for all custom code in this workflow)
+
+#### References
+
+1. Jain C, Rodriguez-R LM, Phillippy AM, Konstantinidis KT, Aluru S. High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. Nature communications. 2018 Nov 30;9(1):1-8.
+1. Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ. Prodigal: prokaryotic gene recognition and translation initiation site identification. BMC bioinformatics. 2010 Dec;11(1):1-1.
+1. Camacho C, Coulouris G, Avagyan V, Ma N, Papadopoulos J, Bealer K, Madden TL. BLAST+: architecture and applications. BMC bioinformatics. 2009 Dec;10(1):1-9.
+1. Steinegger M, Söding J. MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets. Nature biotechnology. 2017 Nov;35(11):1026-8.
+1. Sanner MF. Python: a programming language for software integration and development. J Mol Graph Model. 1999 Feb 1;17(1):57-61.
+
+## Required packages for Python
+
+- [pandas](https://pandas.pydata.org/) 
+- [numpy](https://numpy.org/)
+- [scipy](https://scipy.org/)
+- [statsmodels](https://www.statsmodels.org)
+- [matplotlib](https://matplotlib.org/)
+- [seaborn](https://seaborn.pydata.org/)
+- [lmfit](https://lmfit.github.io/lmfit-py/)
+- [datashader](https://datashader.org/)
+- [pygam](https://pygam.readthedocs.io/)
+
+*Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed easily with [Conda](https://docs.conda.io/en/latest/miniconda.html). Just search "conda install name"*
+
+#### References
+
+1. Van Rossum G, Drake FL. Python 3 Reference Manual. Scotts Valley, CA: CreateSpace; 2009.
+1. McKinney W, others. Data structures for statistical computing in python. In: Proceedings of the 9th Python in Science Conference. 2010. p. 51–6.
+1. Harris CR, Millman KJ, van der Walt SJ, Gommers R, Virtanen P, Cournapeau D, et al. Array programming with NumPy. Nature. 2020;585:357–62.
+1. Virtanen P, Gommers R, Oliphant TE, Haberland M, Reddy T, Cournapeau D, et al. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature Methods. 2020;17:261–72.
+1. Seabold S, Perktold J. Statsmodels: Econometric and statistical modeling with python. InProceedings of the 9th Python in Science Conference 2010 Jun 28 (Vol. 57, No. 61, pp. 10-25080).
+1. Hunter JD. Matplotlib: A 2D graphics environment. Computing in science & engineering. 2007;9(3):90–5.
+1. Waskom ML. Seaborn: statistical data visualization. Journal of Open Source Software. 2021 Apr 6;6(60):3021.
+1. Newville M, Stensitzki T, Allen DB, Rawlik M, Ingargiola A, Nelson A. LMFIT: Non-linear least-square minimization and curve-fitting for Python. Astrophysics Source Code Library. 2016 Jun:ascl-1606.
+1. James A. Bednar, Jim Crist, Joseph Cottam, and Peter Wang (2016). "Datashader: Revealing the Structure of Genuinely Big Data", 15th Python in Science Conference (SciPy 2016).
+1. Servén D., Brummitt C. (2018). pyGAM: Generalized Additive Models in Python. Zenodo. DOI: 10.5281/zenodo.1208723
