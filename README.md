@@ -16,12 +16,24 @@ The steps are left separately so the user can more easily follow the workflow, a
 	1. [Step 01: Rename fasta deflines](#step-01-rename-fasta-deflines)
 	1. [Step 02: Inspect genome similarity](#step-02-inspect-genome-similarity)
 	1. [Step 03: Assign clades, phylogroups, and genomovars](#step-03-assign-clades-phylogroups-and-genomovars)
+
 1. [Part 02: Pairwise Genome Analysis](#part-02-pairwise-genome-analysis)
 	1. [Step 01: Predict genes with Prodigal](#step-01-predict-genes-with-Prodigal)
 	1. [Step 02: Compute Reciprocal Best Match Genes](#step-02-compute-reciprocal-best-match-genes)
 	1. [Step 03: Compute F<sub>100</sub> scores](#step-03-compute-f100-scores)
+	1. [Step 04: Compare User Genomes to GAM Models](#step-04-compare-user-genomes-to-gam-models)
+	1. [Step 05: Identify Significant Outliers](#step-05-identify-significant-outliers)
+	1. [Step 06: F<sub>100</sub> score Clustered Heatmap](#step-06-f100-score-clustered-heatmap)
+	1. [Step 07: Identical gene fractions by groupings](#step-07:-identical-gene-fractions-by-groupings)
 
 1. [Part 03: Gene Analysis](#part-03-gene-analysis)
+	1. [Step 01: Generate gene clusters with MMSeqs2](#step-01-generate-gene-clusters-with-mmseqs2)
+	1. [Step 02: Annotate representative genes with EggNog Mapper or COGclassifier](#Step-02-annotate-representative-genes-with-eggNog-mapper-or-cogclassifier)
+	1. [Step 03: Assign pangenome class to genes](#step-03-assign-pangenome-class-to-genes)
+	1. [Step 04: Reorder/align contigs for MAGs, SAGs, and draft genomes](#step-04-reorder-align-contigs-for-MAGs-SAGs-and-draft-genomes)
+	1. [Step 05: Explore genome pairs of interest](#step-05-explore-genome-pairs-of-interest)
+	1. [Step 06: Explore one vs. many genome groups of interest](#step-06-explore-one-vs-many-genome-groups-of-interest)
+
 1. [Software Dependencies](#software-dependencies)
 
 ## Data table and Figure Outputs
@@ -287,7 +299,7 @@ mv ${my_species}*.pdf 04_rbm_pdf
 
 ![Histogram of gene RBMs](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/test_genome01-genome02.png)
 
-### Step 04: Compare your genomes to a model
+### Step 04: Compare User Genomes to GAM Models
 
 To view model info/options:
 
@@ -313,7 +325,7 @@ Output:
 
 See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
 
-The subsampled model filters the complete genome set for species with n genome pairs above 95% ANI with n ≥ 1000 and it randomly downsamples species with ≥ 5000 genome pairs above 95% ANI to n = 5000.
+The subsampled model filters the complete genome set for species with n genome pairs above 95% ANI with n ≥ 1000 and it randomly downsamples species with ≥ 5000 genome pairs above 95% ANI to n = 5000. The effect is a wider 95% confidence.
 
 ```bash
 # Uncompress the Complete_Genome_Model_Data.tsv.zip file
@@ -350,7 +362,11 @@ python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv 
 
 ![Your data on top of a model build from your own data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_custom_model_GAMplot.png)
 
-### Step 05: Clusters of the most frequently recombining genomes
+### Step 05: Identify Significant Outliers
+
+In this step we'll use the sigpairs.tsv output files from any of the models in step 04 to build some bar plots looking at which groups from the meta data file are most represented above or below the GAM modeled F<sub>100</sub> score confidence intervals.
+
+### Step 06: F<sub>100</sub> score Clustered Heatmap
 
 This step reads in the ${my_species}\_F100.tsv file from Step 02 and generates a square F100 distance (1 - F100) matrix then creates a hierarchical clustered heatmap figure saved as a PDF. (future addition: clustering algorithm to automatically partition the distance matrix into clusters)
 
@@ -359,6 +375,18 @@ This step requires Python with Pandas, Matplotlib, and Seaborn packages.
 Input: ${my_species}\_F100.tsv from Step 02.
 
 Output: Clustered heatmap PDF 
+
+```bash
+python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o ${my_species}_F100.pdf
+```
+
+![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
+
+### Step 07: Identical gene fractions by groupings
+
+This step is for the violin plots showing the identical gene fractions on the y-axis for various different one vs. many groupings on the x-axis. based on the metadata file.
+
+NEED TO ADD THE CORRECT SCRIPT AND COMMANDS AND A NEW FIGURE
 
 ```bash
 python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o ${my_species}_F100.pdf
@@ -551,12 +579,14 @@ python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
 
 
-### Step 04: (OPTIONAL) Reorder contigs / align genomes of draft genomes and MAGs
+### Step 04: Reorder/align contigs for MAGs, SAGs, and draft genomes
+
+This step is optional.
 
 Contigs in draft genome and MAG assemblies are not typically aligned to any particular order. It can be helpful for the figure created in Step 02 to align the genome pair to each other or to a common reference genome. One way to do that is with [Mauve](https://darlinglab.org/mauve/mauve.html). See "Reordering contigs" section of the User Guide here: [https://darlinglab.org/mauve/user-guide/reordering.html](https://darlinglab.org/mauve/user-guide/reordering.html).
 
 
-### Step 05: Investigate recombinant positions between specific genome pairs 
+### Step 05: Explore genome pairs of interest
 
 In this section, we tie all previous steps together and look at the types and distribution of recent plausible recombination events between specific genome pairs.
 
@@ -876,7 +906,7 @@ And finally, we have a figure with the sequence identity of RBMs vs. genome posi
 
 ![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_posline_out.png)
 
-### Step 06: Investigate recombinant positions between one to many genomes
+### Step 06: Explore one vs. many genome groups of interest
 
 This script is similar to the 03f script for genome pairs except it looks at one genome compared to many genomes.
 
