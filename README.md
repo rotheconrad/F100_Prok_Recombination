@@ -35,6 +35,7 @@ The steps are left separately so the user can more easily follow the workflow, a
 	1. [Step 06: Explore one vs. many genome groups of interest](#step-06-explore-one-vs-many-genome-groups-of-interest)
 
 1. [Software Dependencies](#software-dependencies)
+1. [How to Cite](#how-to-cite)
 
 ## Data table and Figure Outputs
 
@@ -85,7 +86,7 @@ This workflow will yeild many intermediate files and several publication ready f
 
 
 
-# PART 01: Genome Preparation ([top](#table-of-contents))
+# PART 01: Genome Preparation
 
 This workflow is intended for a collection of genomes belonging to the same species. Start with your genome files in fasta format in their own directory. We will refer to this directory as ${genomes_dir}.
 
@@ -130,6 +131,8 @@ So with -p my_genome the script will output:
 >GAGCCGCCAGAGCTTCACGACCTGGTTTGAGCCGCTGGAGGCCCACTCCTTGGAGGACGA...  
 >\>my_genome_n  
 >GGACGACCTGCGCAAGCTGACGATCCAACTTCCGAGCCGGTTTTACTACGAGTGGATTGA...  
+
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 02: Inspect genome similarity
 
@@ -178,6 +181,8 @@ python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -i fastANI_allV.ani -o fas
 
 As you can see in the figures above, there is a small cluster of genomes between 3-5% different than the other genomes. In other words we have two fairly distinct clusters. This indicates we may want to split them into two separate analyses. For now, we will leave them together.
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 03: Assign clades, phylogroups, and genomovars
 
 A Note on preparing clade, phylogroup, genomovar assignments.
@@ -189,6 +194,10 @@ Additional, many well studied species already phylogroup or sequencing typing to
 Prepare a metadata file with the genome name in column 1 and additional metadata values in the remaining columns. Any category may be used such as location, sample, niche, sequence type, phylogroup, clade, and genomovar.
 
 The Heatmap figure with metadata is useful to determine genomes and genome groups of interest to investigate in more detail in step 3.
+
+INCLUDE METADATA FILE EXAMPLE TABLE HERE
+
+([Return to Table of Contents](#table-of-contents))
 
 # PART 02: Genome Analysis
 
@@ -221,6 +230,8 @@ for f in ${genes_dir_faa}/*.faa; do python 00d_Workflow_Scripts/02a_len_filter_g
 ```
 
 ![Gene Length Distribution](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/geneLenDist.png)
+
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 02: Compute Reciprocal Best Match Genes
 
@@ -265,6 +276,7 @@ rm -r ${rbm_dir}/
 split -l 50 -a -d genes_filenames_allV.txt genes_filenames_allV_
 for f in genes_filenames_allV_*; do (run pbs or sbatch script with the while read loop); done
 ```
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 03: Compute F<sub>100</sub> scores
 
@@ -298,6 +310,8 @@ mv ${my_species}*.pdf 04_rbm_pdf
 ```
 
 ![Histogram of gene RBMs](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/test_genome01-genome02.png)
+
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 04: Compare User Genomes to GAM Models
 
@@ -362,9 +376,21 @@ python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i ${my_species}_F100.tsv 
 
 ![Your data on top of a model build from your own data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_custom_model_GAMplot.png)
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 05: Identify Significant Outliers
 
 In this step we'll use the sigpairs.tsv output files from any of the models in step 04 to build some bar plots looking at which groups from the meta data file are most represented above or below the GAM modeled F<sub>100</sub> score confidence intervals.
+
+NEED TO ADD THE CORRECT SCRIPT AND COMMANDS AND A NEW FIGURE
+
+```bash
+python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o ${my_species}_F100.pdf
+```
+
+![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
+
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 06: F<sub>100</sub> score Clustered Heatmap
 
@@ -382,6 +408,8 @@ python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o
 
 ![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 07: Identical gene fractions by groupings
 
 This step is for the violin plots showing the identical gene fractions on the y-axis for various different one vs. many groupings on the x-axis. based on the metadata file.
@@ -393,6 +421,8 @@ python  00d_Workflow_Scripts/02e_F100_clustermap.py -i ${my_species}_F100.tsv -o
 ```
 
 ![F100 Distance Heatmap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_F100.png)
+
+([Return to Table of Contents](#table-of-contents))
 
 # PART 03: Gene Analysis
 
@@ -505,6 +535,8 @@ python 00d_Workflow_Scripts/03c_Clustermap_fromBinary.py -b pangenome_matrix.tsv
 
 ![Gene clusters vs genomes from your data](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pangenome_clustermap.png)
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 02: Annotate representative genes with EggNog Mapper or COGclassifier
 
 In this step we prepare to annotate our representative genes with EggNog mapper (or COGclassifier) by concatenating the amino acid sequences of the predicted CDS from all genomes into a single fasta file. 
@@ -552,6 +584,8 @@ mkdir COGclass
 COGclassifier -i my_rep_seqs.faa -o COGclass
 ```
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 03: Assign pangenome class to genes
 
 In this step we assign pangenome gene categories to our gene clusters. This step generates a .tsv file with columns: Gene_Name, Cluster_Name, Pangenome_Category, n/N, Distance, and a PDF hitsogram of average within cluster sequence distance of core gene clusters.
@@ -578,6 +612,7 @@ python 00d_Workflow_Scripts/03e_Get_Genes_Clusters_PanCat.py -b pangenome_matrix
 
 ![Average sequence distance within gene clusters](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/pancat_file.png)
 
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 04: Reorder/align contigs for MAGs, SAGs, and draft genomes
 
@@ -585,6 +620,7 @@ This step is optional.
 
 Contigs in draft genome and MAG assemblies are not typically aligned to any particular order. It can be helpful for the figure created in Step 02 to align the genome pair to each other or to a common reference genome. One way to do that is with [Mauve](https://darlinglab.org/mauve/mauve.html). See "Reordering contigs" section of the User Guide here: [https://darlinglab.org/mauve/user-guide/reordering.html](https://darlinglab.org/mauve/user-guide/reordering.html).
 
+([Return to Table of Contents](#table-of-contents))
 
 ### Step 05: Explore genome pairs of interest
 
@@ -906,6 +942,8 @@ And finally, we have a figure with the sequence identity of RBMs vs. genome posi
 
 ![RBM sequence identity vs. genome position](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/g01-g02_A_posline_out.png)
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 06: Explore one vs. many genome groups of interest
 
 This script is similar to the 03f script for genome pairs except it looks at one genome compared to many genomes.
@@ -1076,6 +1114,7 @@ python 03j_RBM-Clade_Rarefaction.py -r group_g1_rbm_matrix.tsv -l clade_list.txt
 
 ![Recombinant RBM clustermap](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/rbm_rarefaction_test_plot.png)
 
+([Return to Table of Contents](#table-of-contents))
 
 # Software Dependencies
 
@@ -1123,3 +1162,11 @@ python 03j_RBM-Clade_Rarefaction.py -r group_g1_rbm_matrix.tsv -l clade_list.txt
 1. Newville M, Stensitzki T, Allen DB, Rawlik M, Ingargiola A, Nelson A. LMFIT: Non-linear least-square minimization and curve-fitting for Python. Astrophysics Source Code Library. 2016 Jun:ascl-1606.
 1. James A. Bednar, Jim Crist, Joseph Cottam, and Peter Wang (2016). "Datashader: Revealing the Structure of Genuinely Big Data", 15th Python in Science Conference (SciPy 2016).
 1. Servén D., Brummitt C. (2018). pyGAM: Generalized Additive Models in Python. Zenodo. DOI: 10.5281/zenodo.1208723
+
+([Return to Table of Contents](#table-of-contents))
+
+# How to Cite
+
+If you use any part of this workflow in your research please cite the following manuscript:
+
+PLACEHOLDER FOR MANUSCRIPT CITATION AND LINK
