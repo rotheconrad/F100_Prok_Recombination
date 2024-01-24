@@ -85,7 +85,7 @@ This workflow will yeild many intermediate files and several publication ready f
 
 
 
-# PART 01: Genome Preparation
+# PART 01: Genome Preparation ([top](#table-of-contents))
 
 This workflow is intended for a collection of genomes belonging to the same species. Start with your genome files in fasta format in their own directory. We will refer to this directory as ${genomes_dir}.
 
