@@ -24,7 +24,7 @@ The steps are left separately so the user can more easily follow the workflow, a
 	1. [Step 04: Compare User Genomes to GAM Models](#step-04-compare-user-genomes-to-gam-models)
 	1. [Step 05: Identify Significant Outliers](#step-05-identify-significant-outliers)
 	1. [Step 06: F<sub>100</sub> score Clustered Heatmap](#step-06-f100-score-clustered-heatmap)
-	1. [Step 07: Identical gene fractions by groupings](#step-07:-identical-gene-fractions-by-groupings)
+	1. [Step 07: Identical gene fractions by groupings](#step-07-identical-gene-fractions-by-groupings)
 
 1. [Part 03: Gene Analysis](#part-03-gene-analysis)
 	1. [Step 01: Generate gene clusters with MMSeqs2](#step-01-generate-gene-clusters-with-mmseqs2)
