@@ -30,7 +30,7 @@ The steps are left separately so the user can more easily follow the workflow, a
 	1. [Step 01: Generate gene clusters with MMSeqs2](#step-01-generate-gene-clusters-with-mmseqs2)
 	1. [Step 02: Annotate representative genes with EggNog Mapper or COGclassifier](#Step-02-annotate-representative-genes-with-eggNog-mapper-or-cogclassifier)
 	1. [Step 03: Assign pangenome class to genes](#step-03-assign-pangenome-class-to-genes)
-	1. [Step 04: Reorder/align contigs for MAGs, SAGs, and draft genomes](#step-04-reorder-align-contigs-for-MAGs-SAGs-and-draft-genomes)
+	1. [Step 04: Reorder/align contigs for MAGs, SAGs, and draft genomes](#step-04-reorder/align-contigs-for-MAGs-SAGs-and-draft-genomes)
 	1. [Step 05: Explore genome pairs of interest](#step-05-explore-genome-pairs-of-interest)
 	1. [Step 06: Explore one vs. many genome groups of interest](#step-06-explore-one-vs-many-genome-groups-of-interest)
 
