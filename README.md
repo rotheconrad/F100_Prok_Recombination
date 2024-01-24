@@ -36,6 +36,7 @@ The steps are left separately so the user can more easily follow the workflow, a
 
 1. [Software Dependencies](#software-dependencies)
 1. [How to Cite](#how-to-cite)
+1. [Future Improvements](#future-improvements)
 
 ## Data table and Figure Outputs
 
@@ -1170,3 +1171,10 @@ python 03j_RBM-Clade_Rarefaction.py -r group_g1_rbm_matrix.tsv -l clade_list.txt
 If you use any part of this workflow in your research please cite the following manuscript:
 
 PLACEHOLDER FOR MANUSCRIPT CITATION AND LINK
+
+# Future Improvements
+
+1. More efficient All vs. All RBM with Diamond or other.
+1. Filter MMSeqs2 Gene clusters for improved true ortholog assignments.
+1. Compute number of unique alleles for each gene cluster.
+1. Compute pN/pS for each gene cluster.
