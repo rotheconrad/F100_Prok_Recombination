@@ -1005,7 +1005,7 @@ def get_recombination_rate(df, window, outfile, rbm_ani):
     # select recombinant and non nonrecombinant genes
     dfR = df[df['REC'] == 1] # rows of recombinant genes pid ≥ rec (default 99.8)
     dfN = df[df['REC'] == 0] # rows of nonrec genes pid < rec (default 99.8)
-    # window must have at leat 1 of each recombinant or non-rec
+    # window must have at least 1 of each recombinant or non-rec
     if len(dfR) == 0 or len(dfN) == 0: return 0, 0, 0
     # get sums, define variable
     rec_mismatch = dfR['Mismatch'].sum()

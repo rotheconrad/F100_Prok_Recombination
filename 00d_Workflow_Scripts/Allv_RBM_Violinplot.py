@@ -2,11 +2,23 @@
 
 '''Violin plots from All vs. All RBM data
 
-Creates boxplots of identical vs non-identical genes between groups.
+Creates violin plots of the Cumulative identical gene fraction within groups.
 
-# compare genomovars in the same phylogroup.
-# compare same phylogroup outside of genomovar
-# compare same species outside of phylogroup
+A) compare each genome to other genomes in the same genomovar
+B) compare each genome to other genomes within each separate genomovar in the
+genomes phylogroup
+C) compare each genome to other genomes within each separate genomovar outside
+the genomes phylogroup
+D) compare each genome to other genomes of a different species
+E) compare each genome to all genomes in its phylogroup excluding genomes from
+its genomovar
+F) compare each genome to all genomes within its species excluding genomes from
+its phylogroup
+
+Data are presented in hybrid violin plots where the top and bottom whiskers
+show the minimum and maximum values, the middle whisker shows the median value,
+the black boxes show the interquartile range, and the shaded light blue regions
+show the density of values along the y-axis.
 
 Each datapoint is 1 reference genome against all other genomes in each category
 Each reference genome is represented in each category except genomes that
@@ -16,54 +28,54 @@ If you imagine a one vs many genomes rarefaction plot, each y-axis value in the
 violin plot is the value at the end of the rarefaction plot, and the x-axis is
 the specific groups of genome used for each rarefaction plot.
  
-For 1 and 2, first I collect the pairwise data for each reference genome to all
+For A and B, first I collect the pairwise data for each reference genome to all
 other genomes in its own phylogroup. Then I split these pairwise data for each
 reference genome into the same genomovar or different genomovar (but not all
 different genomovars in the species, only different genomovars in the same
 phylogroup because the first step).
  
-1-sgv) each reference genome is compared one to many genomes with genomes in
+A) each reference genome is compared one to many genomes with genomes in
         its own genomovar (I think this one is clear)
  
-2-dgv) each reference genome is compared one to many genomes with genomes in
+B) each reference genome is compared one to many genomes with genomes in
         the other genomovars of its own phylogroup, but only one genomovar at
         a time. This excludes genomes from its own genomovar. (e.g. each 
         reference genome in genomovar A is compared to all genomes in 
         genomovar B, then genomovar C, then genomovar D for all genomovars in 
         the phylogroup with more than 1 genome).
  
-* 1 and 2 exclude singleton genomovars.
+* A and B exclude singleton genomovars.
  
 ###
  
-For 3 and 4, first I collect the pairwise data for each reference genome to all
+For E and C, first I collect the pairwise data for each reference genome to all
 other genomes that are NOT in the same genomovar. Then I split these pairwise 
 data for each reference genome into the same phylogroup or different phylogroup
  
-3-spg) each reference genome is compared one to many genomes with genomes in
+E) each reference genome is compared one to many genomes with genomes in
         its own phylogroup. This excludes genomes in the same genomovar but it 
-        includes the genomes from singleton genomovars. Whereas 2 shows each 
-        genomovar separately and excludes singletons, 3 compares each reference
+        includes the genomes from singleton genomovars. Whereas B shows each 
+        genomovar separately and excludes singletons, E compares each reference
         genome to all genomovars and singletons in the same phylogroup added up
         at once.
  
-4-dpg) each reference genome is compared one to many genomes with genomes 
+C) each reference genome is compared one to many genomes with genomes 
         outside of its own phylogroup, but only one phylogroup at a time. This
         includes the genomes from singleton genomovars.
  
 ###
  
-For 5 and 6, first I collect the pairwise data for each reference genome to all
+For F and D, first I collect the pairwise data for each reference genome to all
 other genomes that are NOT in the same phylogroup. Then I split these pairwise
 data for each reference genome into the same species or different species.
  
-5-ssp) each reference genome is compared one to many genomes with genomes
+F) each reference genome is compared one to many genomes with genomes
         outside of its own phylogroup, but to genomes of all other phylogroups
         at the same time. This includes the genomes from singleton genomovars.
-        Whereas 4 shows each phylogroup separately, 5 compares each reference
+        Whereas C shows each phylogroup separately, F compares each reference
         genome to genomes from all phylogroups in the species added up at once.
  
-6-dsp) each reference genome is compared one to many genomes with genomes
+D) each reference genome is compared one to many genomes with genomes
         outside of the species – all genomes outside the species at the same
         time.
 
@@ -82,12 +94,12 @@ Appending them in a list with preserve the gene order.
 Input files:
 
     - All vs. All RBM file
-    - Pancat file
-    - Metadata tsv file with columns Genome name and group name
+    - Full gene list - complete_gene_list.txt
+    - Metadata tsv file with columns Genome, Genomovar, phylogroup, species
 
 Output files:
 
-    - Vectorized PDF boxplot figure
+    - Vectorized PDF hybrid violin plot
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -336,12 +348,12 @@ def score_genomes_by_category(gvd, pgd, spd, gpmin, outpre):
     sspl, dspl, sspd, dspd = sort_scores(spd, gpmin)
 
     summary = {
-            'sgv': sgvl, # same genomvar
-            'dgv': dgvl, # different genomvar
-            'dpg': dpgl, # different phylogroup
-            'dsp': dspl, # different species
-            'spg': spgl, # same phylogroup
-            'ssp': sspl, # same species
+            'A': sgvl, # same genomvar
+            'B': dgvl, # different genomvar
+            'C': dpgl, # different phylogroup
+            'D': dspl, # different species
+            'E': spgl, # same phylogroup
+            'F': sspl, # same species
             }     
 
     # note spd for species level is not split into same and different.
