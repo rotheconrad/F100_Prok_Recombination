@@ -338,10 +338,10 @@ def score_genomes_by_category(gvd, pgd, spd, gpmin, outpre):
     summary = {
             'sgv': sgvl, # same genomvar
             'dgv': dgvl, # different genomvar
-            'spg': spgl, # same phylogroup
             'dpg': dpgl, # different phylogroup
-            'ssp': sspl, # same species
             'dsp': dspl, # different species
+            'spg': spgl, # same phylogroup
+            'ssp': sspl, # same species
             }     
 
     # note spd for species level is not split into same and different.
@@ -445,16 +445,17 @@ def build_box_plot(data, title, outfile):
 
     if title == 'Summary':
         ax.tick_params(axis='x', labelrotation=0)
-        plt.subplots_adjust(left=0.12, right=0.98, top=0.95, bottom=0.23)
+        ax.vlines(x=4.5, ymin=0, ymax=1, ls='--', lw=2, color='k')
+        plt.subplots_adjust(left=0.12, right=0.98, top=0.95, bottom=0.24)
         txt1 = (
             'sgv - same genomovar\n'
-            'spg - same phylogroup outside of genomovar\n'
+            'dgv - different genomovar\n'
+            'dpg - different phylogroup\n'
             'ssp - same species outside of phylogorup'
             )
 
         txt2 = (
-            'dgv - different genomovar\n'
-            'dpg - different phylogroup\n'
+            'spg - same phylogroup outside of genomovar\n'
             'dsp - different species'
             )
 
@@ -517,7 +518,7 @@ def main():
         )
     parser.add_argument(
         '-gpmin', '--minimum_genome_pairs',
-        help='(OPTIONAL) Minimun genome pairs to include group (default: 3)!',
+        help='(OPTIONAL) Minimum genome pairs to include group (default: 3)!',
         metavar='',
         type=int,
         required=False,

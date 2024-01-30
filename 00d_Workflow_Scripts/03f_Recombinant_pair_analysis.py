@@ -1191,6 +1191,13 @@ def main():
         required=True
         )
     parser.add_argument(
+        '-ano', '--annotation_file',
+        help='Specify the representative gene annotation file.',
+        metavar='',
+        type=str,
+        required=True
+        )
+    parser.add_argument(
         '-cA', '--input_CDS_A',
         help='Please specify the first prodigal CDS in fasta format!',
         metavar='',
@@ -1231,13 +1238,6 @@ def main():
         metavar='',
         type=float,
         default=99.8,
-        required=False
-        )
-    parser.add_argument(
-        '-ano', '--annotation_file',
-        help='(OPTIONAL) Specify the representative gene annotation file.',
-        metavar='',
-        type=str,
         required=False
         )
     parser.add_argument(
