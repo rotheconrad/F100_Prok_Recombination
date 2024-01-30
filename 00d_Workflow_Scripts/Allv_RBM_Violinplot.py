@@ -424,7 +424,7 @@ def build_box_plot(data, title, outfile):
     ax.set_title(f'Pairwise identical RBM gene fractions by {title}')
     # change axis labels
     ax.set_xlabel('')
-    ax.set_ylabel("Identical gene fraction", fontsize=12)
+    ax.set_ylabel("Cumulative identical gene fraction", fontsize=12)
 
     # set style for the axes
     ax.set_xticks(np.arange(1, len(labels) + 1), labels=labels)
