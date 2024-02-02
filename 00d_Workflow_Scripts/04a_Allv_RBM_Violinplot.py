@@ -99,6 +99,7 @@ Input files:
 
 Output files:
 
+    - tsv data files
     - Vectorized PDF hybrid violin plot
 
 -------------------------------------------
@@ -404,7 +405,7 @@ def get_lw_xlabsize(ncat):
     return lw, xlabsize
 
 
-def build_box_plot(data, title, outfile):
+def build_violin_plot(data, title, outfile):
     # simple bar plot for data
 
     labels = data.keys()
@@ -591,18 +592,18 @@ def main():
                 nd = {k: d[k] for k in ilabs}
                 outfile = f'{outpre}-figure0{i+1}{abc[j]}-{olab}.pdf'
                 nt = f'{title} - {abc[j]}'
-                _ = build_box_plot(nd, nt, outfile)
+                _ = build_violin_plot(nd, nt, outfile)
                 labels = labels[40:]
                 j += 1
             # plot remaining
             nd = {k: d[k] for k in labels}
             outfile = f'{outpre}-figure0{i+1}{abc[j]}-{olab}.pdf'
             nt = f'{title} - {abc[j]}'
-            _ = build_box_plot(nd, nt, outfile)
+            _ = build_violin_plot(nd, nt, outfile)
 
         else:
             outfile = f'{outpre}-figure0{i+1}-{olab}.pdf'
-            _ = build_box_plot(d, title, outfile)
+            _ = build_violin_plot(d, title, outfile)
 
     print(f'\n\nComplete success space cadet!! Finished without errors.\n\n')
 
