@@ -51,6 +51,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np, pandas as pd; np.random.seed(0)
+import warnings
+np.warnings = warnings
 import seaborn as sns; sns.set(style="white", color_codes=True)
 import datashader as ds
 from datashader.mpl_ext import dsshow
@@ -400,21 +402,21 @@ def main():
     parser.add_argument(
         '-i', '--input_file',
         help='Please specify the input file!',
-        metavar='',
+        #metavar='',
         type=str,
         required=True
         )
     parser.add_argument(
         '-o', '--output_file_prefix',
         help='Please specify the output file prefix!',
-        metavar='',
+        #metavar='',
         type=str,
         required=True
         )
     parser.add_argument(
         '-t', '--plot_title',
         help='OPTIONAL: Please specify the plot title (defalut: F100 vs ANI)!',
-        metavar='',
+        #metavar='',
         type=str,
         nargs='+',
         default=['F100', 'vs', 'ANI'],
@@ -423,7 +425,7 @@ def main():
     parser.add_argument(
         '-xmin', '--xaxis_minimum',
         help='OPTIONAL: Minimum value to plot on x-axis. (Default=95.0)',
-        metavar='',
+        #metavar='',
         type=float,
         default=95.0,
         required=False
@@ -431,7 +433,7 @@ def main():
     parser.add_argument(
         '-xmax', '--xaxis_maximum',
         help='OPTIONAL: Maximum value to plot on x-axis. (Default=100.0)',
-        metavar='',
+        #metavar='',
         type=float,
         default=100.0,
         required=False
@@ -439,7 +441,7 @@ def main():
     parser.add_argument(
         '-ymin', '--yaxis_minimum',
         help='OPTIONAL: Minimum value to plot on y-axis. (Default=-8.0)',
-        metavar='',
+        #metavar='',
         type=float,
         default=-8.0,
         required=False
@@ -447,7 +449,7 @@ def main():
     parser.add_argument(
         '-ymax', '--yaxis_maximum',
         help='OPTIONAL: Maximum value to plot on y-axis. (Default=0.0)',
-        metavar='',
+        #metavar='',
         type=float,
         default=0.0,
         required=False
@@ -455,7 +457,7 @@ def main():
     parser.add_argument(
         '-i2', '--input_file2',
         help='OPTIONAL: Second file data to plot on top of first file data.',
-        metavar='',
+        #metavar='',
         type=str,
         required=False,
         default=None
@@ -463,7 +465,7 @@ def main():
     parser.add_argument(
         '-l', '--input_file2_labelled',
         help='OPTIONAL: Second input file has clade labels (default: False).',
-        metavar='',
+        #metavar='',
         type=str,
         required=False,
         default=None
@@ -471,7 +473,7 @@ def main():
     parser.add_argument(
         '-s', '--xaxis_step_size',
         help='OPTIONAL: X-axis ticks step increment. (Default=1.0)',
-        metavar='',
+        #metavar='',
         type=float,
         default=1.0,
         required=False
@@ -479,7 +481,7 @@ def main():
     parser.add_argument(
         '-p', '--point_size',
         help='OPTIONAL: Size for i2 plotted points (Default=4.0)',
-        metavar='',
+        #metavar='',
         type=float,
         default=4.0,
         required=False
@@ -487,7 +489,7 @@ def main():
     parser.add_argument(
         '-a', '--point_alpha',
         help='OPTIONAL: Alpha value for i2 plotted points (Default=0.10)',
-        metavar='',
+        #metavar='',
         type=float,
         default=0.10,
         required=False
