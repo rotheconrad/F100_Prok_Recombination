@@ -434,7 +434,7 @@ def build_violin_plot(data, title, outfile):
     
 
     # set plot title
-    ax.set_title(f'Pairwise identical RBM gene fractions by {title}')
+    ax.set_title(f'Cumulative identical RBM gene fractions by {title}')
     # change axis labels
     ax.set_xlabel('')
     ax.set_ylabel("Cumulative identical gene fraction", fontsize=12)
@@ -461,15 +461,15 @@ def build_violin_plot(data, title, outfile):
         ax.vlines(x=4.5, ymin=0, ymax=1, ls='--', lw=2, color='k')
         plt.subplots_adjust(left=0.12, right=0.98, top=0.95, bottom=0.24)
         txt1 = (
-            'sgv - same genomovar\n'
-            'dgv - different genomovar\n'
-            'dpg - different phylogroup\n'
-            'ssp - same species outside of phylogorup'
+            'A - same genomovar\n'
+            'B - different genomovar\n'
+            'C - different phylogroup\n'
+            'D - same species outside of phylogorup'
             )
 
         txt2 = (
-            'spg - same phylogroup outside of genomovar\n'
-            'dsp - different species'
+            'E - same phylogroup outside of genomovar\n'
+            'F - different species'
             )
 
         ax.annotate(
