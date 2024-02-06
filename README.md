@@ -355,8 +355,6 @@ python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Complete_Genome_Model_D
 
 *This model comes from [Population-Genome-Simulator](https://github.com/rotheconrad/Population-Genome-Simulator) which simulates a population of genomes by introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. Replace ${my_species_simulated_model} with a  file name prefix of your choosing. Users can generate their own sets of simulated genomes by tweaking various parameters. Then follow Option 03 for building a custom model.*
 
-See 01b_Building_Simulated_Genomes_Model.txt for detailed notes/methods used to build the model with simulated genomes. Code referenced in these notes can be found in 00c_Simulated_Genomes_Model directory.
-
 ```bash
 # Uncompress the Simulated_Neutral_Model_Data.tsv.zip file
 unzip Simulated_Neutral_Model_Data.tsv.zip
