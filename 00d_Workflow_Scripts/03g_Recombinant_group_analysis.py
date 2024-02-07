@@ -30,6 +30,14 @@ https://github.com/rotheconrad/F100_Prok_Recombination
 # COG one letter code descriptions
 # http://www.sbg.bio.ic.ac.uk/~phunkee/html/old/COG_classes.html
 
+* SPECIAL NOTE ABOUT SPECIFIC gene pangenome classification:
+The pangenome classification comes from MMSeqs2 clusters which filter more
+strictly than the BLAST+ based RBM. The result is that some genes labeled with
+the pangenome class of "Specific" based on singleton MMSeqs2 clusters do find
+a RBM gene partner in other genomes. In the cases we observed this would be
+because one gene of the RBM pair is about the half the length of other but with
+high sequence identity.
+
 -------------------------------------------
 Author :: Roth Conrad
 Email :: rotheconrad@gatech.edu
