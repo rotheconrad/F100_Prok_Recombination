@@ -300,6 +300,7 @@ def combine_input_data(mgenome, mgenes, RBM, pancats, repgenes, annos):
             rbm_matches = RBM.get(gene, [['-', 0, 0, 'x']])
             for rbmInfo in rbm_matches:
                 match_gene = rbmInfo[0]
+                if match_gene == '-': match_gene = '-_-_-'
                 match_contig = '_'.join(match_gene.split('_')[:-1])
                 match_genome = '_'.join(match_gene.split('_')[:-2])
                 REC = rbmInfo[1]
