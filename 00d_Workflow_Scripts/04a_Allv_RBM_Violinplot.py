@@ -97,6 +97,9 @@ Input files:
     - Full gene list - complete_gene_list.txt
     - Metadata tsv file with columns Genome, Genomovar, phylogroup, species
 
+    * to create complete_gene_list.txt:
+      'grep '>' 03a_all_CDS.fnn > 08_complete_gene_list.txt'
+
 Output files:
 
     - tsv data files
