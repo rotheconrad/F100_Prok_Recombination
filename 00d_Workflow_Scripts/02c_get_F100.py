@@ -128,7 +128,7 @@ def fastANI_visual_dist_plot(xs, title, outfile, stat):
     plt.close()
 
 
-def process_concatenated_rbm(infile, outpre):
+def process_concatenated_rbm(infile, outpre, rec):
     """ Reads the file does the work """
 
     #initialize dictionAAary to store data
@@ -153,21 +153,24 @@ def process_concatenated_rbm(infile, outpre):
 
     # open the output file
     with open(f"{outpre}_F100.tsv", 'w') as ofile:
-        header = "Genome 1\tGenome 2\tANI\tF100\tF99.5\tF99\n"
+        #header = "Genome 1\tGenome 2\tANI\tF100\tF99.5\tF99\n"
+        header = f"Genome 1\tGenome 2\tANI\tF{rec}\n"
         ofile.write(header)
         # read through data dict
         for gpair, values in data.items():
             # calculate metrics
             rbms = len(values)
             ANI = sum(values) / rbms
-            F100 = len([i for i in values if i >= 100]) / rbms
-            F995 = len([i for i in values if i >= 99.5]) / rbms
-            F990 = len([i for i in values if i >= 99]) / rbms
+            Frec = len([i for i in values if i >= rec]) / rbms
+            #F100 = len([i for i in values if i >= 100]) / rbms
+            #F995 = len([i for i in values if i >= 99.5]) / rbms
+            #F990 = len([i for i in values if i >= 99]) / rbms
             # write out the line
             genomes = gpair.split('-')
             genome1 = genomes[0]
             genome2 = genomes[1]
-            lineout = f'{genome1}\t{genome2}\t{ANI}\t{F100}\t{F995}\t{F990}\n'
+            #lineout = f'{genome1}\t{genome2}\t{ANI}\t{F100}\t{F995}\t{F990}\n'
+            lineout = f'{genome1}\t{genome2}\t{ANI}\t{Frec}\n'
             ofile.write(lineout)
             # store stats
             stats[gpair] = [ANI, F100, F995, F990]
@@ -204,6 +207,14 @@ def main():
         required=False,
         default=None
         )
+    parser.add_argument(
+        '-rec', '--recombination_cutoff',
+        help='(OPTIONAL) Specify recombination cutoff (default = 100.0).',
+        metavar='',
+        type=float,
+        default=100.0,
+        required=False
+        )
     args=vars(parser.parse_args())
 
     # Do what you came here to do:
@@ -213,9 +224,10 @@ def main():
     infile = args['input_file']
     outpre = args['output_file_prefix']
     plots = args['plot_histograms']
+    rec = args['recombination_cutoff']
 
     # run it
-    data, stats = process_concatenated_rbm(infile, outpre)
+    data, stats = process_concatenated_rbm(infile, outpre, rec)
 
     # build the plots
     if plots:
