@@ -173,7 +173,8 @@ def process_concatenated_rbm(infile, outpre, rec):
             lineout = f'{genome1}\t{genome2}\t{ANI}\t{Frec}\n'
             ofile.write(lineout)
             # store stats
-            stats[gpair] = [ANI, F100, F995, F990]
+            #stats[gpair] = [ANI, F100, F995, F990]
+            stats[gpair] = [ANI, Frec]
 
     return data, stats
 
