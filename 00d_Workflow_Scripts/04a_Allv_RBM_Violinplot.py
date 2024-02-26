@@ -237,8 +237,8 @@ def sort_gpairs(data1, md):
         # get metadata
         if g1 in md and g2 in md:
             md1, md2 = copy(md[g1]), copy(md[g2]) # get metadata
-            pg1, pg2 = md1[0], md2[0] # get phylogroup assignments
-            gv1, gv2 = md1[1], md2[1] # get genomovar assignments
+            gv1, gv2 = md1[0], md2[0] # get genomovar assignments
+            pg1, pg2 = md1[1], md2[1] # get phylogroup assignments
             sp1, sp2 = md1[2], md2[2] # get species
 
         # alphabetical sort group names to combine g1-g2 and g2-g1 combos
