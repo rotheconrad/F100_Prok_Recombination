@@ -133,10 +133,10 @@ def parse_metadata_file(metadata):
         for line in file:
             X = line.rstrip().split('\t')
             genome = X[0]
-            phylogroup = X[1]
-            genomovar = X[2]
+            genomovar = X[1]
+            phylogroup = X[2]
             species = X[3]
-            md[genome] = [phylogroup, genomovar, species]
+            md[genome] = [genomovar, phylogroup, species]
 
     return md
 
