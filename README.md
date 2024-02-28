@@ -22,6 +22,9 @@ The steps are left separately so the user can more easily follow the workflow, a
 	1. [Step 02: Compute Reciprocal Best Match Genes](#step-02-compute-reciprocal-best-match-genes)
 	1. [Step 03: Compute F<sub>100</sub> scores](#step-03-compute-f100-scores)
 	1. [Step 04: Compare User Genomes to GAM Models](#step-04-compare-user-genomes-to-gam-models)
+		1. [Option 01: Complete genomes model](#option-01-complete-genomes-model)
+		1. [Option 02: Simulated NEZR model](#option-02-simulated-nezr-model)
+		1. [Option 03: Custom models](#option-03-custom-models)
 	1. [Step 05: Identify Significant Outliers](#step-05-identify-significant-outliers)
 	1. [Step 06: F<sub>100</sub> score Clustered Heatmap](#step-06-f100-score-clustered-heatmap)
 	1. [Step 07: Identical gene fractions by groupings](#step-07-identical-gene-fractions-by-groupings)
@@ -334,26 +337,30 @@ Output:
       1) ${my_species}\_complete_model_sig-pairs.tsv
       2) ${my_species}\_complete_model_GAMplot.pdf
 
-#### Option 01: Complete genomes model (Subsampled model also available)
+#### Option 01: Complete genomes model
 
 *This model comes from 330 species with at least 10 complete genomes in the NCBI RefSeq database as of April 20, 2022. Replace ${my_species_complete_model} with a  file name prefix of your choosing.*
 
 See 01a_Building_Complete_Genomes_Model.txt for detailed notes/methods used to build the model with NCBI Complete genomes. Code referenced in these notes can be found in 00b_Complete_Genomes_Model directory.
 
-The subsampled model filters the complete genome set for species with n genome pairs above 95% ANI with n ≥ 1000 and it randomly downsamples species with ≥ 5000 genome pairs above 95% ANI to n = 5000. The effect is a wider 95% confidence.
+(Subsampled model also available) The subsampled model filters the complete genome set for species with n genome pairs above 95% ANI with n ≥ 1000 and it randomly downsamples species with ≥ 5000 genome pairs above 95% ANI to n = 5000. The effect is a wider 95% confidence.
 
 ```bash
 # Uncompress the Complete_Genome_Model_Data.tsv.zip file
 unzip Complete_Genome_Model_Data.tsv.zip
 # this input file is part of the git repository
 python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Complete_Genome_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species}_complete_model
+# Subsampled model - this input file is part of the git repository
+python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Subsampled_Genome_Model_Data.tsv -i2 ${my_species}_F100.tsv -o ${my_species}_complete_model
 ```
 
 ![Your data on top of the complete genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_complete_model_GAMplot.png)
 
-#### Option 02: Simulated Neutral model
+#### Option 02: Simulated NEZR model
 
-*This model comes from [Population-Genome-Simulator](https://github.com/rotheconrad/Population-Genome-Simulator) which simulates a population of genomes by introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. Replace ${my_species_simulated_model} with a  file name prefix of your choosing. Users can generate their own sets of simulated genomes by tweaking various parameters. Then follow Option 03 for building a custom model.*
+Neutral evolution zero recombination (NEZR) model comes from [Population-Genome-Simulator](https://github.com/rotheconrad/Population-Genome-Simulator) which simulates a population of genomes by introducing random single point mutations across genes to fit a gamma distribution of RBMs along an ANI gradient from 95%-100% ANI with a step size of 0.01 ANI and 10 genomes per step. These genomes are simulated without recombination or selection events and with neutral evolution (random distribution of single point mutations).
+
+*Replace ${my_species_simulated_model} with a  file name prefix of your choosing. Users can generate their own sets of simulated genomes by tweaking various parameters. Then follow Option 03 for building a custom model.*
 
 ```bash
 # Uncompress the Simulated_Neutral_Model_Data.tsv.zip file
@@ -364,7 +371,7 @@ python 00d_Workflow_Scripts/02d_f100_scatter_pyGAM.py -i Simulated_Neutral_Model
 
 ![Your data on top of the simulated neutral genomes model](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/my_species_simulated_model_GAMplot.png)
 
-#### Option 03: Custom model
+#### Option 03: Custom models
 
 *You can build the model using your species genomes and compare them to themselves, or build any other custom model from any set of genomes by repeating this pipeline with that set of genomes. Replace ${my_species_custom_model} with a  file name prefix of your choosing.*
 
