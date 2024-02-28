@@ -333,13 +333,13 @@ This step requires Python with Numpy, Pandas, Matplotlib, Seaborn, Datashader, a
 
 Input:
 
-	1.${my_species}\_F100.tsv from Step 02
-	1. One of the model tsv files from three options below.
+1. ${my_species}\_F100.tsv from Step 02
+1. One of the model tsv files from three options below.
 
 Output:
 
-      1. ${my_species}\_complete_model_sig-pairs.tsv
-      2. ${my_species}\_complete_model_GAMplot.pdf
+  1. ${my_species}\_complete_model_sig-pairs.tsv
+  1. ${my_species}\_complete_model_GAMplot.pdf
 
 #### Option 01: Complete genomes model
 
