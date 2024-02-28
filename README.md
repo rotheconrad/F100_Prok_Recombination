@@ -331,11 +331,13 @@ This step will create a PDF of your genomes on top of the models and write out a
 
 This step requires Python with Numpy, Pandas, Matplotlib, Seaborn, Datashader, and PyGAM packages.
 
-Input: ${my_species}\_F100.tsv from Step 02 and one of the three model tsv files from the options below.
+Input:
+	1.${my_species}\_F100.tsv from Step 02
+	1. One of the model tsv files from three options below.
 
 Output:
-      1) ${my_species}\_complete_model_sig-pairs.tsv
-      2) ${my_species}\_complete_model_GAMplot.pdf
+      1. ${my_species}\_complete_model_sig-pairs.tsv
+      2. ${my_species}\_complete_model_GAMplot.pdf
 
 #### Option 01: Complete genomes model
 
