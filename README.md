@@ -92,7 +92,7 @@ This workflow will yeild many intermediate files and several publication ready f
 
 # PART 01: Genome Preparation
 
-This workflow is intended for a collection of genomes belonging to the same species. Start with your genome files in fasta format in their own directory. We will refer to this directory as ${genomes_dir}.
+This workflow is intended for a collection of genomes belonging to the same species (ANI ≥ 95%) or to closely related species (ANI ≥ 85-90%). Start with your genome files in fasta format in their own directory. We will refer to this directory as the ${genomes_dir}.
 
 ### Step 01: Rename fasta deflines
 
