@@ -51,6 +51,7 @@ This workflow will yeild many intermediate files and several publication ready f
 1. DataTable: All vs All genome pair fastANI results
 1. Figure: Shared fraction vs ANI scatter plot
 1. Figure: ANI distance hierarchical clustered heatmap
+1. DataTable: Predicted Genomovars and Phylogroups (future)
 
 #### Part 02:
 1. Fasta: Predicted CDS gene sequences from Prodigal
