@@ -111,9 +111,13 @@ So with default settings the script will cut "ASM710v1" from filename "GCF_00000
 
 This step requires Python.
 
-Input: genome fasta files in ${my_genomes} directory
+Input:
 
-Output: overwrites genome fasta files with new names 
+1. genome fasta files in ${my_genomes} directory
+
+Output:
+
+1. overwrites genome fasta files with new names 
 
 To use the renaming script on all files in a directory with default setting:
 
@@ -148,9 +152,13 @@ To generate the fastANI plots, we want a single file with all vs. all genome pai
 
 This step requires fastANI.
 
-Input: genome fasta files in ${my_genomes} directory
+Input:
 
-Output: all vs. all fastANI tsv outfile file saved as fastANI_allV.ani
+1. genome fasta files in ${my_genomes} directory
+
+Output:
+
+1. all vs. all fastANI tsv outfile file saved as fastANI_allV.ani
 
 ```bash
 # make a list of your fasta files with the path
@@ -215,9 +223,14 @@ Prodigal has a habit of sometimes predicting very short genes and/or also very l
 
 This step requires Prodigal and Python with Numpy and Matplotlib packages.
 
-Input: Genomes fasta files
+Input:
 
-Output: CDS fasta files of nucleotide and amino acid sequence. Histogram gene length distribution PDFs.
+1. Genomes fasta files
+
+Output:
+
+1. CDS fasta files of nucleotide and amino acid sequence.
+1. Histogram gene length distribution PDFs.
 
 ```bash
 # make new directory for gene CDS fastas we'll refer to this as ${genes_dir}
@@ -243,9 +256,13 @@ In this step we calculate all vs. all genomes reciprocal best match (RBM) genes 
 
 This step requires Python and BLAST+.
 
-Input: CDS fasta files of nucleotide sequences
+Input:
 
-Output: Tabular blast table with filtered RBMs (RBMs_alV.rbm)
+1. CDS fasta files of nucleotide sequences
+
+Output:
+
+1. Tabular blast table with filtered RBMs (RBMs_alV.rbm)
 
 ```bash
 # make new directory for reciprocal best match results we'll refer to this as ${rbm_dir}
@@ -290,9 +307,13 @@ This step calculates the F100 for each genome pair using the outputs from 02b_ge
 
 This step requires Python with Matplotlib and Seaborn packages.
 
-Input: RBMs_alV.rbm
+Input:
 
-Output: ${my_species}\_F100.tsv
+1. RBMs_alV.rbm
+
+Output:
+
+1. ${my_species}\_F100.tsv
 
 ```bash
 # Calculate F100 scores and plot RBM sequence similarity histograms
@@ -338,8 +359,8 @@ Input:
 
 Output:
 
-  1. ${my_species}\_complete_model_sig-pairs.tsv
-  1. ${my_species}\_complete_model_GAMplot.pdf
+1. ${my_species}\_complete_model_sig-pairs.tsv
+1. ${my_species}\_complete_model_GAMplot.pdf
 
 #### Option 01: Complete genomes model
 
