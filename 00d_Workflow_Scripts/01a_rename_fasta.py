@@ -2,24 +2,65 @@
 
 '''Renames fasta deflines sequentially using the filename.
 
+This script renames the deflines of fasta files with a genome prefix
+and the number of the contig in sequential order.
+
+This script renames the file inplace ie. it overwrites the orginal file.
+
+This script has three modes:
+
+1) Default mode:
+
+Renames all fasta deflines with the file name as the genome prefix.
+Any underscores in the file name are replaced with a period.
+
+So My_genome_file.fasta will get renamed to:
+
+>My.genome.file_1
+AACGAAGTTGCTGACGGCGGAAGCGACATAGGGATCTGTCAGTTGTCATTCGCGAAAAACATCCGTCCCCGA
+>My.genome.file_2
+GAAGCCTAGGGGAACAGGTTAGTTTGAGTAGCTTAAGAATGTAAATTCTGGGATTATAGTGTAGTAATCTCT
+>My.genome.file_3
+AATTAACGGTGACGGTTTTAAGACAGGTCTTCGCAAAATCAAGCGGGGTGATTTCAACAGATTTTGCTGATG
+
+#######################
+
+2) NCBI mode:
+
 Genomes downloaded from NCBI have a typical naming scheme like this:
 example filename: GCF_000007105.1_ASM710v1_genomic.fna
 
-The default behavior of this script is cut the second underscore position
-("_") and use it as a prefix for renaming the fasta deflines in numeric
-consecutive order.
+The shortest unique description for these files is the "ASM710v1" at the
+third underscore position. This mode cuts the third underscore position
+and uses it as the genome prefix.
 
-So for a fasta file with three contigs or chromosomes the script cuts
-"ASM710v1" from filename and renames fasta deflines as:
+To use this mode set -ncbi True.
+
+So GCF_000007105.1_ASM710v1_genomic.fna fasta will get renamed to:
 
 >ASM710v1_1
+AACGAAGTTGCTGACGGCGGAAGCGACATAGGGATCTGTCAGTTGTCATTCGCGAAAAACATCCGTCCCCGA
 >ASM710v1_2
+GAAGCCTAGGGGAACAGGTTAGTTTGAGTAGCTTAAGAATGTAAATTCTGGGATTATAGTGTAGTAATCTCT
 >ASM710v1_n
+AATTAACGGTGACGGTTTTAAGACAGGTCTTCGCAAAATCAAGCGGGGTGATTTCAACAGATTTTGCTGATG
 
-Alternatively, the user can input their own desired prefix.
+#######################
 
-This script effectively renames the file inplace.
-eg. Writes temporary file while renaming and then replaces the original.
+3) User custom mode:
+
+The user can input their own desired genome prefix using the -user flag.
+
+So My_genome_file.fasta using -user myNameScheme will get renamed to:
+
+>myNameScheme_1
+AACGAAGTTGCTGACGGCGGAAGCGACATAGGGATCTGTCAGTTGTCATTCGCGAAAAACATCCGTCCCCGA
+>myNameScheme_2
+GAAGCCTAGGGGAACAGGTTAGTTTGAGTAGCTTAAGAATGTAAATTCTGGGATTATAGTGTAGTAATCTCT
+>myNameScheme_n
+AATTAACGGTGACGGTTTTAAGACAGGTCTTCGCAAAATCAAGCGGGGTGATTTCAACAGATTTTGCTGATG
+
+* ATTENTION!! DO NOT USE UNDERSCORES IN THE USER DEFINED GENOME PREFIX
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -75,7 +116,15 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-p', '--prefix',
+        '-ncbi', '--NCBI_mode',
+        help='(OPTIONAL) Set -ncbi True to activate NCBI mode!',
+        metavar='',
+        type=str,
+        required=False,
+        default=None
+        )
+    parser.add_argument(
+        '-user', '--user_prefix',
         help='(OPTIONAL) Please specify a naming prefix!',
         metavar='',
         type=str,
@@ -86,12 +135,18 @@ def main():
 
     # define input parameters
     infile = args['input_file']
-    prefix = args['prefix']
+    ncbi_mode = args['NCBI_mode']
+    user_prefix = args['user_prefix']
 
     print(f'\n\nRenaming fasta file deflines ...')
-    # check for prefix
-    if not prefix:
+    # check mode
+    if user_prefix:
+        prefix = user_prefix
+    elif ncbi_mode:
         prefix = infile.split('/')[-1].split('_')[2]
+    else:
+        prefix = infile.split('/')[-1].replace("_", ".")
+        
     # rename the fasta deflines
     _ = Fasta_rename_sequences(infile, prefix)
 
