@@ -216,6 +216,14 @@ def main():
         type=str,
         required=True
         )
+    parser.add_argument(
+        '-auto', '--auto_mode',
+        help='(OPTIONAL) Set -auto True for F100_main.py automation!',
+        metavar='',
+        type=str,
+        required=False,
+        default=None
+        )
     args=vars(parser.parse_args())
 
     # Do what you came here to do:
@@ -225,6 +233,7 @@ def main():
     g1 = args['gene_fasta_one']
     g2 = args['gene_fasta_two']
     out = args['output_file']
+    auto = args['auto_mode']
 
     n1 = g1.split('/')[-1].split('.')[0]
     n2 = g2.split('/')[-1].split('.')[0]
@@ -234,9 +243,11 @@ def main():
     _ = subprocess.run(f'mkdir {rtmp}', shell=True)
 
     # first blast
-    print(f'\nBuidling blast database for {g1} ...')
-    db1_str = f'makeblastdb -in {g1} -dbtype nucl -out {rtmp}/db1'
-    db1 = subprocess.run(db1_str, shell=True)
+    if not auto:
+        print(f'\nBuidling blast database for {g1} ...')
+        db1_str = f'makeblastdb -in {g1} -dbtype nucl -out {rtmp}/db1'
+        db1 = subprocess.run(db1_str, shell=True)
+
     print(f'\nRunning blast with {g2} as query against {g1} ...')
     b1_str = (
         f"blastn -max_target_seqs 10 -db {rtmp}/db1 -query {g2} -out {rtmp}/b1.blast "
@@ -248,9 +259,11 @@ def main():
     b1 = parse_tab_blast(f'{rtmp}/b1.blast')
 
     # second blast
-    print(f'\nBuidling blast database for {g2} ...')
-    db2_str = f'makeblastdb -in {g2} -dbtype nucl -out {rtmp}/db2'
-    db2 = subprocess.run(db2_str, shell=True)
+    if not auto:
+        print(f'\nBuidling blast database for {g2} ...')
+        db2_str = f'makeblastdb -in {g2} -dbtype nucl -out {rtmp}/db2'
+        db2 = subprocess.run(db2_str, shell=True)
+
     print(f'\nRunning blast with {g1} as query against {g2} ...')
     b2_str = (
         f"blastn -max_target_seqs 10 -db {rtmp}/db2 -query {g1} -out {rtmp}/b2.blast "
