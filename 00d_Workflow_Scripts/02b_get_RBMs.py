@@ -25,7 +25,6 @@ All rights reserved
 '''
 
 import argparse, subprocess
-from pathlib import Path
 
 
 def best_hits(data, query, bitscore, line):
@@ -239,18 +238,34 @@ def main():
     n2 = g2.split('/')[-1].split('.')[0]
     rtmp = f'{n1}-{n2}'
     # create temp directory
-    #Path("rtmp").mkdir(parents=True, exist_ok=True)
     _ = subprocess.run(f'mkdir {rtmp}', shell=True)
 
-    # first blast
+    ######
+
+    # if running script in solo mode make blast databases for each genome    
     if not auto:
         print(f'\nBuidling blast database for {g1} ...')
         db1_str = f'makeblastdb -in {g1} -dbtype nucl -out {rtmp}/db1'
         db1 = subprocess.run(db1_str, shell=True)
+        db1_path = f'{rtmp}/db1'
 
+        print(f'\nBuidling blast database for {g2} ...')
+        db2_str = f'makeblastdb -in {g2} -dbtype nucl -out {rtmp}/db2'
+        db2 = subprocess.run(db2_str, shell=True)
+        db2_path = f'{rtmp}/db2'
+
+    # if running script with Borja's F100_Prok_Recomb_auto code
+    # the databases are already built in the genome directory
+    if auto:
+        db1_path = g1
+        db2_path = g2
+
+    ######
+
+    # first blast
     print(f'\nRunning blast with {g2} as query against {g1} ...')
     b1_str = (
-        f"blastn -max_target_seqs 10 -db {rtmp}/db1 -query {g2} -out {rtmp}/b1.blast "
+        f"blastn -max_target_seqs 10 -db {db1_path} -query {g2} -out {rtmp}/b1.blast "
         f"-subject_besthit -outfmt '6 qseqid sseqid pident length mismatch "
         f"gapopen qstart qend sstart send evalue bitscore qlen slen'"
         )
@@ -258,21 +273,20 @@ def main():
     print(f'\nParsing 1st blast result to dictionary ...')
     b1 = parse_tab_blast(f'{rtmp}/b1.blast')
 
-    # second blast
-    if not auto:
-        print(f'\nBuidling blast database for {g2} ...')
-        db2_str = f'makeblastdb -in {g2} -dbtype nucl -out {rtmp}/db2'
-        db2 = subprocess.run(db2_str, shell=True)
+    ######
 
+    # second blast
     print(f'\nRunning blast with {g1} as query against {g2} ...')
     b2_str = (
-        f"blastn -max_target_seqs 10 -db {rtmp}/db2 -query {g1} -out {rtmp}/b2.blast "
+        f"blastn -max_target_seqs 10 -db {db2_path} -query {g1} -out {rtmp}/b2.blast "
         f"-subject_besthit -outfmt '6 qseqid sseqid pident length mismatch "
         f"gapopen qstart qend sstart send evalue bitscore qlen slen'"
         )
     blast2 = subprocess.run(b2_str, shell=True)
     print(f'\nParsing 2nd blast result to dictionary ...')
     b2 = parse_tab_blast(f'{rtmp}/b2.blast')
+
+    ######
 
     # read in the fasta sequences
     print(f'\nComputing reciprocal best matches ...')
