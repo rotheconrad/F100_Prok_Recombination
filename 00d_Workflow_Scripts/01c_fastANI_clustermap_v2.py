@@ -421,7 +421,7 @@ def main():
     if no_meta:
         # create the plot without meta data colors
         metadf, cdict = pd.DataFrame(), pd.DataFrame()
-        _ = plot_clustred_heatmap(df, outpre, cmap, metadf, cdict)
+        _ = plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max)
 
     elif metadata and metacolors:
         cdict = parse_colors(metacolors)
