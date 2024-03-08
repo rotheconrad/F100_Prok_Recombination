@@ -459,18 +459,29 @@ def get_lw_xlabsize(ncat):
 def build_violin_plot(data, title, outfile):
     # simple bar plot for data
 
-    labels = data.keys()
-    values = data.values()
+    labels = list(data.keys())
+    values = list(data.values())
 
     x, q1s, mds, q3s = [], [], [], []
 
     for i, d in enumerate(values):
         x.append(i+1)
-        q1, md, q3 = np.percentile(d, [25, 50, 75])
+        if len(d) >= 3:
+            q1, md, q3 = np.percentile(d, [25, 50, 75])
+        elif len(d) > 0:
+            print(f'\n\n\t\tCAUTION: {labels[i]} has < 3 data points.\n\n')
+            q1, md, q3 = np.mean(d), np.mean(d), np.mean(d)
+        else:
+            print(f'\n\n\t\tCAUTION: {labels[i]} has 0 data points.\n\n')
+            q1, md, q3 = 0, 0, 0
+            values[i].append(0)
+
         q1s.append(q1)
         mds.append(md)
         q3s.append(q3)
 
+    if sum(mds) == 0:
+        print((f'\n\n\t\tERROR: Not enough genomes per group to compare.\n\n'))
 
     # add inter quartile range boxplot bar
     # scale line width with number of x-axis categories
@@ -695,3 +706,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
