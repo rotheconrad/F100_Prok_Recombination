@@ -337,6 +337,15 @@ def plot_clustred_heatmap(
             cout.write(f'{meta}\t{color}\n')
 
     g.cax.set_xlabel('ANI (%)', rotation=0, labelpad=10, fontsize=12)
+    # remove labels and tick marks
+    g.ax_heatmap.set_xlabel('')
+    g.ax_heatmap.set_ylabel('')
+    g.ax_heatmap.set_xticklabels([])
+    g.ax_heatmap.set_yticklabels([])
+    # If you want to also remove the ticks
+    g.ax_heatmap.tick_params(axis='x', which='both', length=0)
+    g.ax_heatmap.tick_params(axis='y', which='both', length=0)
+    # write file
     g.savefig(f'{outpre}_clustermap.pdf')
     plt.close()
 
