@@ -78,7 +78,7 @@ from scipy.stats import gaussian_kde
 from scipy.signal import find_peaks
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.cluster.hierarchy import fclusterdata
-from scipy.spatial.distance import squareform
+from scipy.spatial.distance import pdist, squareform
 
 def parse_ANI_file(infile, ani_min, ani_max):
 
@@ -98,7 +98,7 @@ def parse_ANI_file(infile, ani_min, ani_max):
             g1 = X[0].split('/')[-1].split('.')[0]
             g2 = X[1].split('/')[-1].split('.')[0]
             # get ANI
-            ani = float(X[2])
+            ani = round(float(X[2]), 2)
             # get second genome length (total kmers)
             g2size = int(X[4])
             # filter min and max ANI values
@@ -180,16 +180,25 @@ def predict_clusters(df, ani_thresholds, metric, method):
     cdict = {}
 
     genomes = df.columns.tolist()
-    # convert ANI threshold to distance threshold
-    distance_thresholds = [round(100 - i, 2) for i in sorted(ani_thresholds)]
-    #distance_thresholds = ani_thresholds
+    # convert ANI and thresholds to ANI distance
+    df = (100-df)/100
+    distance_thresholds = [(100 - i)/100 for i in sorted(ani_thresholds)]
+
+    # convert to condensed matrix
+    # for some reason the condensed matrix gives (triangle) gives different
+    # results than the uncondensed matrix (square)
+    # squareform converts between condensed and uncondensed
+    cond_matrix = squareform(df.to_numpy())
 
     for n, d in enumerate(distance_thresholds):
-        label = f'clade-{n} ({d}% ANI)'
-        clusters = fclusterdata(
-                            X=df, t=d, criterion='distance',
-                            metric=metric, method=method
-                            )
+        label = f'clade-{n} ({sorted(ani_thresholds)[n]}% ANI; t={d})'
+        
+        Z = linkage(cond_matrix, metric=metric, method=method)
+        clusters = fcluster(Z=Z, t=d, criterion='distance')
+        #clusters = fclusterdata(
+                            #X=df, t=d, criterion='distance',
+                            #metric=metric, method=method
+                            #)
         named = [f'c{n:01}-{i:03}' for i in clusters]
         metadf[label] = named
 
@@ -197,9 +206,12 @@ def predict_clusters(df, ani_thresholds, metric, method):
     metadf = pd.DataFrame(metadf, index=genomes)
 
     # populate cdict with color for each unique metadf value
+    count = 0
     for m in metadf.columns:
+        count += 1
         unique_clusters = sorted(metadf[m].unique())
-        colors = sns.color_palette("hls", len(unique_clusters)).as_hex()
+        colors = sns.color_palette("Paired", len(unique_clusters)).as_hex()
+        if count % 2 == 0: colors.reverse()
         for i,u in enumerate(unique_clusters):
             cdict[u] = colors[i]
 
@@ -224,6 +236,8 @@ def parse_colors(metacolors):
 
 def custom_cmap(ani_min, ani_max):
 
+    '''
+    # two colors per 1% ANI (e.g. light to dark)
     ani_range = int(np.ceil(ani_max) - np.floor(ani_min) + 1) * 2
 
     # Read these as colors per whole ANI value
@@ -236,12 +250,29 @@ def custom_cmap(ani_min, ani_max):
               '#ec7014', '#ffeda0', '#3f007d', '#9e9ac8',  '#01665e', '#c7eae5',
               '#c51b7d', '#fde0ef', '#8c510a', '#f6e8c3', '#d9d9d9', '#252525'
               ]
+
     cmap = sns.blend_palette(reversed(colors[:ani_range-1]), as_cmap=True)
+    '''
+
+    # one color per 1% ANI range
+    ani_range = int(np.ceil(ani_max) - np.floor(ani_min) + 1)
+
+    # Read these as colors per whole ANI value
+    # eg: [100 red, 99 orange, 98 yellow, 97 green, ]
+
+    colors = [
+              '#e41a1c', '#ff7f00', '#ffff33', '#006d2c', '#80cdc1',
+              '#377eb8', '#e78ac3', '#984ea3', '#bf812d', '#bababa'
+              ]
+
+    cmap = sns.blend_palette(reversed(colors[:ani_range]), as_cmap=True)
 
     return cmap
 
 
-def plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max):
+def plot_clustred_heatmap(
+            df, outpre, cmap, metadf, cdict, ani_min, ani_max, metric, method
+            ):
 
     # build the plot with metadata
     if not metadf.empty:
@@ -275,7 +306,8 @@ def plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max):
                         xticklabels=True,
                         yticklabels=True,
                         col_colors=colordf,
-                        vmin=ani_min, vmax=ani_max
+                        vmin=ani_min, vmax=ani_max,
+                        metric=metric, method=method
                         )
 
 
@@ -285,7 +317,8 @@ def plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max):
                         df, figsize=(16,9), cmap=cmap,
                         xticklabels=True,
                         yticklabels=True,
-                        vmin=ani_min, vmax=ani_max
+                        vmin=ani_min, vmax=ani_max,
+                        metric=metric, method=method
                         )
 
     # reorder the distance matrix and write to file
@@ -381,11 +414,11 @@ def main():
         )
     parser.add_argument(
         '-metric', '--cluster_metric',
-        help='Cluster metric (default: correlation)',
+        help='Cluster metric (default: euclidean)',
         metavar=':',
         type=str,
         required=False,
-        default='correlation'
+        default='euclidean'
         )
     parser.add_argument(
         '-method', '--cluster_method',
@@ -421,7 +454,9 @@ def main():
     if no_meta:
         # create the plot without meta data colors
         metadf, cdict = pd.DataFrame(), pd.DataFrame()
-        _ = plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max)
+        _ = plot_clustred_heatmap(
+            df, outpre, cmap, metadf, cdict, ani_min, ani_max, metric, method
+            )
 
     elif metadata and metacolors:
         cdict = parse_colors(metacolors)
@@ -431,7 +466,9 @@ def main():
         df = df[df.index.isin(metadf.index)]
         # select only columns in metadf
         df = df[metadf.index.tolist()]
-        _ = plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max)
+        _ = plot_clustred_heatmap(
+            df, outpre, cmap, metadf, cdict, ani_min, ani_max, metric, method
+            )
 
     elif metadata:
         print('\n\nBoth meta data and meta colors are required to use them!')
@@ -443,14 +480,18 @@ def main():
         # run clustering algo on user defined values
         metadf, cdict = predict_clusters(df, user_clusters, metric, method)
 
-        _ = plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max)
+        _ = plot_clustred_heatmap(
+            df, outpre, cmap, metadf, cdict, ani_min, ani_max, metric, method
+            )
 
     else:
         # default case. find_peaks, get local minimums, predict clusters, plot
         predicted_clusters = get_valleys(ani_array, outpre)
         metadf, cdict = predict_clusters(df, predicted_clusters, metric, method)
 
-        _ = plot_clustred_heatmap(df, outpre, cmap, metadf, cdict, ani_min, ani_max)
+        _ = plot_clustred_heatmap(
+            df, outpre, cmap, metadf, cdict, ani_min, ani_max, metric, method
+            )
 
     print('\n\nComplete success space cadet! Hold on to your boots.\n\n')
 
