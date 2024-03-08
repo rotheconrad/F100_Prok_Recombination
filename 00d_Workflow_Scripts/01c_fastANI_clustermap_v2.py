@@ -182,7 +182,8 @@ def predict_clusters(df, ani_thresholds, metric, method):
     genomes = df.columns.tolist()
     # convert ANI and thresholds to ANI distance
     df = (100-df)/100
-    distance_thresholds = [(100 - i)/100 for i in sorted(ani_thresholds)]
+    sorted_threshold = sorted(ani_thresholds)
+    distance_thresholds = [round((100 - i)/100, 4) for i in sorted_threshold]
 
     # convert to condensed matrix
     # for some reason the condensed matrix gives (triangle) gives different
@@ -191,7 +192,7 @@ def predict_clusters(df, ani_thresholds, metric, method):
     cond_matrix = squareform(df.to_numpy())
 
     for n, d in enumerate(distance_thresholds):
-        label = f'clade-{n} ({sorted(ani_thresholds)[n]}% ANI; t={d})'
+        label = f'clade-{n} ({sorted_threshold[n]}% ANI; t={d})'
         
         Z = linkage(cond_matrix, metric=metric, method=method)
         clusters = fcluster(Z=Z, t=d, criterion='distance')
