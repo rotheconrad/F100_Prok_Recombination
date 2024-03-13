@@ -49,11 +49,11 @@ For option 3, the user defined metadata requires the following two files:
 * NOTE: The color ranges for the heatmap accommodate to 90% ANI difference
         The code will need modification for more diverse datasets.
 
-To set different cluster method choose from:
+To set different cluster method (default: average) choose from:
     single, complete, average, weighted, centroid, median, ward
     *See webpage/docs for scipy.cluster.hierarchy.linkage for more info
 
-To set different cluster metrics choose from:
+To set different cluster metrics (default: euclidean) choose from:
     euclidean, seuclidean, correlation, hamming, jaccard, braycurtis
     *See webpage/docs for scipy.spatial.distance.pdist for additional 
      options and more info
@@ -62,9 +62,9 @@ To set different cluster metrics choose from:
 Author :: Roth Conrad w/ thanks to Dorian Feistel
 Email :: rotheconrad@gatech.edu
 GitHub :: https://github.com/rotheconrad
-Date Created :: Feb 2023
+Date Created :: March 2024
 License :: GNU GPLv3
-Copyright 2023 Roth Conrad
+Copyright 2024 Roth Conrad
 All rights reserved
 -------------------------------------------
 '''
