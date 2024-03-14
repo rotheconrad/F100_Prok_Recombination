@@ -49,11 +49,11 @@ For option 3, the user defined metadata requires the following two files:
 * NOTE: The color ranges for the heatmap accommodate to 90% ANI difference
         The code will need modification for more diverse datasets.
 
-To set different cluster method (default: average) choose from:
+To set different cluster method choose from:
     single, complete, average, weighted, centroid, median, ward
     *See webpage/docs for scipy.cluster.hierarchy.linkage for more info
 
-To set different cluster metrics (default: euclidean) choose from:
+To set different cluster metrics choose from:
     euclidean, seuclidean, correlation, hamming, jaccard, braycurtis
     *See webpage/docs for scipy.spatial.distance.pdist for additional 
      options and more info
@@ -62,9 +62,9 @@ To set different cluster metrics (default: euclidean) choose from:
 Author :: Roth Conrad w/ thanks to Dorian Feistel
 Email :: rotheconrad@gatech.edu
 GitHub :: https://github.com/rotheconrad
-Date Created :: March 2024
+Date Created :: Feb 2023
 License :: GNU GPLv3
-Copyright 2024 Roth Conrad
+Copyright 2023 Roth Conrad
 All rights reserved
 -------------------------------------------
 '''
@@ -282,7 +282,7 @@ def plot_clustred_heatmap(
             labels = metadf[meta].unique()
 
             # create columns for larger metadata sets
-            cols = np.ceil(len(labels)/20)
+            cols = int(np.ceil(len(labels)/20))
 
             fig, ax = plt.subplots(figsize=(cols*4,10))
             ax.xaxis.set_visible(False)

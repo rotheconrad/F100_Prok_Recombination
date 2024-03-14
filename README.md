@@ -1210,7 +1210,7 @@ PLACEHOLDER FOR MANUSCRIPT CITATION AND LINK
 # Future Improvements
 
 1. Add support for other All vs. All ANI formats and tools (skani, sourmash, etc).
-1. More efficient All vs. All RBM with Diamond or other.
+1. More efficient All vs. All RBM sequence alignment for nucleotides.
 1. Filter MMSeqs2 Gene clusters for improved true ortholog assignments.
 1. Compute number of unique alleles for each gene cluster.
 1. Compute pN/pS for each gene cluster.
