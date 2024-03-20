@@ -166,6 +166,8 @@ for f in ${genomes_dir}/*; do echo $f; done > genome_file_list.txt
 fastANI --ql genome_file_list.txt --rl genome_file_list.txt -o fastANI_allV.ani
 ```
 
+([Return to Table of Contents](#table-of-contents))
+
 ### Step 03: Inspect genome similarity
 
 (OPTIONAL) Check shared genome fraction vs ANI of your genomes using fastANI.
