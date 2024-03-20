@@ -14,8 +14,9 @@ The steps are left separately so the user can more easily follow the workflow, a
 
 1. [Part 01: Genome Preparation](#part-01-genome-preparation)
 	1. [Step 01: Rename fasta deflines](#step-01-rename-fasta-deflines)
-	1. [Step 02: Inspect genome similarity](#step-02-inspect-genome-similarity)
-	1. [Step 03: Assign clades, phylogroups, and genomovars](#step-03-assign-clades-phylogroups-and-genomovars)
+	1. [Step 02: All vs. all fastANI](#step-02-all-vs-all-fastANI)
+	1. [Step 03: Inspect genome similarity](#step-02-inspect-genome-similarity)
+	1. [Step 04: Assign clades, phylogroups, and genomovars](#step-03-assign-clades-phylogroups-and-genomovars)
 
 1. [Part 02: Genome Analysis](#part-02-genome-analysis)
 	1. [Step 01: Predict genes with Prodigal](#step-01-predict-genes-with-Prodigal)
@@ -50,8 +51,8 @@ This workflow will yeild many intermediate files and several publication ready f
 #### Part 01:
 1. DataTable: All vs All genome pair fastANI results
 1. Figure: Shared fraction vs ANI scatter plot
-1. Figure: ANI distance hierarchical clustered heatmap
-1. DataTable: Predicted Genomovars and Phylogroups (future)
+1. Figure: HeatSeq® ANI based hierarchical clustered heatmap
+1. DataTable: HeatSeq® Predicted Genomovars and Phylogroups
 
 #### Part 02:
 1. Fasta: Predicted CDS gene sequences from Prodigal
@@ -143,11 +144,7 @@ So with -p my_genome the script will output:
 
 ([Return to Table of Contents](#table-of-contents))
 
-### Step 02: Inspect genome similarity
-
-(OPTIONAL) Check shared genome fraction vs ANI of your genomes using fastANI.
-
-It is a good idea to know how similar your genomes are to each other. Sometimes you may split your genomes into two or more groups, or remove a few outlier genomes based on their ANI distribution. This can be done manually as needed by removing the desired fasta files from ${genomes_dir} or partition files into separate directories after reviewing the fastANI plot(s).
+### Step 02: All vs. all fastANI
 
 To generate the fastANI plots, we want a single file with all vs. all genome pair results from fastANI. There are many ways to achieve this depending on how many genomes you have and if you're running fastANI locally or on a cluster. Here is a simple example using the many to many option (consult the fastANI documentation and/or your clusters best practices for other options - I frequently use the one to many mode and distribute the work across multiple instances and node. At the end I simply concatenate the outputs for the same results as the many to many mode).
 
@@ -169,6 +166,14 @@ for f in ${genomes_dir}/*; do echo $f; done > genome_file_list.txt
 fastANI --ql genome_file_list.txt --rl genome_file_list.txt -o fastANI_allV.ani
 ```
 
+### Step 03: Inspect genome similarity
+
+(OPTIONAL) Check shared genome fraction vs ANI of your genomes using fastANI.
+
+The shared fraction vs. ANI plot can be used to look for values between genome clusters such as around 99.2-99.8% ANI for the genomovar gap or below for phylogroup or clade values. 
+
+It is a good idea to know how similar your genomes are to each other. Sometimes you may split your genomes into two or more groups, or remove a few outlier genomes based on their ANI distribution. This can be done manually as needed by removing the desired fasta files from ${genomes_dir} or partition files into separate directories after reviewing the fastANI plot(s).
+
 Once you have the all vs. all fastANI output, here is a script to easily create a scatter plot of the results. The shared genome fraction is the number of shared fragments between two genomes divided by the total number of fragments from the larger genome as determined by fastANI. ANI is the genome-aggregate average nucleotide identity as determined by fastANI. Species-like genome clusters are generally ≥95% ANI between them but it may be interesting to investigate the differences between groupings of genomes you find at any ANI level.
 
 ```bash
@@ -179,6 +184,28 @@ python 00d_Workflow_Scripts/01b_fastANI_scatter_pyGAM.py -i fastANI_allV.ani -s 
 ```
 
 ![Shared fraction vs. ANI](https://github.com/rotheconrad/F100_Prok_Recombination/blob/main/00a_example_figures/fastANI_allV_sharedfrac_ANI.png)
+
+([Return to Table of Contents](#table-of-contents))
+
+### Step 04: Assign clades, phylogroups, and genomovars
+
+A Note on preparing clade, phylogroup, genomovar assignments.
+
+**NEED TO UPDATE THIS SECTION TO USE HeatSeq® now that that code and repo is functional.**
+
+https://github.com/rotheconrad/HeatSeq
+
+**Update the figure, data table and metadata options.**
+
+**Double check pipeline downstream to ensure consistent use of metadata and colors. A few different options arose during the development stage**
+
+Many species already have conventions for grouping genomes such as sequencing types or phylogroups and we recommend incorporating this data when possible. 
+
+Prepare a metadata file with the genome name in column 1 and additional metadata values in the remaining columns. Any category may be used such as location, sample, niche, sequence type, phylogroup, clade, and genomovar.
+
+The Heatmap figure with metadata is useful to determine genomes and genome groups of interest to investigate in more detail in step 3.
+
+INCLUDE METADATA FILE EXAMPLE TABLE HERE
 
 And here is another script to easily create a hierarchical clustered heatmap of the results. A square ANI distance (100 - ANI) matrix is generated from the all vs. all fastANI output. The result shows which genomes are the most similar to each other. (future addition: clustering algorithm to automatically partition the distance matrix into clusters)
 
@@ -193,22 +220,6 @@ python 00d_Workflow_Scripts/01c_fastANI_clustermap.py -i fastANI_allV.ani -o fas
 
 
 As you can see in the figures above, there is a small cluster of genomes between 3-5% different than the other genomes. In other words we have two fairly distinct clusters. This indicates we may want to split them into two separate analyses. For now, we will leave them together.
-
-([Return to Table of Contents](#table-of-contents))
-
-### Step 03: Assign clades, phylogroups, and genomovars
-
-A Note on preparing clade, phylogroup, genomovar assignments.
-
-The shared fraction vs. ANI plot can be used to look for values between genome clusters such as around 99.2-99.8% ANI for the genomovar gap or below for phylogroup or clade values. Tools such as MiGA Clades or dREP can be used to sort genomes into clades and genomovars, or the ANI Distance Clustered Heatmap Genomovar version can be used to make manual assignments.
-
-Additional, many well studied species already phylogroup or sequencing typing tools such clermontyping etc. that can be used to assign genomes to groups.
-
-Prepare a metadata file with the genome name in column 1 and additional metadata values in the remaining columns. Any category may be used such as location, sample, niche, sequence type, phylogroup, clade, and genomovar.
-
-The Heatmap figure with metadata is useful to determine genomes and genome groups of interest to investigate in more detail in step 3.
-
-INCLUDE METADATA FILE EXAMPLE TABLE HERE
 
 ([Return to Table of Contents](#table-of-contents))
 
