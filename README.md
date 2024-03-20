@@ -15,8 +15,8 @@ The steps are left separately so the user can more easily follow the workflow, a
 1. [Part 01: Genome Preparation](#part-01-genome-preparation)
 	1. [Step 01: Rename fasta deflines](#step-01-rename-fasta-deflines)
 	1. [Step 02: All vs. all fastANI](#step-02-all-vs-all-fastANI)
-	1. [Step 03: Inspect genome similarity](#step-02-inspect-genome-similarity)
-	1. [Step 04: Assign clades, phylogroups, and genomovars](#step-03-assign-clades-phylogroups-and-genomovars)
+	1. [Step 03: Inspect genome similarity](#step-03-inspect-genome-similarity)
+	1. [Step 04: Assign clades, phylogroups, and genomovars](#step-04-assign-clades-phylogroups-and-genomovars)
 
 1. [Part 02: Genome Analysis](#part-02-genome-analysis)
 	1. [Step 01: Predict genes with Prodigal](#step-01-predict-genes-with-Prodigal)
