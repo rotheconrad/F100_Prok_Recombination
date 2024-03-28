@@ -145,7 +145,7 @@ def main():
     elif ncbi_mode:
         prefix = infile.split('/')[-1].split('_')[2]
     else:
-        prefix = infile.split('/')[-1].replace("_", ".")
+        prefix = infile.split('/')[-1].split('.')[0].replace("_", ".")
         
     # rename the fasta deflines
     _ = Fasta_rename_sequences(infile, prefix)
