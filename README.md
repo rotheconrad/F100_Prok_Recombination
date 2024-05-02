@@ -1225,5 +1225,6 @@ PLACEHOLDER FOR MANUSCRIPT CITATION AND LINK
 1. Add support for other All vs. All ANI formats and tools (skani, sourmash, etc).
 1. More efficient All vs. All RBM sequence alignment for nucleotides.
 1. Filter MMSeqs2 Gene clusters for improved true ortholog assignments.
+1. Optimize RAM usage for 04b_pmrm_analyses_v2.py.
 1. Compute number of unique alleles for each gene cluster.
 1. Compute pN/pS for each gene cluster.
