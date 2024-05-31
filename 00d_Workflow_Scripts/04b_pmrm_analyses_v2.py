@@ -244,6 +244,7 @@ def parse_rbm_file(rbm, md, pnct, ctgct):
         r100s = len([i for i in ANIs if i >= 100])
         F100 = r100s / rbms
         dF100[gpair] = F100
+        #print(gpair, ANI, rbms, F100)
 
     return d3, dGL, dANI, dF100
 
@@ -251,7 +252,7 @@ def parse_rbm_file(rbm, md, pnct, ctgct):
 def compute_allv_pmrm(d3, dGL, dANI, dF100, dt, outpre):
 
     # compute all vs all ρ/θ (pairwise each genome pair)
-    # pmrm is th pm /rm or ρ/θ ratio
+    # pmrm is th pm/rm or ρ/θ ratio
     # rlen is the rec_length or length of genes with pid ≥ divergence_time
     # default divergence_time is 0.2 coinciding with 99.8% ANI
     # tlen is totel length of RBM genes shared by the genome pair.
@@ -275,20 +276,24 @@ def compute_allv_pmrm(d3, dGL, dANI, dF100, dt, outpre):
         pm = pm_rate * rec_length
 
         #rm_rate = dt / 100 # divergence time divided by 100 to remove the %
-        rec_ani = sum(rec_rbms) / len(rec_rbms)
-        rm_rate = (100 - rec_ani) / 100 
+        try: 
+            rec_ani = sum(rec_rbms) / len(rec_rbms)
+            rm_rate = (100 - rec_ani) / 100 
 
-        rm = rm_rate * total_length
-        pmrm = pm / rm if rm > 0 else 0
+            rm = rm_rate * total_length
+            pmrm = pm / rm if rm > 0 else 0
 
-        # add everything to the allv dict
-        allv['gpair'].append(gpair)
-        allv['ρ/θ'].append(pmrm)
-        allv['ani'].append(rbm_ani)
-        allv['f100'].append(f100)
-        allv['rlen'].append(rec_length)
-        allv['tlen'].append(total_length)
-        allv['rec_ani'].append(rec_ani)
+            # add everything to the allv dict
+            allv['gpair'].append(gpair)
+            allv['ρ/θ'].append(pmrm)
+            allv['ani'].append(rbm_ani)
+            allv['f100'].append(f100)
+            allv['rlen'].append(rec_length)
+            allv['tlen'].append(total_length)
+            allv['rec_ani'].append(rec_ani)
+
+        except:
+            print(f'\tFAIL: Genome pair {gpair} has no RBMs in {dt}% range')
 
     df = pd.DataFrame(allv)
     outfile = f'{outpre}_pmpr_pairwise_data.tsv'
