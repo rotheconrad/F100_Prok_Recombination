@@ -24,8 +24,11 @@ focusing on recent evolution only that corresponds to 99.8-100% identity events
 
 This is defined as:
 
-purged mutations (pm) = (100 - rbm_ani) / 100 * rec_length
-recent mutations (rm) = divergence_time / 100 * total length
+r = mutations purged by homologous recombination
+m = mutations created by point mutation within the same time
+
+r = (100 - rbm_ani) / 100 * rec_length
+m = divergence_time / 100 * total length
 
 RBM = reciprocal best match gene
 Rbm_ani is the ANI calculated from the average of RBM sequence identities
@@ -57,8 +60,8 @@ II. Cumulative one vs. many results are plotted for each genome against the
 2) we compute the ANI from the RBM genes of each genome pair
 2) we store the gene lengths for each genome pair preserving gene position
 3) we store the total genome length for each genome (based on RBMs gene length)
-5) we compute ρ/θ (pm/rm) for each genome pair
-6) we compute ρ/θ  (pm/rm) for each reference genome vs many grouping
+5) we compute ρ/θ (r/m) for each genome pair
+6) we compute ρ/θ  (r/m) for each reference genome vs many grouping
    for this we use the average ANI of the many group to the reference
 
 ### 
@@ -252,7 +255,10 @@ def parse_rbm_file(rbm, md, pnct, ctgct):
 def compute_allv_pmrm(d3, dGL, dANI, dF100, dt, outpre):
 
     # compute all vs all ρ/θ (pairwise each genome pair)
-    # pmrm is th pm/rm or ρ/θ ratio
+    # pmrm is th pm/rm or ρ/θ ratio or finally r/m
+    # note originally I used purged mutations (pm) and recent mutations (rm)
+    # later we changed pm = r and rm = m as noted in the help text and in the
+    # manuscript. The code still uses pm and rm.
     # rlen is the rec_length or length of genes with pid ≥ divergence_time
     # default divergence_time is 0.2 coinciding with 99.8% ANI
     # tlen is totel length of RBM genes shared by the genome pair.
