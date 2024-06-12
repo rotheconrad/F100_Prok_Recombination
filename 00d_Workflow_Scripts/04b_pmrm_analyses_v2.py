@@ -28,17 +28,17 @@ r = mutations purged by homologous recombination
 m = mutations created by point mutation within the same time
 
 r = (100 - rbm_ani) / 100 * rec_length
-m = divergence_time / 100 * total length
+m = (100 - rec_ani) / 100 * total length
 
 RBM = reciprocal best match gene
-Rbm_ani is the ANI calculated from the average of RBM sequence identities
+rbm_ani is the ANI calculated from the average of RBM sequence identities
 
-RBM genes ≥ 99.8% are classified as recent recombination events
-when the default divergence_time is set to 0.2% sequence identity.
+RBM genes ≥ 99.8% are classified as recent recombination events (rec RBMs)
+with the default dt parameter setting of 0.2% sequence identity.
+This can be changed by the user with -dt.
 
-* default divergence_time is 0.2 but can be adjusted by the user with -dt
-
-rec_length is the length of RBM genes identified as recent recombination.
+rec_ani is the ANI calculated from rec RBMs.
+rec_length is the length of rec RBM genes.
 total_length is the total length of all RBM genes between the genome pair.
 
 If the ratio > 1 recombination removes more mutations
@@ -277,7 +277,7 @@ def compute_allv_pmrm(d3, dGL, dANI, dF100, dt, outpre):
                     rec_length += glen
                     rec_rbms.append(pid)
 
-        # pm / rm - this is the goal
+        # pm / rm - this is the goal or (r / m)
         pm_rate = (100 - rbm_ani) / 100 # remove the %
         pm = pm_rate * rec_length
 
