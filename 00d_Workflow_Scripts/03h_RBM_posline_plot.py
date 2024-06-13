@@ -385,7 +385,7 @@ def build_pos_line_plot(
 
     dfG = df[df['Match Genome'] != '-']
     dfG['Mid'] = dfG[['Start', 'Stop']].mean(axis=1)
-    dfG = dfG[(dfG['Mid'] >= xmin) & dfG['Mid'] <= xmax]
+    dfG = dfG[(dfG['Mid'] >= xmin) & (dfG['Mid'] <= xmax)]
 
     # write df to file
     group_df_file = f'{outpre}_group_data.tsv'
