@@ -384,15 +384,16 @@ def build_pos_line_plot(
         cpos is a list of contig lengths to add markers '''
 
     dfG = df[df['Match Genome'] != '-']
+
+    # Sort by ANI
+    gorder, ani = ani_sort(dfG, gorder)
+    
     dfG['Mid'] = dfG[['Start', 'Stop']].mean(axis=1)
     dfG = dfG[(dfG['Mid'] >= xmin) & (dfG['Mid'] <= xmax)]
 
     # write df to file
     group_df_file = f'{outpre}_group_data.tsv'
     dfG.to_csv(group_df_file, sep='\t', index=False)
-
-    # Sort by ANI
-    gorder, ani = ani_sort(dfG, gorder)
 
     colors = {
             'Conserved': '#e41a1c', # red high conserved core gene
