@@ -116,7 +116,7 @@ All rights reserved
 -------------------------------------------
 '''
 
-import argparse, sys
+import argparse, sys, string
 from collections import defaultdict
 from copy import copy
 import numpy as np
@@ -682,7 +682,10 @@ def main():
         # if more than 40 category pairs on x-axis create additional plots.
         if len(d) > 40:
             labels = list(d.keys())
-            abc = 'abcdefghijklmnopqrstuvwxyz'
+            letters = list(string.ascii_lowercase)
+            abc = []
+            for i in range(1,10):
+                abc = abc + [A * i for A in letters]
             j = 0
             while len(labels) > 40:
                 ilabs = labels[:40]
