@@ -2,7 +2,7 @@
 
 '''Violin plots from All vs. All RBM data
 
-Creates violin plots of the Cumulative identical gene fraction within groups.
+Creates violin plots of the Cumulative Recombining gene fraction within groups.
 
 A) compare each genome to other genomes in the same genomovar
 B) compare each genome to other genomes within each separate genomovar in the
@@ -85,7 +85,7 @@ D) each reference genome is compared one to many genomes with genomes
 
 All vs. All RBM only includes RBM genes of a genome and not all genes.
 Gene list file has all genes for each genome and is used get the total
-gene count for each genome used as the denominator for the identical
+gene count for each genome used as the denominator for the recombining
 gene fraction.
 
 Genes of column 1 in the RBM file are always in order.
@@ -174,7 +174,7 @@ def parse_metadata_file(metadata):
 
 def parse_gene_list(genelist):
     # the RBM file only has RBM genes not all genes
-    # need total gene count for denominator of identical gene fraction
+    # need total gene count for denominator of recombining gene fraction
     # create gene position list of 0's to add RBM gene positions to
     
     contigs = defaultdict(list)
@@ -232,7 +232,7 @@ def parse_gpairs(rbm, pnct, ctgct, recx):
             if g1 == g2: continue
             gpair = f'{g1}-{g2}'
             pid = float(X[2])
-            # no need to change anything unless RBM is identical
+            # no need to change anything unless RBM is recombining
             #if pid != 100: continue
             score = 1 if pid >= recx else 0
             # add gpair to dict
@@ -328,13 +328,13 @@ def score_gpairs(list_dict, outfile):
         dt = np.array([np.array(copy(score)) for score in scores])
         sm = dt.sum(axis=0)
         ty = [0 if i == 0 else 1 for i in sm]
-        identical_genes = sum(ty)
+        recombining_genes = sum(ty)
         total_genes = len(ty)
-        identical_fraction = identical_genes / total_genes
+        recombining_fraction = recombining_genes / total_genes
 
-        score_dict[grouping].append(identical_fraction)
+        score_dict[grouping].append(recombining_fraction)
 
-        outfile.write(f'{genome}\t{grouping}\t{identical_fraction}\n')
+        outfile.write(f'{genome}\t{grouping}\t{recombining_fraction}\n')
 
     return score_dict
 
@@ -363,8 +363,8 @@ def sort_scores(score_dict, gpmin):
 
 def score_genomes_by_category(gvd, pgd, spd, gpmin, outpre, pop_struc):
 
-    # data3 stores identical fraction values for each gv, pg, sp grouping
-    header = "Genome\tPairing\tIdentical Genome Fraction\n"
+    # data3 stores recombining fraction values for each gv, pg, sp grouping
+    header = "Genome\tPairing\tRecombining Genome Fraction\n"
 
     # gvd contains scores for all genome in the same phylogroup that are
     # in a a genomovar with more than 1 genome.
@@ -388,7 +388,7 @@ def score_genomes_by_category(gvd, pgd, spd, gpmin, outpre, pop_struc):
     spdout.close()
 
     # create 6 category dict with lists
-    # each value in the "sort_scores" lists is the fraction of identical genes
+    # each value in the "sort_scores" lists is the fraction of recombining genes
     # in 1 genome, to the rest of genomes/genes in that category.
     
     sgvl, dgvl, sgvd, dgvd = sort_scores(gvd, gpmin)
@@ -433,7 +433,7 @@ def parse_rbm_file(rbm, md, pnct, ctgct, gpmin, outpre, pop_struc, recx):
     # returns data dict of {}
 
     # store each gene pairs list of gene scores
-    # gene score: 1 = identical; 0 = not identical
+    # gene score: 1 = Recombining; 0 = not Recombining
     data1 = parse_gpairs(rbm, pnct, ctgct, recx)
 
     # sort genome pairs into md categories and store gnlst
@@ -444,7 +444,7 @@ def parse_rbm_file(rbm, md, pnct, ctgct, gpmin, outpre, pop_struc, recx):
     # sum numpy array by column. Any element ≥ 1 recombines within
     # that category and any 0 is a gene that does not.
     # sum the 1d numpy column sum and divide by length gives fraction
-    # of genes in the genome that are identical to other genes in 
+    # of genes in the genome that are recombining with other genes in 
     # other genomes in that category. Store that result by category
     # to plot in the boxplots
     data3 = score_genomes_by_category(gvd, pgd, spd, gpmin, outpre, pop_struc)
@@ -510,10 +510,10 @@ def build_violin_plot(data, title, outfile):
     
 
     # set plot title
-    ax.set_title(f'Cumulative identical RBM gene fractions by {title}')
+    ax.set_title(f'Cumulative recombining RBM gene fractions by {title}')
     # change axis labels
     ax.set_xlabel('')
-    ax.set_ylabel("Cumulative identical gene fraction", fontsize=12)
+    ax.set_ylabel("Cumulative recombining gene fraction", fontsize=12)
 
     # set style for the axes
     ax.set_xticks(np.arange(1, len(labels) + 1), labels=labels)
