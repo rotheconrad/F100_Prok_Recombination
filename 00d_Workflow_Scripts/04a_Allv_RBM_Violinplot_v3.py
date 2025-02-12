@@ -647,9 +647,9 @@ def main():
         '-recx', '--Recombinat_Sequence_Identity_Threshold',
         help='(OPTIONAL) Set threshold to determine recombinant RBMs (default: 99.8)!',
         metavar='',
-        type=int,
+        type=float,
         required=False,
-        default=2
+        default=99.8
         )
     parser.add_argument(
         '-o', '--output_file_prefix',
