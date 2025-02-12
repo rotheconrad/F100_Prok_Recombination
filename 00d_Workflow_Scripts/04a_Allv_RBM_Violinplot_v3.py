@@ -95,7 +95,8 @@ Input files:
 
     - All vs. All RBM file
     - Full gene list - complete_gene_list.txt
-    - Metadata tsv file with columns Genome, Genomovar, phylogroup, species
+    - Metadata tsv file with columns Genome, Genomovar, Phylogroup, Species
+      * NOTE: Column order of Metadata tsv file is CRITICAL
 
     * to create complete_gene_list.txt:
       'grep '>' 03a_all_CDS.fnn > 08_complete_gene_list.txt'
