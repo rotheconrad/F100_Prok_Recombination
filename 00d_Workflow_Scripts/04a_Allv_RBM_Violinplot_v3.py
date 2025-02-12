@@ -214,6 +214,7 @@ def parse_gpairs(rbm, pnct, ctgct, recx):
     data1a = {}
     data1b = defaultdict(list)
     # returns data1b {gpair: gene list of [1,0]}
+    pids = []
 
     with open(rbm, 'r') as file:
 
@@ -233,6 +234,7 @@ def parse_gpairs(rbm, pnct, ctgct, recx):
             if g1 == g2: continue
             gpair = f'{g1}-{g2}'
             pid = float(X[2])
+            pids.append(pid)
             # no need to change anything unless RBM is recombining
             #if pid != 100: continue
             score = 1 if pid >= recx else 0
@@ -258,6 +260,30 @@ def parse_gpairs(rbm, pnct, ctgct, recx):
         # join all contigs and add to data1b
         joined_contigs = [i for c in all_contigs.values() for i in c]
         data1b[gpair] = copy(joined_contigs)
+
+    # compute % RBMs ≥ recx and descriptive stats of RBMs
+    # Calculate descriptive statistics
+    mean = np.mean(pids)
+    median = np.median(pids)
+    std_dev = np.std(pids)
+    variance = np.var(pids)
+    minimum = np.min(pids)
+    maximum = np.max(pids)
+    quantiles = np.quantile(pids, [0.25, 0.5, 0.75])
+    quants = f"{quantiles[0]:.2f}, {quantiles[1]:.2f}, {quantiles[2]:.2f}"
+    count = sum(1 for x in pids if x >= recx)
+
+    # Print the results
+    print(f"\n\n\tRBM STATS:")
+    print(f"\tMean: {mean:.2f}")
+    print(f"\tMedian: {median:.2f}")
+    print(f"\tStandard Deviation: {std_dev:.2f}")
+    print(f"\tVariance: {variance:.2f}")
+    print(f"\tMinimum: {minimum:.2f}")
+    print(f"\tMaximum: {maximum:.2f}")
+    print(f"\tQuantiles (25th, 50th, 75th): {quants}")
+    print(f"\tRBMs ≥ {recx} (%): {count/len(pids) * 100:.2f}")
+
 
     return data1b
 
@@ -484,10 +510,10 @@ def build_violin_plot(data, title, outfile):
         if len(d) >= 3:
             q1, md, q3 = np.percentile(d, [25, 50, 75])
         elif len(d) > 0:
-            print(f'\n\n\t\tCAUTION: {labels[i]} has < 3 data points.\n\n')
+            print(f'\t\tCAUTION: {title} ({labels[i]}) has < 3 data points.')
             q1, md, q3 = np.mean(d), np.mean(d), np.mean(d)
         else:
-            print(f'\n\n\t\tCAUTION: {labels[i]} has 0 data points.\n\n')
+            print(f'\t\tCAUTION: {title} ({labels[i]}) has 0 data points.')
             q1, md, q3 = 0, 0, 0
             values[i].append(0)
 
@@ -692,6 +718,7 @@ def main():
     # parse rbm file
     print(f'\n\nParsing RBM file ...')
     data3 = parse_rbm_file(rbm, md, pnct, ctgct, gpmin, outpre, pop_struc, recx)
+
 
     ####################################################################
     ####################################################################
