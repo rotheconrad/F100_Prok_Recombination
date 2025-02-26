@@ -1187,15 +1187,15 @@ python 03j_RBM-Clade_Rarefaction.py -r group_g1_rbm_matrix.tsv -l clade_list.txt
 
 ## Required packages for Python
 
-- [pandas](https://pandas.pydata.org/) 
-- [numpy](https://numpy.org/)
-- [scipy](https://scipy.org/)
-- [statsmodels](https://www.statsmodels.org)
-- [matplotlib](https://matplotlib.org/)
-- [seaborn](https://seaborn.pydata.org/)
-- [lmfit](https://lmfit.github.io/lmfit-py/)
-- [datashader](https://datashader.org/)
-- [pygam](https://pygam.readthedocs.io/)
+- [pandas](https://pandas.pydata.org/) - tested version = 1.5.2
+- [numpy](https://numpy.org/) - tested version = 1.23.5
+- [scipy](https://scipy.org/) - tested version = 1.10.0
+- [statsmodels](https://www.statsmodels.org) - tested version = 0.13.5
+- [matplotlib](https://matplotlib.org/) - tested version = 3.6.2
+- [seaborn](https://seaborn.pydata.org/) - tested version = 0.12.2
+- [lmfit](https://lmfit.github.io/lmfit-py/) - tested version = 1.1.0
+- [datashader](https://datashader.org/) - tested version = 0.15.2
+- [pygam](https://pygam.readthedocs.io/) - tested version = 0.9.0
 
 *Python and all packages can be easily installed with conda or pip. Prodigal, BLAST+ and MMseqs2 can also be installed easily with [Conda](https://docs.conda.io/en/latest/miniconda.html). Just search "conda install name"*
 
